@@ -5,6 +5,10 @@ import java.awt.Image;
 import java.awt.image.*;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.ref.Cleaner.Cleanable;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.*;
 
 import javax.imageio.ImageIO;
@@ -12,9 +16,9 @@ import javax.imageio.ImageIO;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.compoment.Text;
 
-public class Bitmap implements IResource {
+public class Bitmap implements IResource, Cleanable {
 	private static final long serialVersionUID = 1L;
-	public final int[] pixels;
+	public final IntBuffer pixels;
 	public final int w, h;
 	public int xOffs;
 	public int yOffs;
@@ -25,24 +29,34 @@ public class Bitmap implements IResource {
 	public Bitmap(int w, int h) {
 		this.w = w;
 		this.h = h;
-		pixels = new int[w * h];
-	}
-
-	public Bitmap(int w, int h, int[] pixels) {
-		this.w = w;
-		this.h = h;
-		this.pixels = pixels;
-	}
-
-	public Bitmap(BufferedImage img) {
-		this.w = img.getWidth();
-		this.h = img.getHeight();
-		pixels = ((DataBufferInt) img.getRaster().getDataBuffer()).getData();
+		ByteBuffer buffer = ByteBuffer.allocateDirect(w * h * 4)
+		        .order(ByteOrder.nativeOrder());
+		this.pixels = buffer.asIntBuffer();
 	}
 	
+	public Bitmap(int w, int h, IntBuffer copy) {
+	    this.w = w;
+	    this.h = h;
+	    this.pixels = ByteBuffer
+	        .allocateDirect(copy.capacity() * 4)
+	        .order(ByteOrder.nativeOrder())
+	        .asIntBuffer();
+	    copy.rewind();
+	    this.pixels.put(copy);
+	    this.pixels.rewind();
+	}
+	
+	public void rewind() {
+		this.pixels.rewind();
+	}
+
 	public BufferedImage toImage() {
 		BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+		int[] pixels = new int[w * h];
+		rewind();
+		this.pixels.get(pixels);
 		img.setRGB(0, 0, w, h, pixels, 0, w);
+		rewind();
 		return img;
 	}
 	
@@ -98,10 +112,10 @@ public class Bitmap implements IResource {
 	                int yCeil = yFloor + 1;             // Alt piksel
 
 	                // Piksel renklerini al (sınır kontrolü yap)
-	                int topLeft = pixels[yFloor * w + xFloor];
-	                int topRight = pixels[yFloor * w + (xCeil < w ? xCeil : xFloor)];
-	                int bottomLeft = pixels[(yCeil < h ? yCeil : yFloor) * w + xFloor];
-	                int bottomRight = pixels[(yCeil < h ? yCeil : yFloor) * w + (xCeil < w ? xCeil : xFloor)];
+	                int topLeft = pixels.get(yFloor * w + xFloor);
+	                int topRight = pixels.get(yFloor * w + (xCeil < w ? xCeil : xFloor));
+	                int bottomLeft = pixels.get((yCeil < h ? yCeil : yFloor) * w + xFloor);
+	                int bottomRight = pixels.get((yCeil < h ? yCeil : yFloor) * w + (xCeil < w ? xCeil : xFloor));
 
 	                // Kesirli kısımları al (ağırlıklar)
 	                double xWeight = oldX - xFloor;
@@ -111,13 +125,16 @@ public class Bitmap implements IResource {
 	                int interpolatedColor = bilinearInterpolation(topLeft, topRight, bottomLeft, bottomRight, xWeight, yWeight);
 
 	                // Rotated bitmap'e yeni renk ata
-	                rotated.pixels[y * newWidth + x] = interpolatedColor;
+	                rotated.pixels.put(y * newWidth + x, interpolatedColor);
 	            } else {
 	                // Eğer orijinal bitmap'in dışına düşüyorsa siyah renk ata
-	                rotated.pixels[y * newWidth + x] = 0; // Siyah (0x00000000)
+	                rotated.pixels.put(y * newWidth + x, 0);
 	            }
 	        }
 	    }
+	    
+	    rewind();
+	    rotated.rewind();
 
 	    return rotated;
 	}
@@ -185,7 +202,7 @@ public class Bitmap implements IResource {
 	                int px = x1 + ox;
 	                int py = y1 + oy;
 	                if (px >= 0 && px < w && py >= 0 && py < h) {
-	                    pixels[py * w + px] = color;
+	                    this.pixels.put(py * w + px, color);
 	                }
 	            }
 	        }
@@ -204,6 +221,8 @@ public class Bitmap implements IResource {
 	            y1 += sy;
 	        }
 	    }
+	    
+	    rewind();
 	}
 
 	public void draw(Bitmap b, int xp, int yp) {
@@ -224,8 +243,8 @@ public class Bitmap implements IResource {
 				int dp = (y) * w;
 
 				for (int x = x0; x < x1; x++) {
-					int c = b.pixels[sp - x];
-					if (c < 0) pixels[dp + x] = b.pixels[sp - x];
+					int c = b.pixels.get(sp - x);
+					if (c < 0) pixels.put(dp + x, b.pixels.get(sp - x));
 				}
 			}
 		} else {
@@ -234,11 +253,14 @@ public class Bitmap implements IResource {
 				int dp = (y) * w;
 
 				for (int x = x0; x < x1; x++) {
-					int c = b.pixels[sp + x];
-					if (c < 0) pixels[dp + x] = b.pixels[sp + x];
+					int c = b.pixels.get(sp + x);
+					if (c < 0) pixels.put(dp + x, b.pixels.get(sp + x));
 				}
 			}
 		}
+		
+		b.rewind();
+		rewind();
 	}
 	
 	// Düzeltilmiş blend metodu
@@ -259,12 +281,12 @@ public class Bitmap implements IResource {
 	        int dp = y * w;
 
 	        for (int x = x0; x < x1; x++) {
-	            int c = b.pixels[sp + x];
+	            int c = b.pixels.get(sp + x);
 	            int a = (c >> 24) & 0xff;
 	            
 	            // Sadece alfa değeri > 0 olan pikselleri işle
 	            if (a > 0) {
-	                int bgColor = pixels[dp + x];
+	                int bgColor = pixels.get(dp + x);
 	                
 	                // Arka plan ve kaynak pikselin renk bileşenlerini çıkar
 	                int bgR = (bgColor >> 16) & 0xff;
@@ -281,10 +303,12 @@ public class Bitmap implements IResource {
 	                int newB = (srcB * a + bgB * (255 - a)) / 255;
 	                
 	                // Yeni pikseli ayarla (alfa kanalı tamamen opak)
-	                pixels[dp + x] = 0xff000000 | (newR << 16) | (newG << 8) | newB;
+	                pixels.put(dp + x, 0xff000000 | (newR << 16) | (newG << 8) | newB);
 	            }
 	        }
 	    }
+	    b.rewind();
+	    rewind();
 	}
 
 	// Düzeltilmiş blendDraw metodu
@@ -312,7 +336,7 @@ public class Bitmap implements IResource {
 	            int dp = y * w;
 
 	            for (int x = x0; x < x1; x++) {
-	                int c = b.pixels[sp - (x - xp)];
+	                int c = b.pixels.get(sp - (x - xp));
 	                int a = (c >> 24) & 0xff;
 	                
 	                if (a > 0) {
@@ -327,7 +351,7 @@ public class Bitmap implements IResource {
 	                    int blendB = (srcB * colB) / 255;
 	                    
 	                    // Mevcut piksel ile alfa değerine göre karıştır
-	                    int bgColor = pixels[dp + x];
+	                    int bgColor = pixels.get(dp + x);
 	                    int bgR = (bgColor >> 16) & 0xff;
 	                    int bgG = (bgColor >> 8) & 0xff;
 	                    int bgB = bgColor & 0xff;
@@ -336,7 +360,7 @@ public class Bitmap implements IResource {
 	                    int newG = (blendG * a + bgG * (255 - a)) / 255;
 	                    int newB = (blendB * a + bgB * (255 - a)) / 255;
 	                    
-	                    pixels[dp + x] = 0xff000000 | (newR << 16) | (newG << 8) | newB;
+	                    pixels.put(dp + x, 0xff000000 | (newR << 16) | (newG << 8) | newB);
 	                }
 	            }
 	        }
@@ -346,7 +370,7 @@ public class Bitmap implements IResource {
 	            int dp = y * w;
 
 	            for (int x = x0; x < x1; x++) {
-	                int c = b.pixels[sp + (x - xp)];
+	                int c = b.pixels.get(sp + (x - xp));
 	                int a = (c >> 24) & 0xff;
 	                
 	                if (a > 0) {
@@ -361,7 +385,7 @@ public class Bitmap implements IResource {
 	                    int blendB = (srcB * colB) / 255;
 	                    
 	                    // Mevcut piksel ile alfa değerine göre karıştır
-	                    int bgColor = pixels[dp + x];
+	                    int bgColor = pixels.get(dp + x);
 	                    int bgR = (bgColor >> 16) & 0xff;
 	                    int bgG = (bgColor >> 8) & 0xff;
 	                    int bgB = bgColor & 0xff;
@@ -370,11 +394,13 @@ public class Bitmap implements IResource {
 	                    int newG = (blendG * a + bgG * (255 - a)) / 255;
 	                    int newB = (blendB * a + bgB * (255 - a)) / 255;
 	                    
-	                    pixels[dp + x] = 0xff000000 | (newR << 16) | (newG << 8) | newB;
+	                    pixels.put(dp + x, 0xff000000 | (newR << 16) | (newG << 8) | newB);
 	                }
 	            }
 	        }
 	    }
+	    b.rewind();
+	    rewind();
 	}
 
 	// Düzeltilmiş blendFill metodu
@@ -399,7 +425,7 @@ public class Bitmap implements IResource {
 	    
 	    for (int y = y0; y <= y1; y++) {
 	        for (int x = x0; x <= x1; x++) {
-	            int bgColor = pixels[x + y * w];
+	            int bgColor = pixels.get(x + y * w);
 	            int bgR = (bgColor >> 16) & 0xff;
 	            int bgG = (bgColor >> 8) & 0xff;
 	            int bgB = bgColor & 0xff;
@@ -408,9 +434,11 @@ public class Bitmap implements IResource {
 	            int newG = (srcG * a + bgG * (255 - a)) / 255;
 	            int newB = (srcB * a + bgB * (255 - a)) / 255;
 	            
-	            pixels[x + y * w] = 0xff000000 | (newR << 16) | (newG << 8) | newB;
+	            pixels.put(x + y * w, 0xff000000 | (newR << 16) | (newG << 8) | newB);
 	        }
 	    }
+	    
+	    rewind();
 	}
 
 	// Düzeltilmiş fogBlend metodu
@@ -431,14 +459,14 @@ public class Bitmap implements IResource {
 	        int dp = y * w;
 
 	        for (int x = x0; x < x1; x++) {
-	            int c = b.pixels[sp + x];
+	            int c = b.pixels.get(sp + x);
 	            // Eğer piksel şeffaf değilse işleme devam et
 	            if (c != 0) {
 	                // Alfa değerini al (0-255 arası)
 	                int fogIntensity = c & 0xff;
 	                // Sis yoğunluğu değeri olmadığında işlem yapma
 	                if (fogIntensity > 0) {
-	                    int bgColor = pixels[dp + x];
+	                    int bgColor = pixels.get(dp + x);
 	                    int bgR = (bgColor >> 16) & 0xff;
 	                    int bgG = (bgColor >> 8) & 0xff;
 	                    int bgB = bgColor & 0xff;
@@ -454,35 +482,43 @@ public class Bitmap implements IResource {
 	                    int newG = (bgG * ic + gray * fogIntensity) / 255;
 	                    int newB = (bgB * ic + gray * fogIntensity) / 255;
 	                    
-	                    pixels[dp + x] = 0xff000000 | (newR << 16) | (newG << 8) | newB;
+	                    pixels.put(dp + x, 0xff000000 | (newR << 16) | (newG << 8) | newB);
 	                }
 	            }
 	        }
 	    }
+	    
+	    b.rewind();
+	    rewind();
 	}
 
 	public void clear(int color) {
-		Arrays.fill(pixels, color);
+		for (int i = 0; i < pixels.capacity(); i++) {
+		    pixels.put(i, color);
+		}
+		pixels.rewind();
 	}
 
 	public void setPixel(int xp, int yp, int color) {
 		xp += xOffs;
 		yp += yOffs;
 		if (xp >= 0 && yp >= 0 && xp < w && yp < h) {
-			pixels[xp + yp * w] = color;
+			pixels.put(xp + yp * w, color);
 		}
-
+		pixels.rewind();
 	}
 
 	public void shade(Bitmap shadows) {
-		for (int i = 0; i < pixels.length; i++) {
-			if (shadows.pixels[i] > 0) {
-				int r = ((pixels[i] & 0xff0000) * 200) >> 8 & 0xff0000;
-				int g = ((pixels[i] & 0xff00) * 200) >> 8 & 0xff00;
-				int b = ((pixels[i] & 0xff) * 200) >> 8 & 0xff;
-				pixels[i] = 0xff000000 | r | g | b;
+		for (int i = 0; i < pixels.capacity(); i++) {
+			if (shadows.pixels.get(i) > 0) {
+				int r = ((pixels.get(i) & 0xff0000) * 200) >> 8 & 0xff0000;
+				int g = ((pixels.get(i) & 0xff00) * 200) >> 8 & 0xff00;
+				int b = ((pixels.get(i) & 0xff) * 200) >> 8 & 0xff;
+				pixels.put(i, 0xff000000 | r | g | b);
 			}
 		}
+		shadows.rewind();
+		rewind();
 	}
 
 	public void fill(int x0, int y0, int x1, int y1, int color) {
@@ -496,9 +532,10 @@ public class Bitmap implements IResource {
 		if (y1 >= h) y1 = h - 1;
 		for (int y = y0; y <= y1; y++) {
 			for (int x = x0; x <= x1; x++) {
-				pixels[x + y * w] = color;
+				pixels.put(x + y * w, color);
 			}
 		}
+		rewind();
 	}
 
 	public void box(int x0, int y0, int x1, int y1, int color) {
@@ -518,12 +555,13 @@ public class Bitmap implements IResource {
 
 		for (int y = y0; y <= y1; y++) {
 			for (int x = x0; x <= x1; x++) {
-				if (x == xx0 || y == yy0 || x == xx1 || y == yy1) pixels[x + y * w] = color;
+				if (x == xx0 || y == yy0 || x == xx1 || y == yy1) pixels.put(x + y * w, color);
 				if (y > yy0 && y < yy1 && x < xx1 - 1) {
 					x = xx1 - 1;
 				}
 			}
 		}
+		rewind();
 	}
 	
 	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints, int color) {
@@ -584,11 +622,12 @@ public class Bitmap implements IResource {
 	                
 	                // Fill the span
 	                for (int x = startX; x <= endX; x++) {
-	                    pixels[y * w + x] = color;
+	                    pixels.put(y * w + x, color);
 	                }
 	            }
 	        }
 	    }
+	    rewind();
 	}
 
 	// Convenience overload that takes exactly 3 points (for triangles)
@@ -597,7 +636,17 @@ public class Bitmap implements IResource {
 	}
 	
 	public Bitmap clone() {
-		return new Bitmap(w, h, Arrays.copyOf(pixels, pixels.length));
+		IntBuffer copy = ByteBuffer
+		        .allocateDirect(pixels.capacity() * 4)
+		        .order(ByteOrder.nativeOrder())
+		        .asIntBuffer();
+
+		pixels.rewind(); // kaynağı başa sar
+		copy.put(pixels);
+		pixels.rewind(); // orijinalin pozisyonunu eski haline getir (isteğe bağlı)
+		copy.rewind();
+
+		return new Bitmap(w, h, copy);
 	}
 	
 	public Bitmap clone(int w, int h) {
@@ -612,12 +661,12 @@ public class Bitmap implements IResource {
 	}
 
 	public int getPixel(int srcX, int srcY) {
-		return pixels[srcX + srcY * w];
+		return pixels.rewind().get(srcX + srcY * w);
 	}
 
-	public static Bitmap createClearedBitmap(int i, int j, int k) {
-		Bitmap bitmap = new Bitmap(i, j);
-		bitmap.clear(k);
+	public static Bitmap createClearedBitmap(int w, int h, int color) {
+		Bitmap bitmap = new Bitmap(w, h);
+		bitmap.clear(color);
 		return bitmap;
 	}
 
@@ -677,8 +726,81 @@ public class Bitmap implements IResource {
 		int sw = img.getWidth();
 		int sh = img.getHeight();
 		Bitmap result = new Bitmap(sw, sh);
-		img.getRGB(0, 0, sw, sh, result.pixels, 0, sw);
+		int[] pixels = new int[sw * sh];
+		img.getRGB(0, 0, sw, sh, pixels, 0, sw);
+		result.pixels.clear();
+		result.pixels.put(pixels);
+		result.rewind();
 		return result;
 	}
 
+
+	public Bitmap opposite(boolean upMode) {
+		Bitmap bitmap = new Bitmap(w, h);
+    	for (int y = 0; y < h; y++) {
+        	for (int x = 0; x < w; x++) {
+            	int srcIndex = x + y * w;
+            	int destX, destY;
+
+            	if (upMode) {
+                	// Dikey ters çevirme (yukarı <-> aşağı)
+                	destX = x;
+                	destY = h - 1 - y;
+            	} else {
+                	// Yatay ters çevirme (sol <-> sağ)
+                	destX = w - 1 - x;
+                	destY = y;
+            	}
+
+            	int destIndex = destX + destY * w;
+            	bitmap.pixels.put(destIndex, pixels.get(srcIndex));
+        	}
+    	}
+    	rewind();
+    	bitmap.rewind();
+    	return bitmap;
+	}
+	
+	// Bitmap.java içine:
+	public byte[] toBytes(String format) {
+	    try (java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream()) {
+	        javax.imageio.ImageIO.write(toImage(), format, out);
+	        return out.toByteArray();
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return new byte[0];
+	    }
+	}
+
+	public static Bitmap fromBytes(byte[] bytes) {
+	    try {
+	        java.awt.image.BufferedImage img =
+	            javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes));
+	        return Bitmap.toBitmap(img);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	        return null;
+	    }
+	}
+
+	@Override
+	public void clean() {
+		this.pixels.clear();
+		this.rewind();
+	}
+	
+	public Bitmap replaceColor(int targetColor, int replaceColor) {
+		Bitmap cloned = this.clone();
+		int size = cloned.w * cloned.h;
+		cloned.rewind();
+
+		for (int i = 0; i < size; i++) {
+			if (cloned.pixels.get(i) == targetColor) {
+				cloned.pixels.put(i, replaceColor);
+			}
+		}
+		cloned.rewind();
+		
+		return cloned;
+	}
 }

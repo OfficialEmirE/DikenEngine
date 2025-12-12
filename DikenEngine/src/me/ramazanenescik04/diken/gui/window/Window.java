@@ -25,6 +25,7 @@ public class Window extends GuiCompoment {
 	public Window(int x, int y, int width, int height) {
 		super(x, y, width, height);
 		contentPane.setBounds(this.x + 1, this.y + BAR_HEIGHT + 1, width - 2, height - BAR_HEIGHT - 2);
+		contentPane.init(DikenEngine.getEngine());
 		
 		barButtons[0] = new Button("X", width - 18, 2, 12, 12).setButtonColor(0xffff0000);
 	}

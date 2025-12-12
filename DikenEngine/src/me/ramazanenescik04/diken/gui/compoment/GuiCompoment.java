@@ -25,5 +25,6 @@ public abstract class GuiCompoment extends Hitbox implements java.io.Serializabl
 	}
 	
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
-	};
+	}
+
 }

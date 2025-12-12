@@ -252,7 +252,7 @@ public abstract class BatteryInfo {
 		public void updateBatteryInfo() {
 			try {
 				// pmset ve ioreg komutları ile pil bilgisini al
-		        Process pmsetProcess = Runtime.getRuntime().exec("pmset -g batt");
+		        Process pmsetProcess = Runtime.getRuntime().exec(new String[] {"pmset", "-g", "batt"});
 		        pmsetProcess.waitFor();
 		        
 		        BufferedReader pmsetReader = new BufferedReader(new InputStreamReader(pmsetProcess.getInputStream()));
@@ -302,7 +302,7 @@ public abstract class BatteryInfo {
 		        }
 		        
 		        // Tam şarj kapasitesi için ioreg komutunu kullan
-		        Process ioregProcess = Runtime.getRuntime().exec("ioreg -l -w0 | grep Capacity");
+		        Process ioregProcess = Runtime.getRuntime().exec(new String[] {"ioreg", "-l", "-w0", "|", "grep", "Capacity"});
 		        ioregProcess.waitFor();
 		        
 		        BufferedReader ioregReader = new BufferedReader(new InputStreamReader(ioregProcess.getInputStream()));

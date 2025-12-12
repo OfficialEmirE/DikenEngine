@@ -1,11 +1,15 @@
 package me.ramazanenescik04.diken.game.entity;
 
+import java.util.Properties;
+
 import me.ramazanenescik04.diken.game.GameObject;
 
 public abstract class Entity extends GameObject {
-	private static final long serialVersionUID = 1L;
 	public boolean removed = false;
 	public int health = 100, maxHealth = 100; // Default health value
+	public int z;
+	
+	public Properties prop;
 
 	public Entity(int x, int y, int width, int height) {
 		super(x, y, width, height);
@@ -29,6 +33,14 @@ public abstract class Entity extends GameObject {
 	
 	public boolean isDead() {
 		return this.health <= 0;
+	}
+
+	public int getHealth() {
+		return this.health;
+	}
+	
+	public void setHealth(int health) {
+		this.health = Math.min(health, this.maxHealth);
 	}
 	
     //API END

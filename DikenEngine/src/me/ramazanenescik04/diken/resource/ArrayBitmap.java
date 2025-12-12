@@ -4,6 +4,10 @@ public class ArrayBitmap implements IResource {
 	private static final long serialVersionUID = 1L;
 	
 	public Bitmap[][] bitmap;
+	
+	public ArrayBitmap(Bitmap[]...bitmaps) {
+		this.bitmap = bitmaps;
+	}
 
 	public void setArray(Bitmap[][] array) {
 		this.bitmap = array;
@@ -16,5 +20,9 @@ public class ArrayBitmap implements IResource {
 	@Override
 	public EnumResource getResourceType() {
 		return EnumResource.IMAGE;
+	}
+	
+	public IResource clone() {
+		return new ArrayBitmap(bitmap.clone());
 	}
 }

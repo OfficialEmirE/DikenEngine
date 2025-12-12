@@ -143,4 +143,15 @@ public class Panel extends GuiCompoment {
 			compoment.mouseGetInfo(this.x - x, this.y - y, isTouch);
 		}
 	}
+
+	public boolean isVaild(GuiCompoment compoment) {
+		for (int i = 0; i < compoments.size(); i++) {
+			GuiCompoment custom = compoments.get(i);
+			
+			if (custom == compoment) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

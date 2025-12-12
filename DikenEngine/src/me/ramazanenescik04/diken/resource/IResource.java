@@ -11,6 +11,10 @@ public interface IResource extends java.io.Serializable {
 		if(thisRes == res) return true; else return false;
 	}
 	
-	public default void saveResource(OutputStream stream) {
+	public default void saveResource(OutputStream stream) throws Exception {
+	}
+
+	public default IResource clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException("Sen bunu clonelayamazsın kardeşim. git onun kodunu yaz!");
 	}
 }

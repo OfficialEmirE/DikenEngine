@@ -1,5 +1,5 @@
 package me.ramazanenescik04.diken.resource;
 
 public enum EnumResource {
-	IMAGE, SOUND, CURSOR
+	IMAGE, SOUND, CURSOR, ANIMATION
 }

@@ -9,6 +9,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 
 public class Utils {
@@ -92,13 +96,35 @@ public class Utils {
 		return total * 1000; // Convert to milliseconds
 	}
 	
-	// currentTime ve maxTime, System.currentTimeMillis() gibi değerler olamaz!
-	public static int toProccesBarValue(long currentTime, long maxTime, int maxValue) {
-		if (maxTime <= 0) {
+	public static int toProccesBarValue(long currentValue, long maxValue, int width) {
+		if (maxValue <= 0) {
 			return 0;
 		}
 		
-		double percentage = (double) currentTime / maxTime;
-		return (int) (percentage * maxValue);
+		double percentage = (double) currentValue / maxValue;
+		return (int) (percentage * width);
+	}
+
+	public static String getWebData(String uri) {
+		HttpClient client = HttpClient.newHttpClient();
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(uri))
+                .GET()
+                .build();
+        
+        HttpResponse<String> response = null;
+		try {
+			response = client.send(request, HttpResponse.BodyHandlers.ofString());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return """
+		 		{
+		 			"status": "error",
+		 			"message": "%s"
+		 		}
+		 		""".formatted(e.getMessage());
+		}
+		return response.body();
 	}
 }

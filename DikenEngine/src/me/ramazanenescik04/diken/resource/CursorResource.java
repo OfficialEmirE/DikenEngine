@@ -15,18 +15,18 @@ public class CursorResource implements IResource {
 		if (cursorBitmap == null)
 			cursorBitmap = IOResource.missingTexture;
 		
-		IntBuffer buffer = BufferUtils.createIntBuffer(cursorBitmap.pixels.length);
+		IntBuffer buffer = BufferUtils.createIntBuffer(cursorBitmap.pixels.capacity());
 		
 		// Buffer'ı hazırla
 		buffer.clear();
         
 		int width = cursorBitmap.w;
 		int height = cursorBitmap.h;
-		int[] pixels = cursorBitmap.pixels;
+		IntBuffer pixels = cursorBitmap.pixels;
 		for (int y = 0; y < height; y++) {
 		    for (int x = 0; x < width; x++) {
 		        int mirroredX = width - 1 - x;
-		        int color = pixels[y * width + mirroredX];
+		        int color = pixels.get(y * width + mirroredX);
 		        buffer.put(color);
 		    }
 		}
@@ -56,5 +56,11 @@ public class CursorResource implements IResource {
 	public EnumResource getResourceType() {
 		return EnumResource.CURSOR;
 	}
-
+	
+	public IResource clone() {
+		CursorResource clonedCursor = new CursorResource();
+		clonedCursor.cursorBitmap = this.cursorBitmap;
+		clonedCursor.generateCursor();
+		return clonedCursor;
+	}
 }

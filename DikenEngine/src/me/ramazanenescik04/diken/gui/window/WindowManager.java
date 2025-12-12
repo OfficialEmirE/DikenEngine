@@ -246,7 +246,6 @@ public class WindowManager {
     }
     
     // Resize modu için imleç tipini ayarlar
-    //TODO
     private void setResizeCursor(int resizeArea) {    
     	DikenEngine engine = DikenEngine.getEngine();
     	CursorResource cursorResource = null;

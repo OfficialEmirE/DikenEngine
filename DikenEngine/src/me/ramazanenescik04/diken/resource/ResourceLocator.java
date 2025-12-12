@@ -1,12 +1,13 @@
 package me.ramazanenescik04.diken.resource;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 import java.util.Map;
 import java.util.Objects;
 
 public class ResourceLocator {
 	
-	private static Map<String, IResource> resMap = new HashMap<String, IResource>();
+	private static Map<String, IResource> resMap = new ConcurrentHashMap<String, IResource>();
 	
 	public static void addResource(String resourceName, IResource res) {
 		addResource(new ResourceKey(resourceName), res);
@@ -25,7 +26,7 @@ public class ResourceLocator {
 	}
 	
 	public static IResource getResource(ResourceKey key) {
-		return resMap.getOrDefault(key, IOResource.missingTexture);
+		return resMap.getOrDefault(key.toString(), IOResource.missingTexture);
 	}
 	
 	public static final class ResourceKey {

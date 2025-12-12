@@ -1,13 +1,16 @@
 package me.ramazanenescik04.diken.resource;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
 import me.ramazanenescik04.diken.SoundManager;
+import me.ramazanenescik04.diken.game.Animation;
 
 public class IOResource {
 	
@@ -30,6 +33,12 @@ public class IOResource {
 			res.cursorBitmap = cursorBitmap;
 			
 			return res;
+		} else if (_enum == EnumResource.ANIMATION) {
+			try {
+				return Animation.load(stream);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		return null;
 	}
@@ -43,7 +52,10 @@ public class IOResource {
 	    for(int x = 0; x < xSlices; ++x) {
 	    	for(int y = 0; y < ySlices; ++y) {
 	        	result[x][y] = new Bitmap(sw, sh);
-	        	img.getRGB(x * sw, y * sh, sw, sh, result[x][y].pixels, 0, sw);
+	        	int[] pixels = new int[sw * sh];
+	        	img.getRGB(x * sw, y * sh, sw, sh, pixels, 0, sw);
+	        	result[x][y].pixels.clear();
+	        	result[x][y].pixels.rewind().put(pixels);
 	        }
 	    }
 
@@ -58,18 +70,23 @@ public class IOResource {
 		return stream;
 	}
 	
+	@Deprecated(since="1.0.0", forRemoval=true)
 	public static InputStream createFileStream(String path) {
-		InputStream stream;
 		try {
-			stream = new FileInputStream(path);
+			return new FileInputStream(path);
 		} catch (FileNotFoundException e) {
-			stream = null;
 			e.printStackTrace();
+			return null;
 		}
-		if (stream == null) {
-			System.err.println("Error: Resource not found: " + path);
+	}
+	
+	public static InputStream createFileStream(File path) {
+		try {
+			return new FileInputStream(path);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return null;
 		}
-		return stream;
 	}
 	
 	private static Bitmap generateMissingTexture() {

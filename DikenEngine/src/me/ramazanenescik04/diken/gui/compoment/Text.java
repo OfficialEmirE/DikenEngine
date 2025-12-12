@@ -53,6 +53,10 @@ public class Text extends GuiCompoment {
 	}
 
 	public static void render(String text, Bitmap bitmap, int x, int y, int color, UniFont font) {
+		if (font == null) {
+			font = DikenEngine.getEngine().defaultFont;
+		}
+		
 	    // Split the text into lines
 	    Stream<String> lines = text.lines();
 	    

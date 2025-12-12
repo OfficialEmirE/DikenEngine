@@ -43,6 +43,18 @@ public class TextField extends GuiCompoment {
 		Text.render(text, bitmap, 2, 2);
 		return bitmap;
 	}
+	
+	public String getText() {
+		return text;
+	}
+	
+	public void setText(String text) {
+		this.text = text;
+	}
+	
+	public void setFocused(boolean focused) {
+		this.isFocused = focused;
+	}
 
 	public boolean isFocused() {
 		return isFocused;

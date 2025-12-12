@@ -24,7 +24,7 @@ public abstract class Screen {
 		contentPane.tick(engine);
 	}
 	
-	public void keyboardEveent() {
+	public void keyboardEvent() {
 		this.keyDown( Keyboard.getEventCharacter(), Keyboard.getEventKey());
 	}
 

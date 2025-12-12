@@ -30,5 +30,13 @@ public class PixelToColor {
 			(int) (blue * 255)
 		);
 	}
+	
+	public static int colorAddAlpha(int rgb, int alpha) {
+		int red = (rgb >> 16) & 0xff;
+		int green = (rgb >> 8) & 0xff;
+		int blue = (rgb >> 0) & 0xff;
+		
+		return toColor(alpha, red, green, blue);
+	}
 
 }

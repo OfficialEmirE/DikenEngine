@@ -2,6 +2,8 @@ package me.ramazanenescik04.diken.resource.sound;
 
 import org.lwjgl.openal.AL10;
 
+import me.ramazanenescik04.diken.resource.IResource;
+
 public class WaveSoundResource implements SoundResource {
 	private static final long serialVersionUID = 1L;
 	
@@ -67,6 +69,10 @@ public class WaveSoundResource implements SoundResource {
 	// Bir ses kaynağının döngüde olup olmadığını kontrol etme
 	public boolean isLooping() {
 	    return AL10.alGetSourcei(sourceID, AL10.AL_LOOPING) == AL10.AL_TRUE;
+	}
+	
+	public IResource clone() {
+		return new WaveSoundResource(sourceID);
 	}
 
 }

@@ -5,6 +5,7 @@ import javax.net.ssl.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
 
+@Deprecated(since = "1.0.0")
 public class WebGet {
 	
 	public static URLConnection getHTTP(String url) {

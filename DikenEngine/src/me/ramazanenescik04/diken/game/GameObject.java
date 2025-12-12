@@ -1,13 +1,15 @@
 package me.ramazanenescik04.diken.game;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 public class GameObject extends Hitbox {
-	private static final long serialVersionUID = 1L;
-	
 	protected String name; // Object name, used for identification
+	private final Map<String, Object> properties = new HashMap<>();
 	private boolean isVisible = true; // Object visibility status
 
 	public GameObject(int x, int y, int width, int height) {
@@ -48,6 +50,45 @@ public class GameObject extends Hitbox {
 	public boolean isVisible() {
 		return isVisible;
 	}
+	
+	// ---------------- Property API ----------------
+
+    /**
+     * Bir property ekler veya günceller.
+     */
+    public void setProperty(String key, Object value) {
+        properties.put(key, value);
+    }
+
+    /**
+     * Belirli bir property değerini alır.
+     * @param key property adı
+     * @return değeri veya null
+     */
+    public Object getProperty(String key) {
+        return properties.get(key);
+    }
+
+    /**
+     * Property var mı diye kontrol eder
+     */
+    public boolean hasProperty(String key) {
+        return properties.containsKey(key);
+    }
+
+    /**
+     * Property siler
+     */
+    public void removeProperty(String key) {
+        properties.remove(key);
+    }
+
+    /**
+     * Tüm property’leri döndürür (okuma amaçlı)
+     */
+    public Map<String, Object> getAllProperties() {
+        return new HashMap<>(properties);
+    }
 	
 	// API END
 }

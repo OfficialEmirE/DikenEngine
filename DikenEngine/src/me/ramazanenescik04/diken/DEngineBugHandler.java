@@ -21,7 +21,7 @@ public class DEngineBugHandler implements BugHandler {
 		json.put("severity", arg0.getSeverity().ordinal());*/
 		
 		try {
-			URL url = new URL("https://dikenengine-bot-production.up.railway.app/report");
+			URL url = URI.create("https://dikenengine-bot-production.up.railway.app/report").toURL();
 			HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 			conn.setRequestMethod("POST");
 			conn.setRequestProperty("Content-Type", "application/json");

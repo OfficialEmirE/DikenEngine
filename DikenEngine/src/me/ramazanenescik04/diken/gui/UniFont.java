@@ -27,6 +27,8 @@ public class UniFont {
 	
 	public String name;
 	
+	private static Bitmap missingChar;
+	
 	public static void createFont(String fontName) {
 		UniFont font = new UniFont();
 		
@@ -63,7 +65,7 @@ public class UniFont {
 		    for(int x = 0; x < obj1.getInt("width"); x++) {
 		    	for(int y = 0; y < obj1.getInt("height"); y++) {
 		    		
-		    		int color = bitmap.pixels[(x + obj1.getInt("x")) + (y + obj1.getInt("y")) * bitmap.w];
+		    		int color = bitmap.pixels.get((x + obj1.getInt("x")) + (y + obj1.getInt("y")) * bitmap.w);
 		    		charBitmap.setPixel(x, y, color);
 		    		
 		    		font.charBitmaps.put(chara, charBitmap);
@@ -152,7 +154,7 @@ public class UniFont {
 		if(font == null) {
 			Bitmap[] bitmaps = new Bitmap[text.length()];
 			for (int i = 0; i < text.length(); i++) {
-				bitmaps[i] = generateMissingChar();
+				bitmaps[i] = getMissingChar();
 			}
 			return bitmaps;
 		}
@@ -160,17 +162,17 @@ public class UniFont {
 		List<Bitmap> list = new ArrayList<Bitmap>();
 		for (int i = 0; i < text.length(); i++) {
 			char ch = text.charAt(i);
-			list.add(font.charBitmaps.getOrDefault(ch + "", generateMissingChar()));
+			list.add(font.charBitmaps.getOrDefault(ch + "", getMissingChar()));
 		}
 		return list.toArray(new Bitmap[] {});
 	}
 	
 	public static Bitmap getBitmapChar(char chara, UniFont font) {
 		if(font == null) {
-			return generateMissingChar();
+			return getMissingChar();
 		}
 		
-		return font.charBitmaps.getOrDefault(chara + "", generateMissingChar());
+		return font.charBitmaps.getOrDefault(chara + "", getMissingChar());
 	}
 	
 	public static UniFont getFont(int id) {
@@ -178,7 +180,14 @@ public class UniFont {
 		return font;
 	}
 	
-	public static Bitmap generateMissingChar() {
+	public static Bitmap getMissingChar() {
+		if (missingChar == null) {
+			missingChar = generateMissingChar();
+		}
+		return missingChar;
+	}
+	
+	private static Bitmap generateMissingChar() {
 		Bitmap bitmap = new Bitmap(6, 8);
 		bitmap.box(1, 0, 6 - 2, 8 - 1, 0xffffffff);
 		return bitmap;

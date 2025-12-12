@@ -18,14 +18,9 @@ public class Config {
 	public static final File defaultConfigFile = new File("./config.dat");
 
 	public Config() {
-		defaultConfig.setProperty("fullscreen", "false");
-		defaultConfig.setProperty("console", "false");
-		defaultConfig.setProperty("sync", "true");
-		defaultConfig.setProperty("legacy-crash", "false");
+		defaultConfig.setProperty("sync", "false");
 		defaultConfig.setProperty("debug", "false");
 		defaultConfig.setProperty("lang", "tr-TR");
-		defaultConfig.setProperty("antialiasing", "false");
-		defaultConfig.setProperty("title", "DikenEngine " + DikenEngine.VERSION);
 		
 		this.config = defaultConfig;
 		this.loadConfig(defaultConfigFile);
@@ -45,7 +40,7 @@ public class Config {
 				String[] datas = data.split("=");
 				properties.setProperty(datas[0], datas[1]);
 			}
-			DikenEngine.TARGET_FPS = (int) stream.readInt();
+			DikenEngine.TARGET_FPS = stream.readDouble();
 			stream.close();
 			this.config = properties;
 			return true;
@@ -69,7 +64,7 @@ public class Config {
 			for(int i = 0; i < config.size(); i++) {
 				stream.writeUTF(keys[i] + "=" + values[i]);
 			}
-			stream.writeInt(DikenEngine.TARGET_FPS);
+			stream.writeDouble(DikenEngine.TARGET_FPS);
 			stream.close();
 		} catch (Exception e) {
 			e.printStackTrace();
