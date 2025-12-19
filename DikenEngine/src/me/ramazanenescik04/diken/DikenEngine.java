@@ -3,7 +3,6 @@ package me.ramazanenescik04.diken;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Window;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,7 +24,6 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 
 import me.ramazanenescik04.diken.game.Config;
-import me.ramazanenescik04.diken.game.IGame;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.screen.*;
 import me.ramazanenescik04.diken.gui.window.ConsoleWindow;
@@ -510,12 +508,9 @@ public class DikenEngine implements Runnable {
 					this.refreshScreenBuffer();
 				}
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
 			crash(e);
-			for (Window w : Window.getWindows()) {
-				w.dispose();
-			}
 		} finally {
 			if (currentScreen != null) {
 				currentScreen.closeScreen();
@@ -523,19 +518,26 @@ public class DikenEngine implements Runnable {
 
 			config.saveConfig();
 
-			wManager.closeAll();
+			wManager.closeAll();	
+			
+			try {
+				System.out.println("Stopping!");
+				SoundManager.destroy();
 
-			SoundManager.destroy();
+				try {
+					GL11.glDisable(GL11.GL_TEXTURE_2D);
+					GL11.glDeleteTextures(screenTextureID);
+				} catch (Exception var6) {
+				}
 
-			// Temizleme işlemleri
-			GL11.glDisable(GL11.GL_TEXTURE_2D);
-			GL11.glDeleteTextures(screenTextureID);
-			Mouse.destroy();
-			Keyboard.destroy();
-			Display.destroy();
-
+				Mouse.destroy();
+				Keyboard.destroy();
+			} finally {
+				Display.destroy();
+			}
+			
 			System.gc();
-		}
+		}	
 	}
 
 	/**
