@@ -35,13 +35,17 @@ public class TextField extends GuiCompoment {
 		Bitmap bitmap = super.render();
 		bitmap.fill(0, 0, width, height, 0xff484848);
 		bitmap.box(0, 0, width - 1, height - 1, isFocused() ? 0xffffff00 : 0xffffffff);
+		Text.render(getRenderedText(), bitmap, 2, 2);
+		return bitmap;
+	}
+	
+	protected String getRenderedText() {
 		String text = new String(this.text);
 		
 		if(isFocused) {
 			text = text + (this.counter / 6 % 12 > 6?"_":"");
 		}
-		Text.render(text, bitmap, 2, 2);
-		return bitmap;
+		return text;
 	}
 	
 	public String getText() {

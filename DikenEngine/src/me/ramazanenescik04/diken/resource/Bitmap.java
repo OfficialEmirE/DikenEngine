@@ -27,16 +27,16 @@ public class Bitmap implements IResource, Cleanable {
 	public static final Bitmap empty = new Bitmap(1, 1);
 
 	public Bitmap(int w, int h) {
-		this.w = w;
-		this.h = h;
+		this.w = (w <= 0) ? 1 : w;
+		this.h = (h <= 0) ? 1 : h;
 		ByteBuffer buffer = ByteBuffer.allocateDirect(w * h * 4)
 		        .order(ByteOrder.nativeOrder());
 		this.pixels = buffer.asIntBuffer();
 	}
 	
 	public Bitmap(int w, int h, IntBuffer copy) {
-	    this.w = w;
-	    this.h = h;
+		this.w = (w <= 0) ? 1 : w;
+	    this.h = (h <= 0) ? 1 : h;
 	    this.pixels = ByteBuffer
 	        .allocateDirect(copy.capacity() * 4)
 	        .order(ByteOrder.nativeOrder())
@@ -226,6 +226,9 @@ public class Bitmap implements IResource, Cleanable {
 	}
 
 	public void draw(Bitmap b, int xp, int yp) {
+		if (b == null) return;
+		if (b.w <= 0 || b.h <= 0) return;
+		
 		xp += xOffs;
 		yp += yOffs;
 		int x0 = xp;

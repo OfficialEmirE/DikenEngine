@@ -145,11 +145,11 @@ public class Window extends GuiCompoment {
 	}
 
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {
-		contentPane.mouseClicked(x, y, button, isTouch);
+		contentPane.mouseClicked(x - contentPane.x, y - contentPane.y, button, isTouch);
 	}
 
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
-		contentPane.mouseGetInfo(x, y, isTouch);
+		contentPane.mouseGetInfo(x - contentPane.x, y - contentPane.y, isTouch);
 		barButtons[0].mouseGetInfo(x, y, closeButtonClicked(new Point(x, y)));
 	}
 

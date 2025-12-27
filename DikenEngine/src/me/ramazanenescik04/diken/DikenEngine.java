@@ -765,8 +765,17 @@ public class DikenEngine implements Runnable {
 
 	private void refreshScreenBuffer() {
 		screenBitmap.clean();
-		;
-		screenBitmap = new Bitmap(getWidth(), getHeight());
+		int width = getWidth();
+		int height = getHeight();
+		
+		if (width <= 0) {
+			width = 1;
+		}
+		
+		if (height <= 0) {
+			height = 1;
+		}
+		screenBitmap = new Bitmap(width, height);
 		screenBuffer = BufferUtils.createByteBuffer(screenBitmap.pixels.capacity() * 4);
 
 		System.gc();

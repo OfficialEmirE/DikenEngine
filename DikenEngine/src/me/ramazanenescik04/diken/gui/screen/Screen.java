@@ -33,11 +33,11 @@ public abstract class Screen {
 	}
 
 	public void mouseClick(int mouseX, int mouseY, int eventButton, boolean isScreenActionMode, boolean isMouseOnScreen) {
-		contentPane.mouseClicked(mouseX, mouseY, eventButton, isScreenActionMode && isMouseOnScreen);
+		contentPane.mouseClicked(mouseX - contentPane.x, mouseY - contentPane.y, eventButton, isScreenActionMode && isMouseOnScreen);
 	}
 	
 	public void mouseGetInfo(int mouseX, int mouseY, boolean isScreenActionMode, boolean isMouseOnScreen) {
-		contentPane.mouseGetInfo(mouseX, mouseY, isMouseOnScreen && isScreenActionMode);
+		contentPane.mouseGetInfo(mouseX - contentPane.x, mouseY - contentPane.y, isMouseOnScreen && isScreenActionMode);
 	}
 	
 	public void openScreen() {
