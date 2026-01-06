@@ -707,54 +707,77 @@ public class DikenEngine implements Runnable {
 	 * @throws LWJGLException
 	 */
 	private void tickDimension() throws LWJGLException {
-		if (this.canvas != null) {
-			if (this.canvas.getWidth() != this.width || this.canvas.getHeight() != this.height) {
-				resize();
-			}
-		} else if (Display.wasResized()) {
-			resize();
-		} else if (this.tmpFullscreen != this.fullscreen) {
-			this.tmpFullscreen = this.fullscreen;
-			if (this.fullscreen) {
-				Display.setDisplayMode(Display.getDesktopDisplayMode());
-				this.width = Display.getDisplayMode().getWidth();
-				this.height = Display.getDisplayMode().getHeight();
+	    // 1. ADIM: Boyut Değişikliği Kontrolü (Resize Logic)
+	    // Bunu fullscreen kontrolünden ayırdık, böylece ikisi de bağımsız çalışabilir.
+	    boolean needsResize = false;
 
-				if (this.width <= 0) {
-					this.width = 1;
-				}
+	    if (this.canvas != null) {
+	        if (this.canvas.getWidth() != this.width || this.canvas.getHeight() != this.height) {
+	            needsResize = true;
+	        }
+	    } else if (Display.wasResized()) {
+	        needsResize = true;
+	    }
 
-				if (this.height <= 0) {
-					this.height = 1;
-				}
-			} else {
-				if (this.canvas != null) {
-					this.width = this.canvas.getWidth();
-					this.height = this.canvas.getHeight();
-				} else {
-					this.width = this.tmpwidth;
-					this.height = this.tmpheight;
-				}
+	    if (needsResize) {
+	        resize();
+	    }
 
-				Display.setDisplayMode(new DisplayMode(width, height));
+	    // 2. ADIM: Fullscreen Geçiş Kontrolü (Toggle Logic)
+	    // "else if" yerine ayrı bir "if" bloğu yaptık.
+	    if (this.tmpFullscreen != this.fullscreen) {
+	        System.out.println("Toggling fullscreen mode: " + this.fullscreen);
+	        this.tmpFullscreen = this.fullscreen;
 
-				if (this.width <= 0) {
-					this.width = 1;
-				}
+	        if (this.canvas != null) {
+	            // --- CANVAS MODU ---
+	            // LWJGL 2'de Canvas parent iken Display.setFullscreen(true) KULLANILAMAZ.
+	            // Bu yüzden burada Display modunu değiştirmek yerine Canvas boyutlarını kabul ediyoruz.
+	            // NOT: Canvas kullanırken "Fullscreen" yapmak için asıl Java Frame'inizi (JFrame) 
+	            // tam ekran yapmanız gerekir. Buradaki kod sadece iç boyutları günceller.
+	            
+	            this.width = this.canvas.getWidth();
+	            this.height = this.canvas.getHeight();
+	            
+	            // Eğer Canvas modunda Display.setFullscreen(true) çağırırsanız
+	            // "No generic fullscreen support for parented Displays" hatası alırsınız.
+	            // Bu yüzden o satırı sadece 'else' bloğunda (Canvas yoksa) çalıştırıyoruz.
+	            
+	        } else {
+	            // --- STANDART PENCERE MODU ---
+	            if (this.fullscreen) {
+	                Display.setDisplayMode(Display.getDesktopDisplayMode());
+	                this.width = Display.getDisplayMode().getWidth();
+	                this.height = Display.getDisplayMode().getHeight();
+	            } else {
+	                // Eski boyuta dön
+	                if (this.canvas != null) { 
+	                    // Bu blok teknik olarak gereksiz çünkü üstteki if kapsıyor ama güvenlik için:
+	                    this.width = this.canvas.getWidth();
+	                    this.height = this.canvas.getHeight();
+	                } else {
+	                    this.width = this.tmpwidth;
+	                    this.height = this.tmpheight;
+	                }
+	                
+	                Display.setDisplayMode(new DisplayMode(width, height));
+	            }
+	            
+	            // Sadece Canvas parent DEĞİLSE native fullscreen yap
+	            Display.setFullscreen(this.fullscreen);
+	        }
 
-				if (this.height <= 0) {
-					this.height = 1;
-				}
+	        // Ortak Güvenlik Kontrolleri
+	        if (this.width <= 0) this.width = 1;
+	        if (this.height <= 0) this.height = 1;
 
-			}
-			Display.setFullscreen(this.fullscreen);
-			Display.setVSyncEnabled(this.config.getProperty("sync").equals("true"));
-			Display.setResizable(this.isResizable);
-			Display.update();
+	        Display.setVSyncEnabled(this.config.getProperty("sync").equals("true"));
+	        Display.setResizable(this.isResizable);
+	        Display.update();
 
-			refreshScreenBuffer();
-			sendScreenResized();
-		}
+	        refreshScreenBuffer();
+	        sendScreenResized();
+	    }
 	}
 
 	private void sendScreenResized() {

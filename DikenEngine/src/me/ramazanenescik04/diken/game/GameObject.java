@@ -20,7 +20,7 @@ public class GameObject extends Hitbox {
 	}
 	
 	public Bitmap render() {
-		return new Bitmap(16, 16);
+		return new Bitmap(this.width, this.height);
 	}
 	
 	public void tick(World world, DikenEngine engine) {

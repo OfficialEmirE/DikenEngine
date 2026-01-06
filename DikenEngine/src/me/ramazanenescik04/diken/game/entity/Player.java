@@ -27,24 +27,28 @@ public class Player extends Entity {
 
 	@Override
 	public void tick(World world, DikenEngine engine) {
-		int centerX = engine.getWidth() / 2 - this.width / 2;
-		int centerY = engine.getHeight() / 2 - this.height / 2;
+		int centerX = -(engine.getWidth() / 2 - this.width / 2);
+	      int centerY = -(engine.getHeight() / 2 - this.height / 2);
 		
 		if (followCamera) {
 			if (onEdge) {
-				if (this.x < world.camera.x() + centerX) {
-					world.camera.add(new Vec2D(this.x - world.camera.x() - centerX, 0).multiply(0.1f));
-				} else if (this.x + this.width > world.camera.x() + centerX + engine.getWidth()) {
-					world.camera.add(new Vec2D(this.x + this.width - centerX - engine.getWidth() - world.camera.x(), 0).multiply(0.1f));
+				if (this.x + centerX < 0) {
+					world.camera = new Vec2D(0, this.y + centerY);
+				} else if (this.x + centerX > world.width - engine.getWidth()) {
+					world.camera = new Vec2D(world.width - engine.getWidth(), this.y + centerY);
+				} else {
+					world.camera = new Vec2D(this.x + centerX, this.y + centerY);
 				}
 				
-				if (this.y < world.camera.y() + centerY) {
-					world.camera.add(new Vec2D(0, this.y - world.camera.y() - centerY).multiply(0.1f));
-				} else if (this.y + this.height > world.camera.y() + centerY + engine.getHeight()) {
-					world.camera.add(new Vec2D(0, this.y + this.height - centerY - engine.getHeight() - world.camera.y()).multiply(0.1f));
+				if (this.y + centerY < 0) {
+					world.camera = new Vec2D(world.camera.x(), 0);
+				} else if (this.y + centerY > world.height - engine.getHeight()) {
+					world.camera = new Vec2D(world.camera.x(), world.height - engine.getHeight());
+				} else {
+					world.camera = new Vec2D(world.camera.x(), this.y + centerY);
 				}
 			} else {
-				world.camera.add(new Vec2D(this.x - world.camera.x() - centerX, this.y - world.camera.y() - centerY).multiply(0.1f));
+				world.camera = new Vec2D(this.x + centerX, this.y + centerY);
 			}
 		}
 	}
