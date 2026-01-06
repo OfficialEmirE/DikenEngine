@@ -1,6 +1,5 @@
 package me.ramazanenescik04.diken.game;
 
-import java.util.Collection;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -17,17 +16,7 @@ public class World extends Panel {
 
 	public Vec2D camera = new Vec2D(0, 0);
 
-	protected World() {
-	}
-
-	public static World createWorld(Collection<GameObject> gameObjects, Collection<Entity> gameEntities) {
-		World world = new World();
-		if (!(gameObjects == null || gameEntities == null)) {
-			world.objects = new java.util.ArrayList<>(gameObjects);
-			world.entities = new java.util.ArrayList<Entity>(gameEntities);
-		}
-
-		return world;
+	public World() {
 	}
 
 	public void addObject(GameObject obj) {
@@ -110,6 +99,15 @@ public class World extends Panel {
 		}
 		return null;
 	}
+	
+	public GameObject getObjectByName(String name) {
+		for (GameObject entity : objects) {
+			if (entity.name.equals(name)) {
+				return entity;
+			}
+		}
+		return null;
+	}
 
 	public Bitmap render() {
 		Bitmap worldBitmap = new Bitmap(width, height);
@@ -148,6 +146,9 @@ public class World extends Panel {
 
 	public void tick(DikenEngine engine) {
 		for (GameObject obj : objects) {
+			if (obj.x != obj.aabbHitbox.x || obj.y != obj.aabbHitbox.y) {
+				obj.aabbHitbox.setLocation(obj.x, obj.y);
+			}
 			obj.tick(this, engine);
 		}
 
@@ -156,6 +157,9 @@ public class World extends Panel {
 		});
 
 		for (Entity entity : entities) {
+			if (entity.x != entity.aabbHitbox.x || entity.y != entity.aabbHitbox.y) {
+				entity.aabbHitbox.setLocation(entity.x, entity.y);
+			}
 			if (entity.isDead()) {
 				entity.remove();
 				continue; // Skip further processing for dead entities
@@ -167,6 +171,25 @@ public class World extends Panel {
 			}
 
 			entity.tick(this, engine);
+		}
+		
+		//Object Collision Detection
+		List<GameObject> entityAndObjects = new java.util.ArrayList<>();
+		entityAndObjects.addAll(objects);
+		entityAndObjects.addAll(entities);
+		
+		for (int i = 0; i < objects.size(); i++) {
+			GameObject objA = objects.get(i);
+			for (int j = i + 1; j < objects.size(); j++) {
+				GameObject objB = objects.get(j);
+				if (objA.aabbHitbox == null || objB.aabbHitbox == null) {
+					continue;
+				}
+				if (objA.aabbHitbox.intersects(objB.aabbHitbox)) {
+					objA.objectCollided(this, engine, objB);
+					objB.objectCollided(this, engine, objA);
+				}
+			}
 		}
 
 		super.tick(engine);

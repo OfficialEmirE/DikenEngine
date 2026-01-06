@@ -47,12 +47,12 @@ import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
  * @author Ramazanenescik04
  */
 public class DikenEngine implements Runnable {
-	public static final String VERSION = "1.0.0";
-	public static final int protocolVersion = 10;
+	public static final String VERSION = "1.0.1";
+	public static final int protocolVersion = 11;
 
 	public Canvas canvas;
-	public int width, tmpwidth;
-	public int height, tmpheight;
+	private int width, tmpwidth;
+	private int height, tmpheight;
 	private boolean fullscreen;
 	private boolean tmpFullscreen;
 	private boolean isResizable = true;

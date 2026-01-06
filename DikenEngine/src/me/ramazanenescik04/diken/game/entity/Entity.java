@@ -43,5 +43,10 @@ public abstract class Entity extends GameObject {
 		this.health = Math.min(health, this.maxHealth);
 	}
 	
+	public void move(float dx, float dy) {
+		this.x += dx;
+		this.y += dy;
+	}
+	
     //API END
 }

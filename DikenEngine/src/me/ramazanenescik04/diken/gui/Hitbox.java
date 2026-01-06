@@ -74,6 +74,22 @@ public class Hitbox {
 		this.y = y;
 	};
 	
+	public int getWidth() {
+		return width;
+	}
+	
+	public int getHeight() {
+		return height;
+	}
+	
+	public void setWidth(int width) {
+		this.width = width;
+	}
+	
+	public void setHeight(int height) {
+		this.height = height;
+	}
+	
 	public void setBounds(int x, int y, int width, int height) {
 		this.x = x;
     	this.y = y;

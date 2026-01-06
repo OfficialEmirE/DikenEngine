@@ -23,6 +23,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="libs/jna-5.12.1.jar"/>
-	<classpathentry kind="lib" path="/home/ramazanenescik04/eclipse-workspace/DikenEngine/DikenEngine/libs/ReportBugs.jar"/>
+	<classpathentry kind="lib" path="libs/ReportBugs.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
