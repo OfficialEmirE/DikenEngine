@@ -2,7 +2,6 @@ package me.ramazanenescik04.diken.gui.screen;
 
 import java.net.URI;
 
-import me.ramazanenescik04.diken.DEngineBugHandler;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Timer;
 import me.ramazanenescik04.diken.gui.compoment.Button;
@@ -16,7 +15,6 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.PixelToColor;
-import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
 
 public class DefaultMainMenuScreen extends Screen {
 	
@@ -93,7 +91,7 @@ public class DefaultMainMenuScreen extends Screen {
 				engine.wManager.addWindow(new AboutWindow());
 			}));
 			add(new Button(lang.languageValue("dmainmenu.reportbug"), 110, engine.getHeight() - (2 * 20), 100, 15).setRunnable(() -> {
-				ReportBugGUI.showErrorReport(new DEngineBugHandler());
+				;
 			}));
 		}
 		

@@ -1,209 +1,171 @@
 package me.ramazanenescik04.diken.game;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Vec2D;
-import me.ramazanenescik04.diken.game.entity.Entity;
+import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.gui.compoment.GuiCompoment;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
-import me.ramazanenescik04.diken.resource.Bitmap;
 
 public class World extends Panel {
-	private static final long serialVersionUID = 1L;
-	private List<GameObject> objects = new java.util.ArrayList<>();
-	private List<Entity> entities = new java.util.ArrayList<>();
+    private static final long serialVersionUID = 1L;
 
-	public Vec2D camera = new Vec2D(0, 0);
+    // Her şeyin bağlı olduğu ana düğüm (Sahne)
+    public final Node root;
+    public String gameName = "Game";
+    
+    public Vec2D camera = new Vec2D(0, 0);
 
-	public World() {
-	}
+    public World(String gameName, int width, int height) {
+    	super(0, 0, width, height);
+    	this.gameName = gameName;
+        // Root isimsiz ve render edilmeyen bir container'dır
+        this.root = new Node(gameName) {
+            @Override
+            public Bitmap render() { return null; } // Root'un kendisi görünmez
+            @Override
+            protected void onAdded() {}
+            @Override
+            protected void onRemoved() {}
+        };
+    }
 
-	public void addObject(GameObject obj) {
-		this.objects.add(obj);
-	}
+    // --- Node Yönetimi ---
 
-	public void addEntity(Entity entity) {
-		this.entities.add(entity);
-	}
+    public void addNode(Node node) {
+        root.addChild(node);
+    }
 
-	public List<GameObject> getObjects() {
-		return objects;
-	}
+    public void removeNode(Node node) {
+        root.removeChild(node);
+    }
 
-	public List<Entity> getEntities() {
-		return entities;
-	}
+    public Node getNodeByName(String name) {
+        return findNodeRecursive(root, name);
+    }
+    
+    // Ağaç içinde isme göre arama yapar
+    private Node findNodeRecursive(Node current, String name) {
+        if (current.name.equals(name)) return current;
+        for (Node child : current.getChildren()) {
+            Node found = findNodeRecursive(child, name);
+            if (found != null) return found;
+        }
+        return null;
+    }
 
-	public void setCamera(Vec2D camera) {
-		this.camera = camera;
-	}
+    // --- Render ---
 
-	public Vec2D getCamera() {
-		return camera;
-	}
+    @Override
+    public Bitmap render() {
+        Bitmap worldBitmap = new Bitmap(width, height);
 
-	public void removeObject(GameObject obj) {
-		this.objects.remove(obj);
-	}
+        // Arkaplan rengi ve çizgileri
+        if (this.drawX) {
+            worldBitmap.box(0, 0, width - 1, height - 1, 0xffffffff);
+            worldBitmap.drawLine(0, 0, this.width, this.height, 0xffffffff, 1);
+            worldBitmap.drawLine(this.width, 0, 0, this.height, 0xffffffff, 1);
+        }
 
-	public void removeEntity(Entity entity) {
-		this.entities.remove(entity);
-	}
+        // --- KAMERA MANTIĞI ---
+        // Root'u kameranın tersine çekerek her şeyi kaydırıyoruz
+        int oldX = root.x;
+        int oldY = root.y;
+        
+        root.x = -(int)camera.x();
+        root.y = -(int)camera.y();
 
-	public GameObject getObjectAt(int x, int y) {
-		for (GameObject obj : objects) {
-			if (obj.getX() >= x && obj.getY() >= y && obj.width <= x && obj.height <= y) {
-				return obj;
-			}
-		}
-		return null;
-	}
+        // Tüm sahneyi (Entityler, Objectler) çiz
+        root.draw(worldBitmap);
 
-	public Entity getEntityAt(int x, int y) {
-		for (Entity entity : entities) {
-			if (entity.getX() >= x && entity.getY() >= y && entity.width <= x && entity.height <= y) {
-				return entity;
-			}
-		}
-		return null;
-	}
+        // Root'u eski yerine koy (ki fizik hesaplamaları bozulmasın)
+        root.x = oldX;
+        root.y = oldY;
 
-	public int getObjectCount() {
-		return objects.size();
-	}
+        // GUI Bileşenlerini çiz (Kameradan etkilenmezler, sabit kalırlar)
+        List<GuiCompoment> compoments = this.getCompoments();
+        for (GuiCompoment compoment : compoments) {
+            worldBitmap.draw(compoment.render(), compoment.x, compoment.y);
+        }
 
-	public int getEntityCount() {
-		return entities.size();
-	}
+        return worldBitmap;
+    }
 
-	public GameObject getObject(int index) {
-		if (index < 0 || index >= objects.size()) {
-			return null;
-		}
-		return objects.get(index);
-	}
+    // --- Update & Collision ---
 
-	public Entity getEntity(int index) {
-		if (index < 0 || index >= entities.size()) {
-			return null;
-		}
-		return entities.get(index);
-	}
+    public void tick(DikenEngine engine) {
+        // 1. Tüm objelerin mantığını çalıştır (Recursive)
+        root.update(this, engine);
 
-	public Entity getEntityByName(String name) {
-		for (Entity entity : entities) {
-			if (entity.name.equals(name)) {
-				return entity;
-			}
-		}
-		return null;
-	}
-	
-	public GameObject getObjectByName(String name) {
-		for (GameObject entity : objects) {
-			if (entity.name.equals(name)) {
-				return entity;
-			}
-		}
-		return null;
-	}
+        // 2. Çarpışmaları kontrol et
+        checkCollisions(engine);
 
-	public Bitmap render() {
-		Bitmap worldBitmap = new Bitmap(width, height);
+        super.tick(engine);
+    }
 
-		if (this.drawX) {
-			worldBitmap.box(0, 0, width - 1, height - 1, 0xffffffff);
-			worldBitmap.drawLine(0, 0, this.width, this.height, 0xffffffff, 1);
-			worldBitmap.drawLine(this.width, 0, 0, this.height, 0xffffffff, 1);
-		}
+    private void checkCollisions(DikenEngine engine) {
+        List<Node> collidables = new ArrayList<>();
+        collectCollidableNodes(root, collidables);
 
-		if (this.background != null) {
-			this.background.render(worldBitmap);
-		}
+        for (int i = 0; i < collidables.size(); i++) {
+            Node a = collidables.get(i);
+            
+            // j = i + 1 değil, 0'dan başlatıp kendisiyle kontrolü engelliyoruz.
+            // Neden? Çünkü dinamik nesnelerin her turda taranması gerekebilir.
+            // Ama performans için i+1 daha iyidir, sadece itme mantığını iyi kurmalıyız.
+            for (int j = i + 1; j < collidables.size(); j++) {
+                Node b = collidables.get(j);
 
-		for (GameObject obj : objects) {
-			Bitmap objBitmap = obj.render();
-			if (objBitmap != null) {
-				worldBitmap.draw(objBitmap, obj.x - (int) camera.x(), obj.y - (int) camera.y());
-			}
-		}
+                Hitbox boxA = a.getGlobalAABB();
+                Hitbox boxB = b.getGlobalAABB();
 
-		for (Entity entity : entities) {
-			Bitmap entityBitmap = entity.render();
-			if (entityBitmap != null) {
-				worldBitmap.draw(entityBitmap, entity.x - (int) camera.x(), entity.y - (int) camera.y());
-			}
-		}
+                if (boxA != null && boxB != null && boxA.intersects(boxB)) {
+                    
+                    // 1. Önce mantıksal çarpışma olaylarını tetikle
+                    a.onCollision(b);
+                    b.onCollision(a);
 
-		List<GuiCompoment> compoments = this.getCompoments();
-		for (GuiCompoment compoment : compoments) {
-			worldBitmap.draw(compoment.render(), compoment.x, compoment.y);
-		}
+                    // 2. Eğer ikisi de KATI (Solid) ise fiziksel itme uygula
+                    if (a.solid && b.solid) {
+                    	if (a.solid && b.solid) {
+                    	    if (!a.isStatic && b.isStatic) {
+                    	        a.separate(b); // A hareketli, B duvar -> A'yı it
+                    	    } 
+                    	    else if (a.isStatic && !b.isStatic) {
+                    	        b.separate(a); // A duvar, B hareketli -> B'yi it
+                    	    }
+                    	    else if (!a.isStatic && !b.isStatic) {
+                    	        // İkisi de hareketli (Örn: İki oyuncu)
+                    	        // Birbirlerini yarı yarıya itebilirler veya sadece biri itilir.
+                    	        a.separate(b);
+                    	    }
+                    	}
+                    }
+                }
+            }
+        }
+    }
 
-		return worldBitmap;
-	}
+    // Yardımcı metod: Ağacı gezip hitbox'ı olanları bulur
+    private void collectCollidableNodes(Node current, List<Node> list) {
+        if (current.getGlobalAABB() != null) {
+            list.add(current);
+        }
+        for (Node child : current.getChildren()) {
+            collectCollidableNodes(child, list);
+        }
+    }
 
-	public void tick(DikenEngine engine) {
-		for (GameObject obj : objects) {
-			if (obj.x != obj.aabbHitbox.x || obj.y != obj.aabbHitbox.y) {
-				obj.aabbHitbox.setLocation(obj.x, obj.y);
-			}
-			obj.tick(this, engine);
-		}
+    // --- Setter/Getter ---
+    
+    public void setCamera(Vec2D camera) {
+        this.camera = camera;
+    }
 
-		entities.sort((a, b) -> {
-			return Integer.compare(a.z, b.z);
-		});
-
-		for (Entity entity : entities) {
-			if (entity.x != entity.aabbHitbox.x || entity.y != entity.aabbHitbox.y) {
-				entity.aabbHitbox.setLocation(entity.x, entity.y);
-			}
-			if (entity.isDead()) {
-				entity.remove();
-				continue; // Skip further processing for dead entities
-			}
-
-			if (entity.removed) {
-				entities.remove(entity);
-				continue; // Skip further processing for removed entities
-			}
-
-			entity.tick(this, engine);
-		}
-		
-		//Object Collision Detection
-		List<GameObject> entityAndObjects = new java.util.ArrayList<>();
-		entityAndObjects.addAll(objects);
-		entityAndObjects.addAll(entities);
-		
-		for (int i = 0; i < objects.size(); i++) {
-			GameObject objA = objects.get(i);
-			for (int j = i + 1; j < objects.size(); j++) {
-				GameObject objB = objects.get(j);
-				if (objA.aabbHitbox == null || objB.aabbHitbox == null) {
-					continue;
-				}
-				if (objA.aabbHitbox.intersects(objB.aabbHitbox)) {
-					objA.objectCollided(this, engine, objB);
-					objB.objectCollided(this, engine, objA);
-				}
-			}
-		}
-
-		super.tick(engine);
-	}
-
-	public void init(DikenEngine engine) {
-
-	}
-
-	public void setObjects(List<GameObject> newObjects) {
-		objects = newObjects;
-	}
-
-	public void setEntities(List<Entity> newEntities) {
-		entities = newEntities;
-	}
+    public Vec2D getCamera() {
+        return camera;
+    }
 }

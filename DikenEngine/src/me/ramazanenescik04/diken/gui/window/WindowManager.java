@@ -63,7 +63,7 @@ public class WindowManager {
     	DikenEngine engine = DikenEngine.getEngine();
         Point currentMousePoint = InputHandler.getMousePosition();
         boolean button0 = Mouse.isButtonDown(0);
-    	
+        
         if(activeWindow != null) {
             if(!isWindowVaild(activeWindow)) {
                 activeWindow.close();

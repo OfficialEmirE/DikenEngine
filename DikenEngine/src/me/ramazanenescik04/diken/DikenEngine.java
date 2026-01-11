@@ -7,8 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
@@ -27,6 +29,7 @@ import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.screen.*;
 import me.ramazanenescik04.diken.gui.window.ConsoleWindow;
+import me.ramazanenescik04.diken.gui.window.OptionWindow;
 import me.ramazanenescik04.diken.gui.window.WindowManager;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -37,7 +40,6 @@ import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.*;
-import me.ramazanenescik04.reportbugs.Issue;
 import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
 
 /**
@@ -54,7 +56,6 @@ public class DikenEngine implements Runnable {
 	private int width, tmpwidth;
 	private int height, tmpheight;
 	private boolean fullscreen;
-	private boolean tmpFullscreen;
 	private boolean isResizable = true;
 	public float scale = 1.0f; // Ölçeklendirme faktörü
 	private String title;
@@ -62,8 +63,6 @@ public class DikenEngine implements Runnable {
 	private long lastFPSTime = System.currentTimeMillis(); // Son FPS hesaplama zamanı
 	public int currentFPS = -1; // Gösterilecek FPS
 
-	public static double TARGET_FPS = 320;
-	public static boolean V_SYNC = false;
 	public boolean running = true;
 
 	private int screenTextureID;
@@ -79,6 +78,8 @@ public class DikenEngine implements Runnable {
 	private Screen currentScreen;
 	// null = Varsayılan Fare İmleci
 	private CursorResource cursorResource = null;
+	private List<Runnable> onCloseRunnables = new ArrayList<>();
+	private ByteBuffer[] displayIcons;
 
 	private static DikenEngine instance;
 
@@ -91,7 +92,7 @@ public class DikenEngine implements Runnable {
 
 		int scaleWidth = (int) (width * scale);
 		int scaleHeight = (int) (height * scale);
-
+		
 		this.canvas = canvas;
 		this.width = scaleWidth;
 		this.height = scaleHeight;
@@ -131,7 +132,7 @@ public class DikenEngine implements Runnable {
 	}
 
 	public void close() {
-		running = false;
+		this.running = false;
 	}
 
 	public static void main(String[] args) {
@@ -235,6 +236,35 @@ public class DikenEngine implements Runnable {
 
 	public void setTitle(String var1) {
 		this.title = var1;
+	}
+	
+	public void appendTitle(String var1) {
+		this.title = this.title + var1;
+	}
+	
+	public void addOnCloseRunnable(Runnable runnable) {
+		this.onCloseRunnables.add(runnable);
+	}
+	
+	public List<Runnable> getOnCloseRunnables() {
+		return new ArrayList<>(this.onCloseRunnables);
+	}
+	
+	public void setIcon(Bitmap iconBitmap) {
+		ByteBuffer icon = BufferUtils.createByteBuffer(iconBitmap.pixels.capacity() * 4);
+		iconBitmap.pixels.rewind();
+		
+		for (int i = 0; i < iconBitmap.pixels.capacity(); i++) {
+			int color = iconBitmap.pixels.get(i);
+			byte r = (byte) ((color >> 16) & 0xff);
+			byte g = (byte) ((color >> 8) & 0xff);
+			byte b = (byte) (color & 0xff);
+			byte a = (byte) ((color >> 24) & 0xff);
+
+			icon.put(r).put(g).put(b).put(a);
+		}
+		
+		this.displayIcons = new ByteBuffer[] { icon };
 	}
 
 	public String getTitle() {
@@ -365,7 +395,7 @@ public class DikenEngine implements Runnable {
 					var1.fillRect(0, 0, this.width, this.height);
 					var1.dispose();
 				}
-
+				
 				Display.setParent(this.canvas);
 			} else if (this.fullscreen) {
 				Display.setFullscreen(true);
@@ -380,10 +410,25 @@ public class DikenEngine implements Runnable {
 				}
 			} else {
 				Display.setDisplayMode(new DisplayMode(this.width, this.height));
+				Display.setResizable(isResizable);
 			}
+			
 			Display.setTitle(title);
-			Display.setResizable(isResizable);
-			Display.create();
+			Display.setIcon(this.displayIcons);
+			Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
+			
+			try {
+				Display.create();
+			} catch (LWJGLException var6) {
+				var6.printStackTrace();
+
+				try {
+					Thread.sleep(1000L);
+				} catch (InterruptedException var5) {
+				}
+
+				Display.create();
+			}
 
 			Mouse.create();
 			Keyboard.create();
@@ -395,13 +440,14 @@ public class DikenEngine implements Runnable {
 			screenBitmap = new Bitmap(getWidth(), getHeight());
 			screenBuffer = BufferUtils.createByteBuffer(screenBitmap.pixels.capacity() * 4);
 
+			// Dokulamaları etkinleştir
+			GL11.glEnable(GL11.GL_TEXTURE_2D);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			
 			GL11.glMatrixMode(GL11.GL_PROJECTION);
 			GL11.glLoadIdentity();
 			GL11.glOrtho(0, width, height, 0, 1, -1);
 			GL11.glMatrixMode(GL11.GL_MODELVIEW);
-
-			// Dokulamaları etkinleştir
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
 
 			// Doku oluştur
 			screenTextureID = GL11.glGenTextures();
@@ -483,12 +529,6 @@ public class DikenEngine implements Runnable {
 				updateFPS();
 
 				Display.update();
-				if (V_SYNC) {
-					Display.sync(60);
-				} else {
-					Display.sync((int) TARGET_FPS);
-				}
-
 				tickDimension();
 
 				IntBuffer viewport = BufferUtils.createIntBuffer(16);
@@ -507,6 +547,8 @@ public class DikenEngine implements Runnable {
 
 					this.refreshScreenBuffer();
 				}
+				
+				Thread.sleep(1);
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -534,6 +576,14 @@ public class DikenEngine implements Runnable {
 				Keyboard.destroy();
 			} finally {
 				Display.destroy();
+			}
+			
+			for (Runnable runnable : onCloseRunnables) {
+				try {
+					runnable.run();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 			
 			System.gc();
@@ -591,10 +641,6 @@ public class DikenEngine implements Runnable {
 				}
 				if (Keyboard.getEventKey() == Keyboard.KEY_F11) {
 					this.setFullscreen(!fullscreen);
-				}
-
-				if (Keyboard.getEventKey() == Keyboard.KEY_F12) {
-					ReportBugGUI.showErrorReport(new DEngineBugHandler());
 				}
 
 				if (Keyboard.getEventKey() == Keyboard.KEY_F3) {
@@ -722,64 +768,56 @@ public class DikenEngine implements Runnable {
 	    if (needsResize) {
 	        resize();
 	    }
+	    
+	    if (this.fullscreen != Display.isFullscreen()) {
+	    	try {
+				if(this.fullscreen) {
+					this.tmpwidth = this.width;
+					this.tmpheight = this.height;
+					
+					Display.setDisplayMode(Display.getDesktopDisplayMode());
+					this.width = Display.getDisplayMode().getWidth();
+					this.height = Display.getDisplayMode().getHeight();
+					if(this.width <= 0) {
+						this.width = 1;
+					}
 
-	    // 2. ADIM: Fullscreen Geçiş Kontrolü (Toggle Logic)
-	    // "else if" yerine ayrı bir "if" bloğu yaptık.
-	    if (this.tmpFullscreen != this.fullscreen) {
-	        System.out.println("Toggling fullscreen mode: " + this.fullscreen);
-	        this.tmpFullscreen = this.fullscreen;
+					if(this.height <= 0) {
+						this.height = 1;
+					}
+				} else {
+					if(this.canvas != null) {
+						this.width = this.canvas.getWidth();
+						this.height = this.canvas.getHeight();
+					} else {
+						this.width = this.tmpwidth;
+						this.height = this.tmpheight;
+					}
 
-	        if (this.canvas != null) {
-	            // --- CANVAS MODU ---
-	            // LWJGL 2'de Canvas parent iken Display.setFullscreen(true) KULLANILAMAZ.
-	            // Bu yüzden burada Display modunu değiştirmek yerine Canvas boyutlarını kabul ediyoruz.
-	            // NOT: Canvas kullanırken "Fullscreen" yapmak için asıl Java Frame'inizi (JFrame) 
-	            // tam ekran yapmanız gerekir. Buradaki kod sadece iç boyutları günceller.
-	            
-	            this.width = this.canvas.getWidth();
-	            this.height = this.canvas.getHeight();
-	            
-	            // Eğer Canvas modunda Display.setFullscreen(true) çağırırsanız
-	            // "No generic fullscreen support for parented Displays" hatası alırsınız.
-	            // Bu yüzden o satırı sadece 'else' bloğunda (Canvas yoksa) çalıştırıyoruz.
-	            
-	        } else {
-	            // --- STANDART PENCERE MODU ---
-	            if (this.fullscreen) {
-	                Display.setDisplayMode(Display.getDesktopDisplayMode());
-	                this.width = Display.getDisplayMode().getWidth();
-	                this.height = Display.getDisplayMode().getHeight();
-	            } else {
-	                // Eski boyuta dön
-	                if (this.canvas != null) { 
-	                    // Bu blok teknik olarak gereksiz çünkü üstteki if kapsıyor ama güvenlik için:
-	                    this.width = this.canvas.getWidth();
-	                    this.height = this.canvas.getHeight();
-	                } else {
-	                    this.width = this.tmpwidth;
-	                    this.height = this.tmpheight;
-	                }
-	                
-	                Display.setDisplayMode(new DisplayMode(width, height));
-	            }
-	            
-	            // Sadece Canvas parent DEĞİLSE native fullscreen yap
-	            Display.setFullscreen(this.fullscreen);
-	        }
+					if(this.width <= 0) {
+						this.width = 1;
+					}
 
-	        // Ortak Güvenlik Kontrolleri
-	        if (this.width <= 0) this.width = 1;
-	        if (this.height <= 0) this.height = 1;
+					if(this.height <= 0) {
+						this.height = 1;
+					}
+					
+					Display.setDisplayMode(new DisplayMode(this.width, this.height));
+				}
+				
+				refreshScreenBuffer();
+				sendScreenResized();
 
-	        Display.setVSyncEnabled(this.config.getProperty("sync").equals("true"));
-	        Display.setResizable(this.isResizable);
-	        Display.update();
-
-	        refreshScreenBuffer();
-	        sendScreenResized();
+				Display.setFullscreen(this.fullscreen);
+				Display.setResizable(isResizable);
+				Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
+				Display.update();
+			} catch (Exception var2) {
+				var2.printStackTrace();
+			}
 	    }
 	}
-
+	
 	private void sendScreenResized() {
 		if (this.currentScreen != null) {
 			currentScreen.resized();
@@ -842,10 +880,6 @@ public class DikenEngine implements Runnable {
 
 	private void crash(Throwable e) {
 		String title = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().trim();
-		ReportBugGUI.showError(title, Utils.getStackTraceString(e).trim());
-
-		int status = ReportBugGUI.showSendErrorPopup();
-
 		StringBuilder desc = new StringBuilder();
 		desc.append("DikenEngine Version: ").append(VERSION).append("\n");
 		desc.append("Protocol Version: ").append(protocolVersion).append("\n");
@@ -867,13 +901,6 @@ public class DikenEngine implements Runnable {
 		} else {
 			desc.append("No stack trace available.\n");
 		}
-
-		Issue issue = new Issue(title, desc.toString().trim(), Issue.Severity.CRITICAL);
-
-		if (status == 0) {
-			new DEngineBugHandler().handle(issue);
-		} else if (status == 1) {
-			ReportBugGUI.showErrorReportWait(issue.getTitle(), issue.getDesc(), new DEngineBugHandler());
-		}
+		ReportBugGUI.showError(title, desc.toString().trim());
 	}
 }

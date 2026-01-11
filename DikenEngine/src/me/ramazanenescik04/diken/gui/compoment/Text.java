@@ -57,39 +57,25 @@ public class Text extends GuiCompoment {
 			font = DikenEngine.getEngine().defaultFont;
 		}
 		
-	    // Split the text into lines
-	    Stream<String> lines = text.lines();
-	    
-	    // Track the current y-position for rendering
-	    int currentY = y;
+		Stream<String> lines = text.lines();
+		String[] texts = lines.toArray(String[]::new);
 	    
 	    // Height of a single line (approximate)
-	    int lineHeight = stringBitmapAverageHeight(text, font) + 2; // Add a small padding
-	    Iterator<String> linesIter = lines.iterator();
-	    for (; linesIter.hasNext();) {
-	    	String line = linesIter.next();
-	        Bitmap[] chars = UniFont.getBitmapChars(line, font);
+	    int lineHeight = stringBitmapAverageHeight(new String[] {text}, font) + 2; // Add a small padding
+	    
+	    for (int i = 0; i < texts.length; i++) {
+	        String lineText = texts[i];
+	        Bitmap[] chars = UniFont.getBitmapChars(lineText, font);
 	        int w = 0;
 	        
-	        for (int i = 0; i < chars.length; i++) {
-	            Bitmap btp = chars[i];
-	            
-	            // Color code handling
-	            if (btp == UniFont.getBitmapChar('§', font) && i + 6 < line.length()) {
-	                String colorCode = line.substring(i + 1, i + 7);
-	                color = (int) Long.parseLong(colorCode, 16);
-	                i += 6;
-	                continue;
-	            }
+	        for (int j = 0; j < chars.length; j++) {
+	            Bitmap btp = chars[j];
 	            
 	            // Render character
-	            bitmap.blendDraw(btp, x + w, currentY, color);
+	            bitmap.blendDraw(btp, x + w, y + (i * lineHeight), color);
 	            
 	            w += ((btp.w));
 	        }
-	        
-	        // Move to the next line
-	        currentY += lineHeight;
 	    }
 	}
 	
@@ -128,7 +114,7 @@ public class Text extends GuiCompoment {
 		int w = 0;
 		for (int i = 0; i < chars.length; i++) {
 			Bitmap btp = chars[i];
-			w += ((btp.w) + 1);
+			w += ((btp.w));
 		}
 		
 		return w;
@@ -142,7 +128,7 @@ public class Text extends GuiCompoment {
 	             int length = 0;
 	             for (int i = 0; i < chars.length; i++) {
 	                 Bitmap btp = chars[i];
-	                 length += ((btp.w) + 1);
+	                 length += ((btp.w));
 	             }
 	             if (length > maxLength) {
 	                 maxLength = length;
@@ -161,20 +147,46 @@ public class Text extends GuiCompoment {
 	}
 	
 	public static int stringBitmapAverageHeight(String text, UniFont font) {
-		Bitmap[] chars = UniFont.getBitmapChars(text, font);
-		int h = 0;
-		int ah = 0;
-		for (int i = 0; i < chars.length; i++) {
-			Bitmap btp = chars[i];
-			ah += ((btp.h) + 1);
+		Stream<String> lines = text.lines();
+		String[] texts = lines.toArray(String[]::new);
+		
+		return stringBitmapAverageHeight(texts, font);
+	}
+	
+	public static int stringBitmapAverageHeight(String[] texts, UniFont font) {
+		int maxHeight = 0;
+	    for (String str : texts) {
+	    	 if (str != null) {
+	    		 Bitmap[] chars = UniFont.getBitmapChars(str, font);
+	             for (int i = 0; i < chars.length; i++) {
+	                 Bitmap btp = chars[i];
+	                 if (btp.h > maxHeight) {
+	                     maxHeight = btp.h;
+	                 }
+	             }
+	         }
+	    }
+	    
+	    return maxHeight;
+	}
+
+	public static String wordWrapString(String message, int i, UniFont defaultFont) {
+		StringBuilder wrappedText = new StringBuilder();
+		String[] words = message.split(" ");
+		int lineLength = 0;
+		
+		for (String word : words) {
+			int wordLength = stringBitmapWidth(word + " ", defaultFont);
+			
+			if (lineLength + wordLength > i) {
+				wrappedText.append("\n");
+				lineLength = 0;
+			}
+			
+			wrappedText.append(word).append(" ");
+			lineLength += wordLength;
 		}
 		
-		if(chars.length <= 0) {
-			return 0;
-		}
-		
-		h = ah / chars.length;
-		
-		return h;
+		return wrappedText.toString().trim();
 	}
 }

@@ -15,7 +15,7 @@ public class Config {
 	
 	private volatile Properties config;
 	public static final Properties defaultConfig = new Properties();
-	public static final File defaultConfigFile = new File("./config.dat");
+	public static File defaultConfigFile = new File("./config.dat");
 
 	public Config() {
 		defaultConfig.setProperty("sync", "false");
@@ -40,7 +40,6 @@ public class Config {
 				String[] datas = data.split("=");
 				properties.setProperty(datas[0], datas[1]);
 			}
-			DikenEngine.TARGET_FPS = stream.readDouble();
 			stream.close();
 			this.config = properties;
 			return true;
@@ -64,7 +63,6 @@ public class Config {
 			for(int i = 0; i < config.size(); i++) {
 				stream.writeUTF(keys[i] + "=" + values[i]);
 			}
-			stream.writeDouble(DikenEngine.TARGET_FPS);
 			stream.close();
 		} catch (Exception e) {
 			e.printStackTrace();
