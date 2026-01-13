@@ -1,7 +1,11 @@
 package me.ramazanenescik04.diken.gui;
 
-public class Hitbox {
-    public int x, y, width, height;
+public class Hitbox implements java.io.Serializable {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 7326677608083408652L;
+	public int x, y, width, height;
     public boolean active = true;
 
     public Hitbox(int x, int y, int width, int height) {

@@ -29,7 +29,7 @@ public class LinkButton extends GuiLink {
 	public Bitmap render() {
 		Bitmap bitmap = button.render();
 		ArrayBitmap button = (ArrayBitmap) ResourceLocator.getResource("button-array");
-		bitmap.draw(button.bitmap[3][0], width - 9, height / 2 - 2);
+		bitmap.draw(button.bitmap[3][0], width - 9, height / 2 - 4);
 		return bitmap;
 	}
 

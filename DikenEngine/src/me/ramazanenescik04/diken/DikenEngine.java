@@ -29,7 +29,6 @@ import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.screen.*;
 import me.ramazanenescik04.diken.gui.window.ConsoleWindow;
-import me.ramazanenescik04.diken.gui.window.OptionWindow;
 import me.ramazanenescik04.diken.gui.window.WindowManager;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;

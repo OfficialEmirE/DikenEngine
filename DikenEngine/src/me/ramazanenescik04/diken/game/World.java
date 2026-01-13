@@ -1,5 +1,11 @@
 package me.ramazanenescik04.diken.game;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,21 +22,23 @@ public class World extends Panel {
     // Her şeyin bağlı olduğu ana düğüm (Sahne)
     public final Node root;
     public String gameName = "Game";
+    public long lastUpdateTime = System.currentTimeMillis();
     
-    public Vec2D camera = new Vec2D(0, 0);
+    public transient Vec2D camera = new Vec2D(0, 0);
 
-    public World(String gameName, int width, int height) {
+    public World(String gameName, Node rootNode, int width, int height) {
     	super(0, 0, width, height);
     	this.gameName = gameName;
         // Root isimsiz ve render edilmeyen bir container'dır
-        this.root = new Node(gameName) {
-            @Override
-            public Bitmap render() { return null; } // Root'un kendisi görünmez
-            @Override
-            protected void onAdded() {}
-            @Override
-            protected void onRemoved() {}
-        };
+    	if (rootNode == null) {
+    		this.root = new Workspace(gameName);
+    	} else {
+    		this.root = rootNode;
+    	}
+    }
+    
+    public World(String gameName, int width, int height) {
+    	this(gameName, null, width, height);
     }
 
     // --- Node Yönetimi ---
@@ -44,17 +52,7 @@ public class World extends Panel {
     }
 
     public Node getNodeByName(String name) {
-        return findNodeRecursive(root, name);
-    }
-    
-    // Ağaç içinde isme göre arama yapar
-    private Node findNodeRecursive(Node current, String name) {
-        if (current.name.equals(name)) return current;
-        for (Node child : current.getChildren()) {
-            Node found = findNodeRecursive(child, name);
-            if (found != null) return found;
-        }
-        return null;
+        return root.findFirstChild(name);
     }
 
     // --- Render ---
@@ -131,13 +129,13 @@ public class World extends Panel {
                     // 2. Eğer ikisi de KATI (Solid) ise fiziksel itme uygula
                     if (a.solid && b.solid) {
                     	if (a.solid && b.solid) {
-                    	    if (!a.isStatic && b.isStatic) {
+                    	    if (!a.isAnchoed() && b.isAnchoed()) {
                     	        a.separate(b); // A hareketli, B duvar -> A'yı it
                     	    } 
-                    	    else if (a.isStatic && !b.isStatic) {
+                    	    else if (a.isAnchoed() && !b.isAnchoed()) {
                     	        b.separate(a); // A duvar, B hareketli -> B'yi it
                     	    }
-                    	    else if (!a.isStatic && !b.isStatic) {
+                    	    else if (!a.isAnchoed() && !b.isAnchoed()) {
                     	        // İkisi de hareketli (Örn: İki oyuncu)
                     	        // Birbirlerini yarı yarıya itebilirler veya sadece biri itilir.
                     	        a.separate(b);
@@ -167,5 +165,46 @@ public class World extends Panel {
 
     public Vec2D getCamera() {
         return camera;
+    }
+    
+    public static void saveWorld(World theWorld, File outputFile) throws IOException {
+    	try (ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(outputFile))) {
+    		outStream.writeUTF("DikenEngine-WorldFile");
+    		
+			outStream.writeUTF(theWorld.gameName);
+			outStream.writeLong(System.currentTimeMillis());
+			outStream.writeObject(theWorld.root);
+		}
+    }
+    
+    public static World loadWorld(File outputFile) throws ClassNotFoundException, IOException {
+    	try (ObjectInputStream outStream = new ObjectInputStream(new FileInputStream(outputFile))) {
+    		String signature = outStream.readUTF();
+    		if (!signature.equals("DikenEngine-WorldFile")) {
+    			throw new IOException("DikenENngine World Dosyası Değil!");
+    		}
+    	
+    		String gameName = outStream.readUTF();
+    		long lastUpdateTime = outStream.readLong();
+    		Node rootNode = (Node) outStream.readObject();
+			
+			World world = new World(gameName, rootNode, 1, 1);
+	    	world.lastUpdateTime = lastUpdateTime;
+			return world;
+		}
+    }
+    
+	private static class Workspace extends Node {
+		private static final long serialVersionUID = -6607945631471286799L;
+
+		public Workspace(String name) {
+			super(name);
+		}
+
+		@Override
+		public Bitmap render() {
+			return null;
+		}
+    	
     }
 }

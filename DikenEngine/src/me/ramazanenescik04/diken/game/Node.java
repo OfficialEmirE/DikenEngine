@@ -2,16 +2,18 @@ package me.ramazanenescik04.diken.game;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 // Java 25 ile gelen özellikleri kullanabiliriz ama temel yapı sağlam olmalı.
-public abstract class Node {
-
-    // Hiyerarşi
-    private Node parent;
+public abstract class Node implements java.io.Serializable, Cloneable {
+	private static final long serialVersionUID = -4123363831057244200L;
+	
+	// Hiyerarşi
+    protected Node parent;
     protected final List<Node> children = new ArrayList<>();
     
     // Temel Özellikler
@@ -29,11 +31,15 @@ public abstract class Node {
     // 1. AABB Sistemi (Null ise collision yok/hayalet)
     protected Hitbox aabb = null;
     
-    private boolean debug = false;
-    public boolean solid = true;
-    public boolean isStatic = false;
+    protected boolean debug = false;
+    protected boolean solid = true;
+    protected boolean anchored = false;
 
     // Constructor
+    public Node() {
+    	this.name = "BaseNode";
+    }
+    
     public Node(String name) {
         this.name = name;
     }
@@ -43,7 +49,6 @@ public abstract class Node {
         this.x = x;
         this.y = y;
     }
-
 
     // --- Hiyerarşi Yönetimi ---
 
@@ -85,12 +90,12 @@ public abstract class Node {
             
             if (debug && aabb != null) {
 				Hitbox globalBox = getGlobalAABB();
-				btp.box(globalBox.x, globalBox.y, globalBox.width, globalBox.height, 0xffff0000); // Kırmızı kutu
+				btp.box(globalBox.x, globalBox.y, globalBox.x + globalBox.width, globalBox.y + globalBox.height, 0xffff0000); // Kırmızı kutu
 				
 				int renderX = (int)getGlobalX();
 				int renderY = (int)getGlobalY();
 				
-				btp.box(renderX, renderY, myTexture.w, myTexture.h, 0xff00ff00); // Yeşil kutu
+				btp.box(renderX, renderY, renderX + myTexture.w, renderY + myTexture.h, 0xff00ff00); // Yeşil kutu
 			}
         }
 
@@ -145,6 +150,106 @@ public abstract class Node {
     
     public List<Node> getChildren() {
 		return new ArrayList<>(children); // Kopya döndür
+	}
+    
+    public StringBuilder printTree(boolean printConsole) {
+        StringBuilder builder = new StringBuilder();
+        generateTreeString(this, "", true, builder);
+        
+        if (printConsole) {
+            System.out.println(builder.toString());
+        }
+        return builder;
+    }
+
+    private void generateTreeString(Node node, String prefix, boolean isLast, StringBuilder builder) {
+        // Mevcut düğümü ekle
+        builder.append(prefix)
+               .append(isLast ? "└── " : "├── ")
+               .append(node.name) // Düğüm ismine göre uyarla
+               .append("\n");
+
+        // Çocuk düğümleri gez
+        List<Node> children = node.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+            String newPrefix = prefix + (isLast ? "    " : "│   ");
+            boolean lastChild = (i == children.size() - 1);
+            generateTreeString(children.get(i), newPrefix, lastChild, builder);
+        }
+    }
+    
+    public List<Node> find(Predicate<Node> condition) {
+        List<Node> results = new ArrayList<>();
+        searchInternal(this, condition, results);
+        return results;
+    }
+
+    private void searchInternal(Node node, Predicate<Node> condition, List<Node> results) {
+        if (condition.test(node)) {
+            results.add(node);
+        }
+        
+        // Çocukları doğrudan döngüyle gezmek Stream'den daha hızlıdır
+        List<Node> children = node.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+            searchInternal(children.get(i), condition, results);
+        }
+    }
+
+    // Kullanım kolaylığı sağlayan "Wrapper" metotlar
+    public List<Node> findByName(String name) {
+        return find(n -> n.getName().equalsIgnoreCase(name));
+    }
+
+	public <T> List<T> findByClass(Class<T> clazz) {
+        @SuppressWarnings("unchecked")
+		List<T> found = (List<T>) find(clazz::isInstance);
+        return found;
+    }
+	
+	/**
+	 * İsme göre ilk bulduğu düğümü döndürür. Hiç bulamazsa null döner.
+	 */
+	public Node findFirstChild(String name) {
+	    // Önce doğrudan çocuklarına bak (Hız için)
+	    for (Node child : getChildren()) {
+	        if (child.getName().equalsIgnoreCase(name)) {
+	            return child;
+	        }
+	    }
+	    
+	    // Eğer çocuklarda yoksa, derinlemesine (recursive) ara
+	    for (Node child : getChildren()) {
+	        Node found = child.findFirstChild(name);
+	        if (found != null) return found;
+	    }
+	    
+	    return null;
+	}
+
+	/**
+	 * Belirli bir Class tipindeki ilk düğümü döndürür.
+	 */
+	@SuppressWarnings("unchecked")
+	public <T extends Node> T findFirstChildOfClass(Class<T> clazz) {
+	    // Önce doğrudan çocuklara bak
+	    for (Node child : getChildren()) {
+	        if (clazz.isInstance(child)) {
+	            return (T) child;
+	        }
+	    }
+	    
+	    // Derinlemesine ara
+	    for (Node child : getChildren()) {
+	        T found = child.findFirstChildOfClass(clazz);
+	        if (found != null) return found;
+	    }
+	    
+	    return null;
+	}
+	
+	public String getName() {
+		return new String(name);
 	}
     
     public void onCollision(Node other) {
@@ -211,16 +316,56 @@ public abstract class Node {
 		this.solid = isSolid;
 	}
 
-	public boolean isStatic() {
-		return isStatic;
+	public boolean isAnchoed() {
+		return this.anchored;
 	}
 
-	public void setStatic(boolean isStatic) {
-		this.isStatic = isStatic;
+	public void setAnchored(boolean isStatic) {
+		this.anchored = isStatic;
 	}
 
 	// --- Lifecycle Hooks (3. Madde) ---
     // Alt sınıflar isterse bunları override edebilir
     protected void onAdded() {} 
     protected void onRemoved() {}
+    
+    public Node copy() {
+        try {
+            // 1. Yüzeysel kopya (x, y, color, visible gibi basit değerleri alır)
+            Node newNode = (Node) super.clone();
+
+            // 2. Parent bağını kopar (Yeni kopya henüz sahneye eklenmedi)
+            newNode.parent = null;
+
+            // 3. Hitbox'ı yeniden oluştur (Yoksa eskisiyle aynı hafızayı kullanır!)
+            if (this.aabb != null) {
+                newNode.aabb = new Hitbox(
+                    this.aabb.x, 
+                    this.aabb.y, 
+                    this.aabb.width, 
+                    this.aabb.height
+                );
+            }
+
+            // 4. Çocukları (Children) tek tek kopyala (Recursive Deep Copy)
+            // Önce listeyi sıfırla, çünkü super.clone() eski listeyi referans alır.
+            newNode.children.clear(); 
+            
+            for (Node child : this.children) {
+                // Çocuğu kopyala ve yeni node'a ekle
+                newNode.addChild(child.copy()); 
+            }
+
+            return newNode;
+
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+	@Override
+	public String toString() {
+		return "[" + this.getName() + "-X=" + this.x + "-Y=" + this.y + "]";
+	}
 }

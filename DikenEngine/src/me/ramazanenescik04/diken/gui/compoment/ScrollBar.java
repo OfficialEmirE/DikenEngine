@@ -40,25 +40,25 @@ public class ScrollBar extends GuiCompoment {
 		this.type = type;
 		
 		if (type == VERTICAL) {
-			upButton = new Button("/\\", 1, 1, width - 6, 20 - 4).setRunnable(() -> {
+			upButton = new Button("/\\", 1, 1, width - 2, 20).setRunnable(() -> {
 				setScrollValue(scrollValue - 0.05f);
 			});
 			
-			downButton = new Button("\\/", 1, height - 21, width - 6, 20 - 4).setRunnable(() -> {
+			downButton = new Button("\\/", 1, height - 21, width - 2, 20).setRunnable(() -> {
 				setScrollValue(scrollValue + 0.05f);
 			});
 			
-			sliderButton = new Button("", 1, 21, width - 6, handleHeight - 4);
+			sliderButton = new Button("", 1, 21, width - 2, handleHeight);
 		} else {
-			upButton = new Button("<", 1, 1, 20 - 4, height - 6).setRunnable(() -> {
+			upButton = new Button("<", 1, 1, 20, height - 2).setRunnable(() -> {
 				setScrollValue(scrollValue - 0.05f);
 			});
 			
-			downButton = new Button(">", width - 21, 1, 20 - 4, height - 6).setRunnable(() -> {
+			downButton = new Button(">", width - 21, 1, 20, height - 2).setRunnable(() -> {
 				setScrollValue(scrollValue + 0.05f);
 			});
 			
-			sliderButton = new Button("=", 21, 1, handleHeight - 4, height - 6);
+			sliderButton = new Button("=", 21, 1, handleHeight, height - 2);
 		}
 		buttons = new Button[] { upButton, downButton, sliderButton };
 	}
@@ -119,17 +119,17 @@ public class ScrollBar extends GuiCompoment {
             // 1. Yukarı Butonu: En üstte, bar genişliğinde kare
             upButton.x = 1; // Bu x, ScrollBar'ın kendi (0,0)'ına göredir
             upButton.y = 1;
-            upButton.width = this.width - 6;
-            upButton.height = this.width - 4; // Kare olması için height = width
+            upButton.width = this.width - 2;
+            upButton.height = this.width - 0; // Kare olması için height = width
 
             // 2. Aşağı Butonu: En altta
             downButton.x = 1;
             downButton.y = this.height - this.width - 1;
-            downButton.width = this.width - 6;
-            downButton.height = this.width - 4;
+            downButton.width = this.width - 2;
+            downButton.height = this.width - 0;
 
             // 3. Sürükleme Butonu (Slider): Genişlik bar kadar, y konumu değere göre
-            sliderButton.width = this.width - 6;
+            sliderButton.width = this.width - 2;
             // sliderButton.height ve sliderButton.y daha önce konuştuğumuz 
             // dinamik hesaplama ile burada güncellenmeli.
             
@@ -137,15 +137,15 @@ public class ScrollBar extends GuiCompoment {
             // YATAY MANTIĞI (Horizontal)
         	upButton.x = 1;
         	upButton.y = 1;
-        	upButton.width = this.height - 4; // Yatayda yükseklik kadar genişlik (kare)
-        	upButton.height = this.height - 6;
+        	upButton.width = this.height; // Yatayda yükseklik kadar genişlik (kare)
+        	upButton.height = this.height - 2;
 
         	downButton.x = this.width - this.height - 1;
             downButton.y = 1;
-            downButton.width = this.height - 4;
-            downButton.height = this.height - 6;
+            downButton.width = this.height;
+            downButton.height = this.height - 2;
 
-            sliderButton.height = this.height - 6;
+            sliderButton.height = this.height - 2;
             // sliderButton.width ve sliderButton.x burada güncellenmeli.
         }
     }
@@ -158,12 +158,12 @@ public class ScrollBar extends GuiCompoment {
 		recalculateLayout();
 		
 		if (type == VERTICAL) {
-			if (sliderButton.height != handleHeight - 4) {
-				sliderButton.setSize(sliderButton.width, handleHeight - 4);
+			if (sliderButton.height != handleHeight) {
+				sliderButton.setSize(sliderButton.width, handleHeight);
 			}
 		} else {
-			if (sliderButton.width != handleHeight - 4) {
-				sliderButton.setSize(handleHeight - 4, sliderButton.height);
+			if (sliderButton.width != handleHeight) {
+				sliderButton.setSize(handleHeight, sliderButton.height);
 			}
 		}
 		
@@ -196,8 +196,8 @@ public class ScrollBar extends GuiCompoment {
 					listener.accept(scrollValue);
 				}
 				
-				int minY = upButton.height + 4; 
-		        int maxY = height - (downButton.height + 4) - (sliderButton.height + 4);
+				int minY = upButton.height; 
+		        int maxY = height - (downButton.height) - (sliderButton.height);
 
 		        // Çökme koruması: Max, Min'den küçük olamaz
 		        if (maxY < minY) maxY = minY;
@@ -238,8 +238,8 @@ public class ScrollBar extends GuiCompoment {
 					listener.accept(scrollValue);
 				}
 				
-				int minX = upButton.width + 4;
-		        int maxX = width - (downButton.width + 4) - (sliderButton.width + 4);
+				int minX = upButton.width;
+		        int maxX = width - (downButton.width) - (sliderButton.width);
 
 		        // Çökme koruması
 		        if (maxX < minX) maxX = minX;

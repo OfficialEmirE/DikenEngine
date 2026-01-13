@@ -138,6 +138,37 @@ public class Bitmap implements IResource, Cleanable {
 
 	    return rotated;
 	}
+	
+	public void drawGradient(int color1, int color2) {
+		rewind();
+		int r1 = (color1 >> 16) & 0xFF;
+	    int g1 = (color1 >> 8) & 0xFF;
+	    int b1 = color1 & 0xFF;
+
+	    // Renk bileşenlerini (RGB) ayır (Color2 - Alt Renk)
+	    int r2 = (color2 >> 16) & 0xFF;
+	    int g2 = (color2 >> 8) & 0xFF;
+	    int b2 = color2 & 0xFF;
+
+	    // Bu sefer dış döngü y (yükseklik) üzerinden dönüyor
+	    for (int y = 0; y < h; y++) {
+	        // İlerleme oranı artık yüksekliğe göre hesaplanıyor
+	        float t = (float) y / (h - 1);
+
+	        // Her kanal için dikey ara rengi hesapla
+	        int r = (int) (r1 + (r2 - r1) * t);
+	        int g = (int) (g1 + (g2 - g1) * t);
+	        int b = (int) (b1 + (b2 - b1) * t);
+
+	        // Yeni rengi birleştir
+	        int finalColor = (255 << 24) | (r << 16) | (g << 8) | b;
+
+	        // Hesaplanan bu rengi tüm satır (x) boyunca boya
+	        for (int x = 0; x < w; x++) {
+	            this.pixels.put(x + y * w, finalColor);
+	        }
+	    }
+	}
 
 	// Bilinear interpolation metodu
 	private int bilinearInterpolation(int topLeft, int topRight, int bottomLeft, int bottomRight, double xWeight, double yWeight) {

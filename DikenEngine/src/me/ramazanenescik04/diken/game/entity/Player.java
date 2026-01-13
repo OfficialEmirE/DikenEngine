@@ -1,32 +1,41 @@
 package me.ramazanenescik04.diken.game.entity;
 
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Vec2D;
 import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.nodes.Part;
+import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
+import me.ramazanenescik04.diken.game.nodes.Tool;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 public class Player extends Part {
-	public boolean followCamera = true;
+	private static final long serialVersionUID = 2113495473844070076L;
+	protected transient InvertoryPlayer invertory = new InvertoryPlayer(this);
+	protected transient MovementPlayer movementPlayer = new MovementPlayer(this);
+	
+	public transient boolean followCamera = true;
 	public boolean canMove = true;
 	public float speed = 4.0f;
 	
 	public int health = 100;
 	public int maxHealth = 100;
 	
-	int killTime = 0;
+	transient int killTime = 0;
 	
 	public Player(int x, int y, int width, int height) {
 		super(x, y, width, height);
 		this.name = "DefaultPlayer";
-		this.isStatic = false;
+		this.setAnchored(false);
 	}
 	
 	public Player(int width, int height) {
 		super(0, 0, width, height);
 		this.name = "DefaultPlayer";
-		this.isStatic = false;
+		this.setAnchored(false);
 	}
 
 	@Override
@@ -45,23 +54,44 @@ public class Player extends Part {
 			this.canMove = false;
 			
 			if (killTime > 120) { // 2 saniye sonra yeniden doğma
-				this.heal(this.maxHealth);
-				this.x = 100; // Yeniden doğma pozisyonu
-				this.y = 100;
+				this.health = (this.maxHealth);
+				List<SpawnLocation> spawnLocations = world.root.findByClass(SpawnLocation.class);
+				
+				if (spawnLocations.isEmpty()) {
+					this.x = 0; // Yeniden doğma pozisyonu
+					this.y = 0;
+				} else {
+					SpawnLocation spawnLocation = spawnLocations.get(ThreadLocalRandom.current().nextInt(spawnLocations.size()));
+					this.x = (spawnLocation.getGlobalAABB().width / 2 - render().w / 2) + spawnLocation.getGlobalX();
+					this.y = (spawnLocation.getGlobalAABB().height / 2 - render().h / 2) + spawnLocation.getGlobalY();
+				}
 				this.canMove = true;
 				killTime = 0;
 			}
 		} else {
 			killTime = 0;
+			this.canMove = true;
 		}
-		
+		movementPlayer.tick();
 		super.update(world, engine);
 	}
 	
-	public void centerCamera(World world, DikenEngine engine) {
-		int centerX = -(engine.getWidth() / 2 - this.aabb.width / 2);
-	    int centerY = -(engine.getHeight() / 2 - this.aabb.height / 2);
+	public InvertoryPlayer getInvertory() {
+		return this.invertory;
+	}
+	
+	public void addTool(Tool tool) {
+		this.invertory.addTool(tool);
+	}
+	
+	public void centerCamera(World world, DikenEngine engine, int width, int height) {
+		int centerX = -(engine.getWidth() / 2 - width / 2);
+	    int centerY = -(engine.getHeight() / 2 - height / 2);
 		world.camera = new Vec2D(this.x + centerX, this.y + centerY);
+	}
+	
+	public void centerCamera(World world, DikenEngine engine) {
+		this.centerCamera(world, engine, this.aabb.width, this.aabb.height);
 	}
 	
 	public Animation getIdleAnimation() {
@@ -135,6 +165,6 @@ public class Player extends Part {
 	}
 	
 	public boolean isAlive() {
-		return this.health > 0;
+		return this.health > 1;
 	}
 }

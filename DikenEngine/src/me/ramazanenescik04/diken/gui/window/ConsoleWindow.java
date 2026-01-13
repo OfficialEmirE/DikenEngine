@@ -26,7 +26,7 @@ public class ConsoleWindow extends Window {
 		
 		TextField textField = new TextField(0, contentPane.height - 20, contentPane.width - 50, 20);
 		
-		Button sendButton = new Button("Gönder", 0, contentPane.height - 20, 50 - 4, 16).setRunnable(() -> {
+		Button sendButton = new Button("Gönder", 0, contentPane.height - 20, 50, 20).setRunnable(() -> {
 			String text = textField.text;
 			if (!text.isEmpty()) {
 				textLine.add(text);

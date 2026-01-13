@@ -17,7 +17,7 @@ public class ImageButton extends Button {
 	
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
-		bitmap.draw(this.bitmap, (width + 4) / 2 - (this.bitmap.w / 2), (height + 4) / 2 - (this.bitmap.h / 2));
+		bitmap.draw(this.bitmap, (width) / 2 - (this.bitmap.w / 2), (height) / 2 - (this.bitmap.h / 2));
 		return bitmap;
 	}
 	

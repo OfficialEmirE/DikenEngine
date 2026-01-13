@@ -9,15 +9,13 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import me.ramazanenescik04.diken.DikenEngine;
-
 public class Config {
 	
 	private volatile Properties config;
 	public static final Properties defaultConfig = new Properties();
 	public static File defaultConfigFile = new File("./config.dat");
 
-	public Config() {
+	public Config() {		
 		defaultConfig.setProperty("sync", "false");
 		defaultConfig.setProperty("debug", "false");
 		defaultConfig.setProperty("lang", "tr-TR");

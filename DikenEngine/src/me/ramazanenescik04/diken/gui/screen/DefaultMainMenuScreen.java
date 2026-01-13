@@ -75,23 +75,22 @@ public class DefaultMainMenuScreen extends Screen {
 			Language lang = Language.i;
 			
 			clear();
-			Button performaceButton = new Button(lang.languageValue("Demo Ekranını Aç"), 10, 100, 200, 15).setRunnable(() -> {
+			Button performaceButton = new Button(lang.languageValue("Demo Ekranını Aç"), 10, 100, 200, 20).setRunnable(() -> {
 				//???
 			});
 			performaceButton.active = false;
 			add(performaceButton);
-			add(new Button(lang.languageValue("dmainmenu.setting"), 10, 100 + (1 * 20), 200, 15).setRunnable(() -> {
+			add(new Button(lang.languageValue("dmainmenu.setting"), 10, 100 + (1 * 20), 200, 20).setRunnable(() -> {
 				engine.wManager.addWindow(new SettingsWindow()); 
 			}));
-			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 100 + (2 * 20), 200, 15).setRunnable(() -> {
+			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 100 + (2 * 20), 200, 20).setRunnable(() -> {
 				engine.close();
 			}));
-			add(new LinkButton("Github", 10, engine.getHeight() - (1 * 20), 200, 15).setURI(URI.create("https://github.com/Ramazanenesisik010/DikenEngine")));
-			add(new Button(lang.languageValue("dmainmenu.about"), 10, engine.getHeight() - (2 * 20), 100, 15).setRunnable(() -> {
+			add(new LinkButton("Github", 10, engine.getHeight() - (1 * 20), 200, 20).setURI(URI.create("https://github.com/Ramazanenesisik010/DikenEngine")));
+			add(new Button(lang.languageValue("dmainmenu.about"), 10, engine.getHeight() - (2 * 20), 100, 20).setRunnable(() -> {
 				engine.wManager.addWindow(new AboutWindow());
 			}));
-			add(new Button(lang.languageValue("dmainmenu.reportbug"), 110, engine.getHeight() - (2 * 20), 100, 15).setRunnable(() -> {
-				;
+			add(new Button(lang.languageValue("dmainmenu.reportbug"), 110, engine.getHeight() - (2 * 20), 100, 20).setRunnable(() -> {
 			}));
 		}
 		
