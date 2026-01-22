@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.resource;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.IntBuffer;
 
 import org.lwjgl.BufferUtils;
@@ -9,7 +12,11 @@ import org.lwjgl.input.Cursor;
 public class CursorResource implements IResource {
 	private static final long serialVersionUID = 1L;
 	public Bitmap cursorBitmap;
-	private Cursor cursor;
+	private transient Cursor cursor;
+	
+	public CursorResource() {
+		cursorBitmap = IOResource.missingTexture;
+	}
 	
 	private Cursor generateCursor() {
 		if (cursorBitmap == null)
@@ -51,6 +58,21 @@ public class CursorResource implements IResource {
 		}
 		
 		return cursor;
+	}
+
+	@Override
+	public void saveResource(DataOutputStream out) throws IOException {
+		byte[] array = cursorBitmap.toBytes("png");
+		out.writeInt(array.length);
+		out.write(array);
+	}
+
+	@Override
+	public void loadResource(DataInputStream in) throws IOException {
+		int lenght = in.readInt();
+		byte[] image = new byte[lenght];
+		in.readFully(image);
+		cursorBitmap = Bitmap.fromBytes(image);
 	}
 
 	public EnumResource getResourceType() {

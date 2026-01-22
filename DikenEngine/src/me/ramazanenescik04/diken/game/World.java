@@ -1,5 +1,9 @@
 package me.ramazanenescik04.diken.game;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -8,15 +12,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Vec2D;
+import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.gui.compoment.GuiCompoment;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
 
-public class World extends Panel {
+public class World extends Panel implements Cloneable {
     private static final long serialVersionUID = 1L;
 
     // Her şeyin bağlı olduğu ana düğüm (Sahne)
@@ -24,14 +35,17 @@ public class World extends Panel {
     public String gameName = "Game";
     public long lastUpdateTime = System.currentTimeMillis();
     
+    public transient Map<String, IResource> resources;
+    
     public transient Vec2D camera = new Vec2D(0, 0);
 
     public World(String gameName, Node rootNode, int width, int height) {
     	super(0, 0, width, height);
     	this.gameName = gameName;
+    	this.resources = new ConcurrentHashMap<>();
         // Root isimsiz ve render edilmeyen bir container'dır
     	if (rootNode == null) {
-    		this.root = new Workspace(gameName);
+    		this.root = new Folder(gameName);
     	} else {
     		this.root = rootNode;
     	}
@@ -168,17 +182,32 @@ public class World extends Panel {
     }
     
     public static void saveWorld(World theWorld, File outputFile) throws IOException {
-    	try (ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(outputFile))) {
+    	try (ObjectOutputStream outStream = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)))) {
     		outStream.writeUTF("DikenEngine-WorldFile");
     		
 			outStream.writeUTF(theWorld.gameName);
 			outStream.writeLong(System.currentTimeMillis());
+			
+			//Sesleri, Animasyonları ve Resimleri Kaydet.
+			outStream.writeInt(theWorld.resources.size());
+			for (Map.Entry<String, IResource> entry : theWorld.resources.entrySet()) {
+	            outStream.writeUTF(entry.getKey());
+	            IResource resource = entry.getValue();
+	            outStream.writeUTF(resource.getClass().getName());
+	            
+	            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+	            resource.saveResource(new DataOutputStream(stream));
+	            outStream.writeInt(stream.size());
+	            outStream.write(stream.toByteArray());
+	        }
+			
+			theWorld.root.sendDisposeAllNodes(theWorld.root);
 			outStream.writeObject(theWorld.root);
 		}
     }
     
-    public static World loadWorld(File outputFile) throws ClassNotFoundException, IOException {
-    	try (ObjectInputStream outStream = new ObjectInputStream(new FileInputStream(outputFile))) {
+    public static World loadWorld(File outputFile) throws IOException, ReflectiveOperationException {
+    	try (ObjectInputStream outStream = new ObjectInputStream(new GZIPInputStream(new FileInputStream(outputFile)))) {
     		String signature = outStream.readUTF();
     		if (!signature.equals("DikenEngine-WorldFile")) {
     			throw new IOException("DikenENngine World Dosyası Değil!");
@@ -186,25 +215,86 @@ public class World extends Panel {
     	
     		String gameName = outStream.readUTF();
     		long lastUpdateTime = outStream.readLong();
+    		int resourceLenght = outStream.readInt();
+    		
+    		Map<String, IResource> resources = new ConcurrentHashMap<>();
+    		
+    		for (int i = 0; i < resourceLenght; i++) {
+    			String key = outStream.readUTF();
+    			String className = outStream.readUTF();
+    			int lenght = outStream.readInt();
+    			byte[] data = new byte[lenght];
+    			outStream.readFully(data);
+    			
+    			var in = new ByteArrayInputStream(data);
+    			var resource = IResource.loadResource(new DataInputStream(in), className);
+    			
+    			resources.put(key, resource);
+    		}
+    		
     		Node rootNode = (Node) outStream.readObject();
+    		rootNode.sendReloadAllNodes(rootNode);
 			
 			World world = new World(gameName, rootNode, 1, 1);
 	    	world.lastUpdateTime = lastUpdateTime;
+	    	
+	    	resources.values().forEach(IResource::reload);
+	    	
+	    	world.resources = resources;
 			return world;
 		}
     }
     
-	private static class Workspace extends Node {
-		private static final long serialVersionUID = -6607945631471286799L;
+    @SuppressWarnings("unchecked")
+	public <T extends IResource> T getResource(String key, EnumResource expectedType) {
+        IResource res = resources.get(key);
 
-		public Workspace(String name) {
-			super(name);
-		}
+        // Kaynak var mı ve tipi bizim beklediğimiz tip mi?
+        if (res != null && res.resourceIs(expectedType)) {
+            return (T) res;
+        }
+        
+        return null;
+    }
+    
+    public World addResource(String key, IResource resource) {
+        if (key == null || resource == null) {
+            throw new IllegalArgumentException("Key veya Resource null olamaz!");
+        }
 
-		@Override
-		public Bitmap render() {
-			return null;
-		}
-    	
+        // Eğer aynı isimde başka bir şey varsa uyarabilir veya üzerine yazabilirsin
+        if (resources.containsKey(key)) {
+            System.out.println("Uyarı: " + key + " zaten kayıtlı, üzerine yazılıyor...");
+        }
+
+        resources.put(key, resource);
+        return this;
+    }
+    
+    public World removeResource(String key) {
+        IResource res = resources.remove(key); // remove() sildiği objeyi geri döndürür
+        
+        if (res != null) {
+        	res.disponse();
+            System.out.println(key + " başarıyla kaldırıldı.");
+        }
+        return this;
+    }
+
+    public void clearAllResources() {
+        // Önce hepsini bellekten boşalt (varsa unload metodun)
+        resources.values().forEach(IResource::disponse);
+        
+        resources.clear();
+    }
+    
+    public World copy() {
+    	Node copyRoot = this.root.copy();
+    	copyRoot.sendReloadAllNodes(copyRoot);
+    	World copyWorld = new World(new String(this.gameName), copyRoot, this.getWidth(), this.getHeight());
+		copyWorld.resources = new ConcurrentHashMap<String, IResource>(this.resources);
+		copyWorld.resources.values().forEach(IResource::reload);
+		copyWorld.lastUpdateTime = System.currentTimeMillis();
+		return copyWorld;
     }
 }

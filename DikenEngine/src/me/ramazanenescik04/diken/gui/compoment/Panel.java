@@ -11,6 +11,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 public class Panel extends GuiCompoment {
 	private static final long serialVersionUID = 1L;
 	private List<GuiCompoment> compoments;
+	protected Panel parent = null;
 	protected IBackground background;
 	
 	public boolean drawX = false;
@@ -25,23 +26,35 @@ public class Panel extends GuiCompoment {
 	}
 
 	public void add(GuiCompoment compoment) {
-		if (compoment instanceof Panel) {
-			Panel panel = (Panel) compoment;
+		if (compoment instanceof Panel panel) {
+			panel.parent = this;
 			panel.init(DikenEngine.getEngine());
 		}
 		this.compoments.add(compoment);
 	}
 	
 	public void remove(GuiCompoment compoment) {
+		if (compoment instanceof Panel panel) {
+			panel.parent = null;
+		}
 		this.compoments.remove(compoment);
 	}
 	
 	public void clear() {
+		this.compoments.forEach(e -> {
+			if (e instanceof Panel panel) {
+				panel.parent = null;
+			}
+		});
+		
 		this.compoments.clear();
 	}
 	
 	public void remove(int index) {
-		this.compoments.remove(index);
+		GuiCompoment compoment = this.compoments.remove(index);
+		if (compoment != null && compoment instanceof Panel panel) {
+			panel.parent = null;
+		}
 	}
 	
 	public GuiCompoment get(int index) {
@@ -164,7 +177,7 @@ public class Panel extends GuiCompoment {
 	 * 
 	 * @return List of GuiCompoment objects.
 	 */
-	public final List<GuiCompoment> getCompoments() {
+	public List<GuiCompoment> getCompoments() {
 		return compoments;
 	}
 

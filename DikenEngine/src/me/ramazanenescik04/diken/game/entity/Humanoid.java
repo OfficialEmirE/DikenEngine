@@ -7,15 +7,14 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Vec2D;
 import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
 import me.ramazanenescik04.diken.game.nodes.Tool;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public class Player extends Part {
+public class Humanoid extends Part {
 	private static final long serialVersionUID = 2113495473844070076L;
-	protected transient InvertoryPlayer invertory = new InvertoryPlayer(this);
-	protected transient MovementPlayer movementPlayer = new MovementPlayer(this);
 	
 	public transient boolean followCamera = true;
 	public boolean canMove = true;
@@ -25,17 +24,22 @@ public class Player extends Part {
 	public int maxHealth = 100;
 	
 	transient int killTime = 0;
+	private transient Tool selectedTool;
 	
-	public Player(int x, int y, int width, int height) {
+	public Humanoid(int x, int y, int width, int height) {
 		super(x, y, width, height);
-		this.name = "DefaultPlayer";
-		this.setAnchored(false);
+		this.init();
 	}
 	
-	public Player(int width, int height) {
+	public Humanoid(int width, int height) {
 		super(0, 0, width, height);
-		this.name = "DefaultPlayer";
+		this.init();
+	}
+	
+	private void init() {
+		this.name = "Humanoid";
 		this.setAnchored(false);
+		this.addChild(new Folder("Tools"));
 	}
 
 	@Override
@@ -70,18 +74,23 @@ public class Player extends Part {
 			}
 		} else {
 			killTime = 0;
-			this.canMove = true;
 		}
-		movementPlayer.tick();
 		super.update(world, engine);
 	}
 	
-	public InvertoryPlayer getInvertory() {
-		return this.invertory;
+	public Tool getSelectedTool() {
+		return this.selectedTool;
 	}
 	
-	public void addTool(Tool tool) {
-		this.invertory.addTool(tool);
+	public Tool setSelectedTool(Tool tool) {
+		if (tool != null) {
+			tool.visible = true;
+		}
+		Tool oldTool = this.selectedTool;
+		if (oldTool != null) {
+			oldTool.visible = false;
+		}
+		return this.selectedTool = tool;
 	}
 	
 	public void centerCamera(World world, DikenEngine engine, int width, int height) {

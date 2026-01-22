@@ -21,14 +21,16 @@ public class ProgressBar extends GuiCompoment {
 		bitmap.box(0, 0, bitmap.w - 1, bitmap.h - 1, 0xffffffff);
 		
 		double progressRatio = (double) value / maxValue;
-        int progressWidth = (int) (width * progressRatio);
-        int progressBarWidth = progressWidth - 2;
-        if (progressBarWidth <= 1) {
-        	progressBarWidth = 1;
+        int progressWidth = (int) ((width - 2) * progressRatio);
+        if (progressWidth <= 1) {
+        	progressWidth = 1;
         }
         
-        Bitmap progressBar = new Bitmap(progressBarWidth, height - 2);
-        progressBar.drawGradient(color, color2);
+        Bitmap progressBar = new Bitmap(progressWidth, height - 2);
+        if (!(progressWidth == 1)) {
+        	progressBar.drawGradient(color, color2);
+        }
+        
         bitmap.draw(progressBar, 1, 1);
         
         bitmap.drawText(text.isEmpty() ? value + "%" : text, 4, height / 2 - Text.stringBitmapAverageHeight(text, DikenEngine.getEngine().defaultFont) / 2, false);

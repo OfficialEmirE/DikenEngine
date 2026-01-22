@@ -5,14 +5,14 @@ import java.util.*;
 import org.lwjgl.input.Keyboard;
 
 public class MovementPlayer {
-	private Player player;
+	private Humanoid player;
 	
 	private Map<String, Integer> keyMap = new HashMap<>();
 	
 	public int viewType = 0; //0 = left, 1 = right
 	public boolean isMoving = false;
 	
-	public MovementPlayer(Player player) {
+	public MovementPlayer(Humanoid player) {
 		keyMap.put("moveUpKey", Keyboard.KEY_W);
 		keyMap.put("moveLeftKey", Keyboard.KEY_A);
 		keyMap.put("moveDownKey", Keyboard.KEY_S);

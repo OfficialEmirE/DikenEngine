@@ -26,6 +26,14 @@ public class Sky extends Node {
 
 	@Override
 	public Bitmap render() {
+		if (width < 1) {
+			this.width = 1;
+		}
+		
+		if (height < 1) {
+			this.height = 1;
+		}
+		
 		Bitmap bitmap = new Bitmap(width, height);
 		bitmap.clear(color);
 		if (this.skyBitmap != null) {

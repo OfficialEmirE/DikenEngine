@@ -31,6 +31,14 @@ public class Window extends GuiCompoment {
 	}
 	
 	protected void open() {};
+	
+	public boolean isCloseable() {
+		return this.barButtons[0].active;
+	}
+	
+	public void setCloseable(boolean b) {
+		this.barButtons[0].active = b;
+	}
 
 	public String getTitle() {
 		return title;

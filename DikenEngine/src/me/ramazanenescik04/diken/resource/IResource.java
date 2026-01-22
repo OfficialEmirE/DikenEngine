@@ -2,7 +2,7 @@ package me.ramazanenescik04.diken.resource;
 
 import java.io.*;
 
-public interface IResource extends java.io.Serializable {
+public interface IResource extends java.io.Serializable, Cloneable {
 	public EnumResource getResourceType();
 	
 	default boolean resourceIs(EnumResource res) {
@@ -11,10 +11,28 @@ public interface IResource extends java.io.Serializable {
 		if(thisRes == res) return true; else return false;
 	}
 	
-	public default void saveResource(OutputStream stream) throws Exception {
-	}
+	public default void saveResource(DataOutputStream out) throws IOException {}
+	public default void loadResource(DataInputStream in) throws IOException {}
+	
+	public static IResource loadResource(DataInputStream in, String clazzName)
+	        throws IOException, ReflectiveOperationException {
 
-	public default IResource clone() throws CloneNotSupportedException {
-		throw new CloneNotSupportedException("Sen bunu clonelayamazsın kardeşim. git onun kodunu yaz!");
+	    Class<?> clazz = Class.forName(
+	        clazzName,
+	        true,
+	        Thread.currentThread().getContextClassLoader()
+	    );
+
+	    Object obj = clazz.getDeclaredConstructor().newInstance();
+
+	    if (!(obj instanceof IResource resource)) {
+	        throw new IllegalArgumentException(clazzName + " does not implement IResource");
+	    }
+
+	    resource.loadResource(in);
+	    return resource;
 	}
+	
+	public default void reload() {}
+	public default void disponse() {}
 }

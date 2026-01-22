@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.gui;
 
+import me.ramazanenescik04.diken.Vec2D;
+
 public class Hitbox implements java.io.Serializable {
     /**
 	 * 
@@ -23,7 +25,21 @@ public class Hitbox implements java.io.Serializable {
         this(x, y, 1, 1);
     }
 
-    public boolean intersects(Hitbox r) {
+    @Override
+	public boolean equals(Object obj) {
+		if (obj == null) {
+			return false;
+		} else if (obj instanceof Hitbox h) {
+			return (h.x == h.x && h.y == h.y && h.height == h.height);
+		} else if (obj instanceof Vec2D v) {
+			return this.contains((int)v.x(), (int)v.y());
+		} else if (obj instanceof java.awt.Point p) {
+			return this.contains(p.x, p.y);
+		}
+		return false;
+	}
+
+	public boolean intersects(Hitbox r) {
         if (!active || !r.active) return false;
 
         // AABB collision
@@ -104,5 +120,17 @@ public class Hitbox implements java.io.Serializable {
 	public void setSize(int width, int height) {
 		this.width = width;
 		this.height = height;
+	}
+	
+	public Hitbox copy() {
+		return new Hitbox(this.x, this.y, this.width, this.height);
+	}
+	
+	public Hitbox getBounds() {
+		return this.copy();
+	}
+	
+	public String toString() {
+		return this.getClass().getName() + "-[" + String.format("%h - %h, %h x %h", this.x, this.y, this.width, this.height) + "]";
 	}
 }

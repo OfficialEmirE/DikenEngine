@@ -38,6 +38,7 @@ import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.resource.SoundResource;
 import me.ramazanenescik04.diken.tools.*;
 import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
 
@@ -52,6 +53,7 @@ public class DikenEngine implements Runnable {
 	public static final int protocolVersion = 11;
 
 	public Canvas canvas;
+	private Canvas oldCanvas;
 	private int width, tmpwidth;
 	private int height, tmpheight;
 	private boolean fullscreen;
@@ -92,7 +94,7 @@ public class DikenEngine implements Runnable {
 		int scaleWidth = (int) (width * scale);
 		int scaleHeight = (int) (height * scale);
 		
-		this.canvas = canvas;
+		this.canvas = this.oldCanvas = canvas;
 		this.width = scaleWidth;
 		this.height = scaleHeight;
 		this.tmpwidth = scaleWidth;
@@ -127,6 +129,7 @@ public class DikenEngine implements Runnable {
 
 	/** Bu kod, Diken Engine'i başlatır. */
 	public void start() {
+		this.running = true;
 		new Thread(this, "Engine Thread").start();
 	}
 
@@ -262,6 +265,8 @@ public class DikenEngine implements Runnable {
 
 			icon.put(r).put(g).put(b).put(a);
 		}
+		
+		icon.flip();
 		
 		this.displayIcons = new ByteBuffer[] { icon };
 	}
@@ -409,9 +414,9 @@ public class DikenEngine implements Runnable {
 				}
 			} else {
 				Display.setDisplayMode(new DisplayMode(this.width, this.height));
-				Display.setResizable(isResizable);
 			}
 			
+			Display.setResizable(isResizable);
 			Display.setTitle(title);
 			Display.setIcon(this.displayIcons);
 			Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
@@ -433,7 +438,7 @@ public class DikenEngine implements Runnable {
 			Keyboard.create();
 
 			if (!AL.isCreated()) {
-				SoundManager.init();
+				AL.create();
 			}
 
 			screenBitmap = new Bitmap(getWidth(), getHeight());
@@ -563,7 +568,8 @@ public class DikenEngine implements Runnable {
 			
 			try {
 				System.out.println("Stopping!");
-				SoundManager.destroy();
+				SoundResource.destroySounds();
+				AL.destroy();
 
 				try {
 					GL11.glDisable(GL11.GL_TEXTURE_2D);
@@ -619,6 +625,15 @@ public class DikenEngine implements Runnable {
 		if (Display.getTitle() != title) {
 			Display.setTitle(title);
 		}
+		
+		if (this.canvas != this.oldCanvas) {
+			this.oldCanvas = this.canvas;
+			
+			Display.setResizable(isResizable);
+			Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
+			Display.setParent(canvas);
+			Display.update();
+		}
 
 		while (Keyboard.next()) {
 			if (Keyboard.getEventKeyState()) {
@@ -647,8 +662,7 @@ public class DikenEngine implements Runnable {
 							this.config.getProperty("debug").equals("true") ? "false" : "true");
 				}
 
-				char ch = Keyboard.getEventCharacter();
-				if (Keyboard.getEventKey() == Keyboard.KEY_GRAVE || ch == '"') {
+				if (Keyboard.getEventKey() == Keyboard.KEY_F4) {
 					if (wManager.isWindowActive(ConsoleWindow.class)) {
 						continue; // Konsol penceresi zaten açıksa, yeni bir tane açma
 					}
@@ -751,7 +765,7 @@ public class DikenEngine implements Runnable {
 	 * 
 	 * @throws LWJGLException
 	 */
-	private void tickDimension() throws LWJGLException {
+	private void tickDimension() throws LWJGLException {		
 	    // 1. ADIM: Boyut Değişikliği Kontrolü (Resize Logic)
 	    // Bunu fullscreen kontrolünden ayırdık, böylece ikisi de bağımsız çalışabilir.
 	    boolean needsResize = false;
@@ -775,6 +789,7 @@ public class DikenEngine implements Runnable {
 					this.tmpheight = this.height;
 					
 					Display.setDisplayMode(Display.getDesktopDisplayMode());
+					Display.setResizable(false);
 					this.width = Display.getDisplayMode().getWidth();
 					this.height = Display.getDisplayMode().getHeight();
 					if(this.width <= 0) {
@@ -802,13 +817,14 @@ public class DikenEngine implements Runnable {
 					}
 					
 					Display.setDisplayMode(new DisplayMode(this.width, this.height));
+					Display.setResizable(this.isResizable);
 				}
 				
 				refreshScreenBuffer();
 				sendScreenResized();
 
+				
 				Display.setFullscreen(this.fullscreen);
-				Display.setResizable(isResizable);
 				Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
 				Display.update();
 			} catch (Exception var2) {
@@ -875,6 +891,10 @@ public class DikenEngine implements Runnable {
 
 		refreshScreenBuffer();
 		sendScreenResized();
+	}
+	
+	public void setParent(Canvas newCanvas) {
+		this.canvas = newCanvas;
 	}
 
 	private void crash(Throwable e) {

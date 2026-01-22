@@ -65,6 +65,9 @@ public class Language {
 	 * Example:
 	 * key = "zort.helloworld=MerhabaDünya"
 	 * 
+	 * @throws
+	 * PatternSyntaxException if the regular expression's syntax is invalid
+	 * 
 	 * @param lang
 	 * @param key
 	 */

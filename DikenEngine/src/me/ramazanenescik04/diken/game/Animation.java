@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.*;
 
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -20,6 +19,9 @@ public class Animation implements IResource {
 
     private int currentFrame = 0;
     private long lastFrameTime = 0;
+    
+    public Animation() {
+    }
 
     public Animation(int fps) {
         this.fps = fps;
@@ -84,23 +86,22 @@ public class Animation implements IResource {
         if (fps > 0) this.fps = fps;
     }
     
-	public void saveResource(OutputStream stream) throws IOException {
-		try (DataOutputStream out = new DataOutputStream(stream)) {
-        	out.writeUTF("DIKEN_ANIM_" + me.ramazanenescik04.diken.DikenEngine.protocolVersion);
-            out.writeInt(this.getFPS());
-            out.writeInt(this.getFrameCount());
+    @Override
+	public void saveResource(DataOutputStream out) throws IOException {
+    	out.writeUTF("DIKEN_ANIM_" + me.ramazanenescik04.diken.DikenEngine.protocolVersion);
+        out.writeInt(this.getFPS());
+        out.writeInt(this.getFrameCount());
 
-            for (int i = 0; i < this.getFrameCount(); i++) {
-                Bitmap bmp = this.getFrame(i);
-                byte[] data = bmp.toBytes("png"); // Bitmap sınıfında olmalı (BufferedImage -> PNG)
-                out.writeInt(data.length);
-                out.write(data);
-            }
+        for (int i = 0; i < this.getFrameCount(); i++) {
+            Bitmap bmp = this.getFrame(i);
+            byte[] data = bmp.toBytes("png"); // Bitmap sınıfında olmalı (BufferedImage -> PNG)
+        	out.writeInt(data.length);
+        	out.write(data);
         }
 	}
 
 	public void save(File file) throws IOException {
-        this.saveResource(new FileOutputStream(file));
+        this.saveResource(new DataOutputStream(new FileOutputStream(file)));
     }
 
     // --- .bin'den animasyonu yükle ---

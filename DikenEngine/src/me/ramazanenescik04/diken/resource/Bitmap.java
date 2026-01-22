@@ -3,6 +3,8 @@ package me.ramazanenescik04.diken.resource;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.Cleaner.Cleanable;
@@ -18,13 +20,23 @@ import me.ramazanenescik04.diken.gui.compoment.Text;
 
 public class Bitmap implements IResource, Cleanable {
 	private static final long serialVersionUID = 1L;
-	public final IntBuffer pixels;
-	public final int w, h;
+	
+	private static final IntBuffer empty_pixels =
+		    ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+	public static final Bitmap empty = new Bitmap(1, 1);
+	
+	public transient IntBuffer pixels = empty_pixels;
+	public int w;
+	public int h;
 	public int xOffs;
 	public int yOffs;
 	public boolean xFlip = false;
 	
-	public static final Bitmap empty = new Bitmap(1, 1);
+	public Bitmap() {
+		this.w = 1;
+		this.h = 1;
+		this.pixels = empty_pixels;
+	}
 
 	public Bitmap(int w, int h) {
 		this.w = (w <= 0) ? 1 : w;
@@ -258,6 +270,8 @@ public class Bitmap implements IResource, Cleanable {
 
 	public void draw(Bitmap b, int xp, int yp) {
 		if (b == null) return;
+		b.ensurePixels();
+
 		if (b.w <= 0 || b.h <= 0) return;
 		
 		xp += xOffs;
@@ -299,6 +313,8 @@ public class Bitmap implements IResource, Cleanable {
 	
 	// Düzeltilmiş blend metodu
 	public void blend(Bitmap b, int xp, int yp) {
+		b.ensurePixels();
+		
 	    xp += xOffs;
 	    yp += yOffs;
 	    int x0 = xp;
@@ -348,6 +364,8 @@ public class Bitmap implements IResource, Cleanable {
 	// Düzeltilmiş blendDraw metodu
 	// Düzeltilmiş blendDraw metodu
 	public void blendDraw(Bitmap b, int xp, int yp, int col) {
+		b.ensurePixels();
+		
 	    xp += xOffs;
 	    yp += yOffs;
 	    int x0 = xp;
@@ -477,6 +495,8 @@ public class Bitmap implements IResource, Cleanable {
 
 	// Düzeltilmiş fogBlend metodu
 	public void fogBlend(Bitmap b, int xp, int yp) {
+		b.ensurePixels();
+		
 	    xp += xOffs;
 	    yp += yOffs;
 	    int x0 = xp;
@@ -543,6 +563,8 @@ public class Bitmap implements IResource, Cleanable {
 	}
 
 	public void shade(Bitmap shadows) {
+		shadows.ensurePixels();
+		
 		for (int i = 0; i < pixels.capacity(); i++) {
 			if (shadows.pixels.get(i) > 0) {
 				int r = ((pixels.get(i) & 0xff0000) * 200) >> 8 & 0xff0000;
@@ -837,4 +859,40 @@ public class Bitmap implements IResource, Cleanable {
 		
 		return cloned;
 	}
+
+	@Override
+	public void saveResource(DataOutputStream out) throws IOException {
+		byte[] data = this.toBytes("png");
+		out.writeInt(data.length);
+		out.write(data);
+		
+		out.writeBoolean(xFlip);
+		out.writeInt(this.xOffs);
+		out.writeInt(this.yOffs);
+	}
+
+	@Override
+	public void loadResource(DataInputStream in) throws IOException {
+		int length = in.readInt();
+		byte[] data = new byte[length];
+		in.readFully(data);
+		Bitmap newBitmap = Bitmap.fromBytes(data);
+		
+		this.xFlip = in.readBoolean();
+		this.xOffs = in.readInt();
+		this.yOffs = in.readInt();
+		
+		this.pixels = newBitmap.pixels;
+		this.w = newBitmap.w;
+		this.h = newBitmap.h;
+	}
+	
+	protected void ensurePixels() {
+	    if (pixels == null) {
+	        throw new IllegalStateException(
+	            "Bitmap pixels NULL: constructor bypass or shadowed field"
+	        );
+	    }
+	}
+
 }

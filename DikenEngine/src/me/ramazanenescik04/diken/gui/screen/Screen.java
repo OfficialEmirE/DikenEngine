@@ -20,8 +20,10 @@ public abstract class Screen {
 			background.tick();
 		}
 		
-		contentPane.setSize(engine.getWidth(), engine.getHeight());
-		contentPane.tick(engine);
+		if (this.engine != null) {
+			contentPane.setSize(engine.getWidth(), engine.getHeight());
+			contentPane.tick(engine);
+		}
 	}
 	
 	public void keyboardEvent() {
@@ -64,11 +66,12 @@ public abstract class Screen {
 	public void mouseEvent() {
 		int mouseX = InputHandler.getMousePosition().x;
 		int mouseY = InputHandler.getMousePosition().y;
+		if (this.engine != null) {
+			this.mouseGetInfo(mouseX, mouseY, (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))), (InputHandler.isMouseOnScreen()));
 		
-		this.mouseGetInfo(mouseX, mouseY, (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))), (InputHandler.isMouseOnScreen()));
-		
-		if (Mouse.getEventButtonState()) {
-			this.mouseClick(mouseX, mouseY, Mouse.getEventButton(), (InputHandler.isMouseOnScreen()), (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))));
+			if (Mouse.getEventButtonState()) {
+				this.mouseClick(mouseX, mouseY, Mouse.getEventButton(), (InputHandler.isMouseOnScreen()), (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))));
+			}
 		}
 	}
 	

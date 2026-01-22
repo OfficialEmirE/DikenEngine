@@ -12,7 +12,7 @@
 			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="libs/lwjgl_util.jar" sourcepath="D:/RetroMCP/libraries/org/lwjgl/lwjgl/lwjgl_util/2.9.4/lwjgl_util-2.9.4-sources.jar">
+	<classpathentry kind="lib" path="libs/lwjgl_util.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-source-2.9.3.zip">
 		<attributes>
 			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
 		</attributes>

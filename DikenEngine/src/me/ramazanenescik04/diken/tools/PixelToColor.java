@@ -38,5 +38,22 @@ public class PixelToColor {
 		
 		return toColor(alpha, red, green, blue);
 	}
+	
+	public static int blendColor(int oldColor, int blendColor) {
+		int bgR = (blendColor >> 16) & 0xff;
+        int bgG = (blendColor >> 8) & 0xff;
+        int bgB = blendColor & 0xff;
+        
+        int a = (oldColor >> 24) & 0xff;
+	    int srcR = (oldColor >> 16) & 0xff;
+	    int srcG = (oldColor >> 8) & 0xff;
+	    int srcB = oldColor & 0xff;
+		
+		int newR = (srcR * a + bgR * (255 - a)) / 255;
+        int newG = (srcG * a + bgG * (255 - a)) / 255;
+        int newB = (srcB * a + bgB * (255 - a)) / 255;
+        
+        return  0xff000000 | (newR << 16) | (newG << 8) | newB;
+	 }
 
 }

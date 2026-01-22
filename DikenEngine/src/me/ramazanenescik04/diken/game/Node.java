@@ -14,7 +14,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	// Hiyerarşi
     protected Node parent;
-    protected final List<Node> children = new ArrayList<>();
+    protected List<Node> children = new ArrayList<>();
     
     // Temel Özellikler
     public String name;
@@ -66,6 +66,10 @@ public abstract class Node implements java.io.Serializable, Cloneable {
             child.onRemoved(); // 3. Lifecycle Event
             child.parent = null;
         }
+    }
+    
+    public Node getParent() {
+    	return parent;
     }
     
     // --- Render Sistemi ---
@@ -207,6 +211,24 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         return found;
     }
 	
+	public List<Node> findInArea(Hitbox area) {
+		List<Node> result = new ArrayList<>();
+		
+		for (Node child : getChildren()) {
+			if (child.getGlobalAABB() != null && child.getGlobalAABB().intersects(area)) {
+				result.add(child);
+			}
+	    }
+	    
+	    // Eğer çocuklarda yoksa, derinlemesine (recursive) ara
+	    for (Node child : getChildren()) {
+	        List<Node> childResult = child.findInArea(area);
+	        result.addAll(childResult);
+	    }
+	    
+	    return result;
+	}
+	
 	/**
 	 * İsme göre ilk bulduğu düğümü döndürür. Hiç bulamazsa null döner.
 	 */
@@ -248,8 +270,26 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	    return null;
 	}
 	
+	public void sendDisposeAllNodes(Node parent) {
+	    for (Node child : parent.children) {
+	        sendDisposeAllNodes(child);
+	    }
+	    parent.dispose();
+	}
+	
+	public void sendReloadAllNodes(Node parent) {
+	    for (Node child : parent.children) {
+	    	sendReloadAllNodes(child);
+	    }
+	    parent.reloadNode();
+	}
+	
 	public String getName() {
 		return new String(name);
+	}
+	
+	public void setName(String name) {
+		this.name = name;
 	}
     
     public void onCollision(Node other) {
@@ -328,16 +368,18 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     // Alt sınıflar isterse bunları override edebilir
     protected void onAdded() {} 
     protected void onRemoved() {}
+    protected void reloadNode() {}
+    protected void dispose() {}
     
     public Node copy() {
         try {
-            // 1. Yüzeysel kopya (x, y, color, visible gibi basit değerleri alır)
+            // 1. Yüzeysel kopya
             Node newNode = (Node) super.clone();
 
-            // 2. Parent bağını kopar (Yeni kopya henüz sahneye eklenmedi)
+            // 2. Parent bağını kopar
             newNode.parent = null;
 
-            // 3. Hitbox'ı yeniden oluştur (Yoksa eskisiyle aynı hafızayı kullanır!)
+            // 3. Hitbox'ı kopyala
             if (this.aabb != null) {
                 newNode.aabb = new Hitbox(
                     this.aabb.x, 
@@ -347,12 +389,13 @@ public abstract class Node implements java.io.Serializable, Cloneable {
                 );
             }
 
-            // 4. Çocukları (Children) tek tek kopyala (Recursive Deep Copy)
-            // Önce listeyi sıfırla, çünkü super.clone() eski listeyi referans alır.
-            newNode.children.clear(); 
+            // --- KRİTİK NOKTA ---
+            // clear() yerine yeni bir liste örneği oluşturuyoruz!
+            // ArrayList kullandığını varsayıyorum, kendi liste tipine göre değiştir:
+            newNode.children = new ArrayList<>(); 
             
+            // Şimdi orijinal liste (this.children) hala dolu, güvenle dönebiliriz:
             for (Node child : this.children) {
-                // Çocuğu kopyala ve yeni node'a ekle
                 newNode.addChild(child.copy()); 
             }
 

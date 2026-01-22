@@ -9,7 +9,6 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
-import me.ramazanenescik04.diken.SoundManager;
 import me.ramazanenescik04.diken.game.Animation;
 
 public class IOResource {
@@ -26,7 +25,7 @@ public class IOResource {
 			}
 			return Bitmap.toBitmap(img);
 		} else if (_enum == EnumResource.SOUND) {
-			return SoundManager.loadSound(stream);
+			return SoundResource.loadSound(stream);
 		} else if (_enum == EnumResource.CURSOR) {
 			Bitmap cursorBitmap = (Bitmap) loadResource(stream, EnumResource.IMAGE);
 			CursorResource res = new CursorResource();
