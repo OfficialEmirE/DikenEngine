@@ -116,32 +116,32 @@ public class Panel extends GuiCompoment {
 	// farenin nerede olduğunu temsil etmeli.
 
 	public void mouseClicked(int relMouseX, int relMouseY, int button, boolean isTouch2) {
-		for (int i = 0; i < this.compoments.size(); i++) {
-			GuiCompoment compoment = compoments.get(i);
+	    // 1. DEĞİŞİKLİK: Listeyi TERSTEN dönüyoruz.
+	    // Listenin sonundaki eleman ekranda en üsttedir. Önce onu kontrol etmeliyiz.
+	    for (int i = this.compoments.size() - 1; i >= 0; i--) {
+	        GuiCompoment compoment = compoments.get(i);
 	        
-	        // --- DÜZELTME BAŞLANGICI ---
-	        
-	        // Farenin bu component (çocuk) üzerinde olup olmadığını kontrol et.
-	        // relMouseX/Y zaten 'this' paneline göre olduğu için, sadece çocuğun sınırlarına bakıyoruz.
-	        // InputHandler kullanmıyoruz, yukarıdan gelen koordinata güveniyoruz.
-	        
+	        // Eğer bileşen görünür değilse (visible) veya aktif değilse bu turu geçebilirsin.
+	        // if (!compoment.isVisible) continue; // (Opsiyonel: Eğer böyle bir değişkenin varsa ekle)
+
+	        // Farenin bu component üzerinde olup olmadığını kontrol et.
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&
 	                            (relMouseY >= compoment.y && relMouseY <= compoment.y + compoment.height);
 
-	        // Eğer senin 'intersects' metodun özel bir hitbox şekli (daire vs.) kullanıyorsa:
-	        // Hitbox childHitbox = new Hitbox(compoment.x, compoment.y, compoment.width, compoment.height);
-	        // Hitbox mousePoint = new Hitbox(relMouseX, relMouseY, 1, 1);
-	        // boolean isHovered = childHitbox.intersects(mousePoint);
-
 	        boolean isTouch = isHovered && isTouch2;
 
-	        if (active) {
-	            // Çocuğa koordinat gönderirken, ÇOCUĞUN konumunu çıkarıyoruz.
-	            // Böylece çocuk da kendi içindeki (0,0) noktasına göre fareyi alıyor.
-	            compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch);
+	        // Eğer fare bu bileşenin üzerindeyse:
+	        if (isHovered) {
+	            if (active) {
+	                // Tıklama olayını çocuğa gönder
+	                compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch);
+	            }
+
+	            // 2. DEĞİŞİKLİK: KRİTİK NOKTA!
+	            // En üstteki bileşeni bulduk ve tıkladık. Artık arkadakilere bakmaya gerek yok.
+	            // Döngüyü kırıyoruz.
+	            break; 
 	        }
-	        
-	        // --- DÜZELTME BİTİŞİ ---
 	    }
 	}
 

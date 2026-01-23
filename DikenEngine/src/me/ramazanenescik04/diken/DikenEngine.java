@@ -49,8 +49,8 @@ import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
  * @author Ramazanenescik04
  */
 public class DikenEngine implements Runnable {
-	public static final String VERSION = "1.0.1";
-	public static final int protocolVersion = 11;
+	public static final String VERSION = "1.0.2";
+	public static final int protocolVersion = 12;
 
 	public Canvas canvas;
 	private Canvas oldCanvas;
