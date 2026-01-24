@@ -30,6 +30,7 @@ import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.screen.*;
 import me.ramazanenescik04.diken.gui.window.ConsoleWindow;
 import me.ramazanenescik04.diken.gui.window.WindowManager;
+import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
@@ -48,9 +49,9 @@ import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
  * 
  * @author Ramazanenescik04
  */
-public class DikenEngine implements Runnable {
-	public static final String VERSION = "1.0.2";
-	public static final int protocolVersion = 12;
+public class DikenEngine implements Runnable {	
+	public static final String VERSION = "1.1.0";
+	public static final int protocolVersion = 13;
 
 	public Canvas canvas;
 	private Canvas oldCanvas;
@@ -164,15 +165,6 @@ public class DikenEngine implements Runnable {
 		}
 
 		DikenEngine engine = useMap(argMap);
-
-		/*
-		 * IGame capsuleGame = new CapsuleGame();
-		 * capsuleGame.loadResources();
-		 * capsuleGame.loadAdvancedNative();
-		 * capsuleGame.loadNatives();
-		 * capsuleGame.startGame(engine);
-		 */ // TODO: Capsule Game
-
 		engine.start();
 	}
 
@@ -252,23 +244,27 @@ public class DikenEngine implements Runnable {
 		return new ArrayList<>(this.onCloseRunnables);
 	}
 	
-	public void setIcon(Bitmap iconBitmap) {
-		ByteBuffer icon = BufferUtils.createByteBuffer(iconBitmap.pixels.capacity() * 4);
-		iconBitmap.pixels.rewind();
+	public void setIcon(Bitmap... icons) {
+		this.displayIcons = new ByteBuffer[icons.length];
 		
-		for (int i = 0; i < iconBitmap.pixels.capacity(); i++) {
-			int color = iconBitmap.pixels.get(i);
-			byte r = (byte) ((color >> 16) & 0xff);
-			byte g = (byte) ((color >> 8) & 0xff);
-			byte b = (byte) (color & 0xff);
-			byte a = (byte) ((color >> 24) & 0xff);
+		for (int j = 0; j < icons.length; j++) {
+			Bitmap iconBitmap = icons[j];
+			ByteBuffer icon = BufferUtils.createByteBuffer(iconBitmap.pixels.capacity() * 4);
+			iconBitmap.pixels.rewind();
+			
+			for (int i = 0; i < iconBitmap.pixels.capacity(); i++) {
+				int color = iconBitmap.pixels.get(i);
+				byte r = (byte) ((color >> 16) & 0xff);
+				byte g = (byte) ((color >> 8) & 0xff);
+				byte b = (byte) (color & 0xff);
+				byte a = (byte) ((color >> 24) & 0xff);
 
-			icon.put(r).put(g).put(b).put(a);
+				icon.put(r).put(g).put(b).put(a);
+			}
+			
+			icon.flip();
+			this.displayIcons[j] = icon;
 		}
-		
-		icon.flip();
-		
-		this.displayIcons = new ByteBuffer[] { icon };
 	}
 
 	public String getTitle() {
@@ -642,10 +638,8 @@ public class DikenEngine implements Runnable {
 					screenshotBitmap.clear(0xFF000000);
 					screenshotBitmap.draw(screenBitmap, 0, 0);
 					try {
-						Date date = new Date();
-						@SuppressWarnings("deprecation")
 						String fileName = "screenshot-"
-								+ date.toLocaleString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
+								+ new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
 						ImageIO.write(screenshotBitmap.toImage(), "png", new File(fileName));
 						log("Screenshot saved as " + fileName);
 					} catch (IOException e) {
@@ -662,7 +656,7 @@ public class DikenEngine implements Runnable {
 							this.config.getProperty("debug").equals("true") ? "false" : "true");
 				}
 
-				if (Keyboard.getEventKey() == Keyboard.KEY_F4) {
+				if (Keyboard.getEventKey() == Keyboard.KEY_F9) {
 					if (wManager.isWindowActive(ConsoleWindow.class)) {
 						continue; // Konsol penceresi zaten açıksa, yeni bir tane açma
 					}
@@ -742,10 +736,12 @@ public class DikenEngine implements Runnable {
 	 */
 	public static void log(String message) {
 		System.out.println("[DikenEngine] " + message);
+		ConsoleLog.sendLog(message);
 	}
 
 	public static void errorLog(String message) {
 		System.err.println("[DikenEngine] " + message);
+		ConsoleLog.sendLog("Error: " + message);
 	}
 
 	public int getHeight() {
@@ -898,6 +894,9 @@ public class DikenEngine implements Runnable {
 	}
 
 	private void crash(Throwable e) {
+		ConsoleLog.sendLog(Utils.getStackTraceString(e));
+		ConsoleLog.saveLogs();
+
 		String title = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().trim();
 		StringBuilder desc = new StringBuilder();
 		desc.append("DikenEngine Version: ").append(VERSION).append("\n");

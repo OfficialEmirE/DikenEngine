@@ -112,35 +112,29 @@ public class Panel extends GuiCompoment {
 		}
 	}
 
-	// Not: x ve y parametreleri, 'this' (şu anki panel) sol üst köşesine göre
-	// farenin nerede olduğunu temsil etmeli.
-
 	public void mouseClicked(int relMouseX, int relMouseY, int button, boolean isTouch2) {
-	    // 1. DEĞİŞİKLİK: Listeyi TERSTEN dönüyoruz.
-	    // Listenin sonundaki eleman ekranda en üsttedir. Önce onu kontrol etmeliyiz.
+	    boolean claimed = false; // Tıklamanın bir bileşen tarafından sahiplenilip sahiplenilmediği
+
 	    for (int i = this.compoments.size() - 1; i >= 0; i--) {
 	        GuiCompoment compoment = compoments.get(i);
-	        
-	        // Eğer bileşen görünür değilse (visible) veya aktif değilse bu turu geçebilirsin.
-	        // if (!compoment.isVisible) continue; // (Opsiyonel: Eğer böyle bir değişkenin varsa ekle)
 
-	        // Farenin bu component üzerinde olup olmadığını kontrol et.
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&
 	                            (relMouseY >= compoment.y && relMouseY <= compoment.y + compoment.height);
 
-	        boolean isTouch = isHovered && isTouch2;
-
-	        // Eğer fare bu bileşenin üzerindeyse:
-	        if (isHovered) {
+	        // Eğer tıklama daha önce bir üstteki bileşen tarafından kapılmadıysa VE fare üzerindeyse
+	        if (!claimed && isHovered) {
 	            if (active) {
-	                // Tıklama olayını çocuğa gönder
-	                compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch);
+	                compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch2);
 	            }
-
-	            // 2. DEĞİŞİKLİK: KRİTİK NOKTA!
-	            // En üstteki bileşeni bulduk ve tıkladık. Artık arkadakilere bakmaya gerek yok.
-	            // Döngüyü kırıyoruz.
-	            break; 
+	            claimed = true; // Bu tıklama artık "işlendi"
+	        } else {
+	            // BURASI KRİTİK: 
+	            // Eğer tıklama bu bileşene gelmediyse veya başka bir bileşen tarafından kapıldıysa,
+	            // bileşene "dışarıya tıklandığını" bildirmek için koordinatları negatif veya geçersiz gönderebilirsin.
+	            // Ya da TextField için özel bir onFocusLost() metodun varsa onu çağırabilirsin.
+	            
+	            // Alternatif: Koordinatları dışarıda kalacak şekilde göndererek TextField'ın focus'u kapatmasını sağla
+	            compoment.mouseClicked(-1, -1, button, false);
 	        }
 	    }
 	}

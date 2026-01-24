@@ -147,7 +147,7 @@ public class TextLine extends GuiCompoment {
 			int averageHeight = Text.stringBitmapAverageHeight(line, DikenEngine.getEngine().defaultFont);
 			int yOffset = 2 + (i * averageHeight); // Assuming each line is 12 pixels tall
 			if (yOffset < height - 2) { // Ensure we don't draw outside the bounds
-				Text.render(line, bitmap, 2, yOffset);
+				Text.render(line, bitmap, 2, yOffset, this.color);
 			}
 		}
 		return bitmap;
