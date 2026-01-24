@@ -9,16 +9,19 @@ import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import me.ramazanenescik04.diken.gui.window.Setting;
+import me.ramazanenescik04.diken.gui.window.Setting.EnumSettingType;
+
 public class Config {
 	
-	private volatile Properties config;
-	public static final Properties defaultConfig = new Properties();
+	private volatile List<Setting<?>> config;
+	public static final List<Setting<?>> defaultConfig = new ArrayList<>();
 	public static File defaultConfigFile = new File("./config.dat");
 
 	public Config() {		
-		defaultConfig.setProperty("sync", "false");
-		defaultConfig.setProperty("debug", "false");
-		defaultConfig.setProperty("lang", "tr-TR");
+		defaultConfig.add(new Setting<Boolean>("sync", false, EnumSettingType.CHECK_BOX));
+		defaultConfig.add(new Setting<Boolean>("debug", false, EnumSettingType.CHECK_BOX));
+		defaultConfig.add(new Setting<String>("lang", "tr-TR", EnumSettingType.TEXT_FIELD));
 		
 		this.config = defaultConfig;
 		this.loadConfig(defaultConfigFile);
@@ -31,7 +34,7 @@ public class Config {
 		}
 		try {
 			DataInputStream stream = new DataInputStream(new GZIPInputStream(new FileInputStream(configFile)));
-			Properties properties = new Properties();
+			List<Setting<?>> properties = new ArrayList<>();
 			int size = stream.readInt();
 			for(int i = 0; i < size; i++) {
 				String data = stream.readUTF();

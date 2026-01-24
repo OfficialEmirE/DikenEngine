@@ -8,7 +8,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public class Button extends GuiCompoment {
 	private static final long serialVersionUID = 1L;
 	public String text = "";
-	public int renderX, renderY, xa, ya, tColor = 0xffffffff, bColor = 0xffffffff;
+	public int renderX, renderY, xa, ya, tColor = 0xff000000, bColor = 0xffffffff;
 	
 	private int textOffset = 0; // Yazı kaydırma için offset
     private boolean movingRight = true; // Yazının hareket yönü
@@ -41,7 +41,7 @@ public class Button extends GuiCompoment {
 	public Bitmap render() {
 		Bitmap bitmap = new Bitmap(width, height);
 		Bitmap buttonBitmap = bitmap.clone();
-		buttonBitmap.fill(0, 0, width, height, 0xff484848);
+		buttonBitmap.fill(0, 0, width, height, 0xffd3d3d3);
 		
 		ArrayBitmap button = (ArrayBitmap) ResourceLocator.getResource("button-array");
 		

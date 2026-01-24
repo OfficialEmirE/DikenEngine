@@ -52,6 +52,7 @@ public class Panel extends GuiCompoment {
 	
 	public void remove(int index) {
 		GuiCompoment compoment = this.compoments.remove(index);
+		
 		if (compoment != null && compoment instanceof Panel panel) {
 			panel.parent = null;
 		}
@@ -64,6 +65,9 @@ public class Panel extends GuiCompoment {
 	public GuiCompoment get(Point point) {
 		for (int i = 0; i < this.compoments.size(); i++) {
 			GuiCompoment compoment = this.compoments.get(i);
+			if (compoment == null) {
+				continue;
+			}
 			if (compoment.intersects(new Hitbox(point.x - this.x, point.y - this.y, 1, 1))) {
 				return compoment;
 			}
@@ -88,7 +92,9 @@ public class Panel extends GuiCompoment {
 		}
 		for (int i = 0; i < this.compoments.size(); i++) {
 			GuiCompoment compoment = this.compoments.get(i);
-			bitmap.draw(compoment.render(), compoment.x, compoment.y);
+			if (compoment != null) {
+				bitmap.draw(compoment.render(), compoment.x, compoment.y);
+			}
 		}
 		return bitmap;
 	}
@@ -100,14 +106,16 @@ public class Panel extends GuiCompoment {
 		
 		for (int i = 0; i < this.compoments.size(); i++) {
 			GuiCompoment compoment = this.compoments.get(i);
-			compoment.tick(engine);
+			if (engine != null && compoment != null) {
+				compoment.tick(engine);
+			}
 		}
 	}
 
 	public void keyPressed(char var1, int var2) {
 		for (int i = 0; i < this.compoments.size(); i++) {
 			GuiCompoment compoment = this.compoments.get(i);
-			if (active)
+			if (active && compoment != null)
 				compoment.keyPressed(var1, var2);
 		}
 	}
@@ -122,6 +130,9 @@ public class Panel extends GuiCompoment {
 	    // Tersten dönmeye devam (En üstteki bileşen için)
 	    for (int i = tempElements.length - 1; i >= 0; i--) {
 	        GuiCompoment compoment = tempElements[i];
+	        if (compoment == null) {
+				continue;
+			}
 
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&
 	                            (relMouseY >= compoment.y && relMouseY <= compoment.y + compoment.height);
@@ -141,6 +152,9 @@ public class Panel extends GuiCompoment {
 	public void mouseGetInfo(int relMouseX, int relMouseY, boolean isTouch2) {
 		for (int i = 0; i < this.compoments.size(); i++) {
 			GuiCompoment compoment = compoments.get(i);
+			if (compoment == null) {
+				continue;
+			}
 	        // Mantık burada da aynı: InputHandler yok, bağıl matematik var.
 	        
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&

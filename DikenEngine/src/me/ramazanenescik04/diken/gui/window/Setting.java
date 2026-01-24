@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.window;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.function.Consumer;
 
 /**
@@ -9,7 +12,7 @@ import java.util.function.Consumer;
 public class Setting<T> {
 
     private String name;
-    private String description; // Ayarın ne işe yaradığını gösteren tooltip için
+    private String description = ""; // Ayarın ne işe yaradığını gösteren tooltip için
     private T value;
     private final T defaultValue;
     private final EnumSettingType type;
@@ -86,6 +89,20 @@ public class Setting<T> {
     public T getMin() { return min; }
     public T getMax() { return max; }
 
+    @java.io.Serial
+    public void writeSetting(DataOutput out) throws IOException {
+    	out.writeUTF(this.name);
+    	out.writeUTF(this.description);
+    	
+    	
+    }
+    
+    @java.io.Serial
+    public static Setting<?> readSetting(DataInput out) throws IOException {
+    	String name = out.readUTF();
+    	String desc = out.readUTF();
+    }
+    
     // --- Enum ---
     public enum EnumSettingType {
         CHECK_BOX,      // Boolean değerler için

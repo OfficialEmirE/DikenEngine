@@ -67,7 +67,7 @@ public class ConsoleLog {
 		StringBuilder builder = new StringBuilder();
 		
 		for (LogText text : logs) {
-			builder.append(text.log.toString());
+			builder.append(text.log.toString() + "\n");
 		}
 		
 		try {

@@ -345,6 +345,10 @@ public class DikenEngine implements Runnable {
 		ArrayBitmap button = new ArrayBitmap();
 		button.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/button.png"), 16, 16);
 		ResourceLocator.addResource("button-array", button);
+		
+		ArrayBitmap checkBox = new ArrayBitmap();
+		checkBox.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/check_box.png"), 16, 16);
+		ResourceLocator.addResource("checkbox-array", checkBox);
 
 		ArrayBitmap bg_tiles = new ArrayBitmap();
 		bg_tiles.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/background_tiles.png"),
