@@ -23,7 +23,7 @@ public class ConsoleLog {
 		return logsFile;
 	}
 	
-	public static void setLogDirectort(File logDirectory) {
+	public static void setLogDirectory(File logDirectory) {
 		if (logDirectory.isDirectory()) {
 			logsFile = logDirectory;
 		}
