@@ -113,27 +113,26 @@ public class Panel extends GuiCompoment {
 	}
 
 	public void mouseClicked(int relMouseX, int relMouseY, int button, boolean isTouch2) {
-	    boolean claimed = false; // Tıklamanın bir bileşen tarafından sahiplenilip sahiplenilmediği
+	    boolean claimed = false;
+	    
+	    // HATAYI ÖNLEYEN KRİTİK NOKTA: Listenin o anki elemanlarını yeni bir diziye alıyoruz.
+	    // Böylece döngü sırasında compoments listesine ekleme/çıkarma yapılsa bile döngü patlamaz.
+	    GuiCompoment[] tempElements = this.compoments.toArray(new GuiCompoment[0]);
 
-	    for (int i = this.compoments.size() - 1; i >= 0; i--) {
-	        GuiCompoment compoment = compoments.get(i);
+	    // Tersten dönmeye devam (En üstteki bileşen için)
+	    for (int i = tempElements.length - 1; i >= 0; i--) {
+	        GuiCompoment compoment = tempElements[i];
 
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&
 	                            (relMouseY >= compoment.y && relMouseY <= compoment.y + compoment.height);
 
-	        // Eğer tıklama daha önce bir üstteki bileşen tarafından kapılmadıysa VE fare üzerindeyse
 	        if (!claimed && isHovered) {
 	            if (active) {
 	                compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch2);
 	            }
-	            claimed = true; // Bu tıklama artık "işlendi"
+	            claimed = true; 
 	        } else {
-	            // BURASI KRİTİK: 
-	            // Eğer tıklama bu bileşene gelmediyse veya başka bir bileşen tarafından kapıldıysa,
-	            // bileşene "dışarıya tıklandığını" bildirmek için koordinatları negatif veya geçersiz gönderebilirsin.
-	            // Ya da TextField için özel bir onFocusLost() metodun varsa onu çağırabilirsin.
-	            
-	            // Alternatif: Koordinatları dışarıda kalacak şekilde göndererek TextField'ın focus'u kapatmasını sağla
+	            // Focus kaybetme mantığı burada çalışmaya devam eder
 	            compoment.mouseClicked(-1, -1, button, false);
 	        }
 	    }
