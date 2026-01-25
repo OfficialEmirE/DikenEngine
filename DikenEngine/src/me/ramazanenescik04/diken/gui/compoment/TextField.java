@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
+import java.util.function.Consumer;
+
 import org.lwjgl.input.Keyboard;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -13,7 +15,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
  * 
  * @author Ramazanenescik04
  */
-public class TextField extends GuiCompoment {
+public class TextField extends GuiComponent {
 	
 	public static final long serialVersionUID = 1L;	
 	public String text = "";
@@ -21,6 +23,7 @@ public class TextField extends GuiCompoment {
 	private int counter;
 	private boolean isFocused;
 	public boolean isNumberField = false;
+	private Consumer<String> textChanced;
 
 	public TextField(int x, int y, int width, int height) {
 		super(x, y, width, height);
@@ -29,6 +32,11 @@ public class TextField extends GuiCompoment {
 	public TextField(String text, int x, int y, int width, int height) {
 		super(x, y, width, height);
 		this.text = text;
+	}
+	
+	public TextField setTextChanced(Consumer<String> consumer) {
+		this.textChanced = consumer;
+		return this;
 	}
 
 	public Bitmap render() {
@@ -54,6 +62,9 @@ public class TextField extends GuiCompoment {
 	
 	public void setText(String text) {
 		this.text = text;
+		if (textChanced != null) {
+			textChanced.accept(text);
+		}
 	}
 	
 	public void setFocused(boolean focused) {
@@ -81,10 +92,19 @@ public class TextField extends GuiCompoment {
 				isFocused = false;
 			} else if (var2 == Keyboard.KEY_DELETE) {
 				text = "";
+				if (textChanced != null) {
+					textChanced.accept(text);
+				}
 			} else if (isNumberField && Character.isDigit(var1)) {
 				text += var1;
+				if (textChanced != null) {
+					textChanced.accept(text);
+				}
 			} else if (!isNumberField && defaultFont.charTypes.indexOf(var1) >= 0) {
 				text += var1;
+				if (textChanced != null) {
+					textChanced.accept(text);
+				}
 			}
 		}
 	}
@@ -103,5 +123,4 @@ public class TextField extends GuiCompoment {
 		this.isNumberField = true;
 		return this;
 	}
-
 }

@@ -6,7 +6,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public class Text extends GuiCompoment {
+public class Text extends GuiComponent {
 	/**
 	 * 
 	 */
@@ -14,41 +14,51 @@ public class Text extends GuiCompoment {
 	public String text;
 	public int color;
 	public UniFont font;
+	
+	public int offsetX, offsetY;
 
 	public Text(String text, int x, int y) {
-		this(text, x, y, 0xFFFFFFFF, DikenEngine.getEngine().defaultFont);
+		this(text, x, y, 0xFFFFFFFF, 0, 0, DikenEngine.getEngine().defaultFont);
 	}
 	
 	public Text(String text, int x, int y, UniFont font) {
-		this(text, x, y, 0xFFFFFFFF, font);
+		this(text, x, y, 0, 0, 0xFFFFFFFF, font);
 	}
 	
-	public Text(String text, int x, int y, int color, UniFont font) {
-		super(x, y, Text.stringBitmapAverageWidth(text, font), Text.stringBitmapAverageHeight(text, font));
+	public Text(String text, int x, int y, int offsetX, int offsetY, int color, UniFont font) {
+		super(x, y, Text.stringBitmapAverageWidth(text, font) + offsetX, Text.stringBitmapAverageHeight(text, font) + offsetY);
 		this.text = text;
 		this.color = color;
 		this.font = font;
+		this.offsetX = offsetX;
+		this.offsetY = offsetY;
 	}
 	
 	public Text(String text, int x, int y, int color) {
-		this(text, x, y, color, DikenEngine.getEngine().defaultFont);
+		this(text, x, y, 0, 0, color, DikenEngine.getEngine().defaultFont);
 	}
 	
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
-		Text.render(text, bitmap, 0, 0, color, font);
+		Text.render(text, bitmap, offsetX, offsetY, color, font);
 		return bitmap;
 	}
 	
 	@Override
 	public void tick(DikenEngine engine) {
-		if((this.width != Text.stringBitmapWidth(text, font))) {
-			this.width = Text.stringBitmapWidth(text, font);
+		if((this.width != Text.stringBitmapWidth(text, font) + offsetX)) {
+			this.width = Text.stringBitmapWidth(text, font) + offsetX;
 		}
 		
-		if((this.height != Text.stringBitmapAverageHeight(text, font))) {
-			this.height = Text.stringBitmapAverageHeight(text, font);
+		if((this.height != Text.stringBitmapAverageHeight(text, font) + offsetY)) {
+			this.height = Text.stringBitmapAverageHeight(text, font) + offsetY;
 		}
+	}
+	
+	public Text setOffsetLocation(int x, int y) {
+		this.offsetX = x;
+		this.offsetY = y;
+		return this;
 	}
 
 	public static void render(String text, Bitmap bitmap, int x, int y, int color, UniFont font) {

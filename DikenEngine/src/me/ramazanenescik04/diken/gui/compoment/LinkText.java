@@ -14,12 +14,12 @@ public class LinkText extends GuiLink {
 	
 	public LinkText(String _text, int x, int y) {
 		super(x, y, 2, 2);
-		this.text = new Text(_text, x, y, 0xFFFFFFFF, DikenEngine.getEngine().defaultFont);
+		this.text = new Text(_text, x, y, 0, 0, 0xFFFFFFFF, DikenEngine.getEngine().defaultFont);
 	}
 	
 	public LinkText(String text, int x, int y, UniFont font) {
 		super(x, y, 2, 2);
-		this.text = new Text(text, x, y, 0xFFFFFFFF, font);
+		this.text = new Text(text, x, y, 0, 0, 0xFFFFFFFF, font);
 	}
 	
 	public LinkText setURI(URI uri) {

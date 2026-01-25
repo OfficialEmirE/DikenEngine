@@ -8,35 +8,37 @@ import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.gui.screen.IBackground;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public class Panel extends GuiCompoment {
+public class Panel extends GuiComponent {
 	private static final long serialVersionUID = 1L;
-	private List<GuiCompoment> compoments;
-	protected Panel parent = null;
+	private List<GuiComponent> compoments;
+	
 	protected IBackground background;
 	
 	public boolean drawX = false;
 
 	public Panel(int x, int y, int width, int height) {
 		super(x, y, width, height);
-		compoments = new java.util.ArrayList<GuiCompoment>();
+		compoments = new java.util.ArrayList<GuiComponent>();
 	}
 	
 	public Panel() {
 		this(0, 0, 100, 100);
 	}
 
-	public void add(GuiCompoment compoment) {
+	public void add(GuiComponent compoment) {
+		if (compoment == null) return;
+		
+		compoment.parent = this;
 		if (compoment instanceof Panel panel) {
-			panel.parent = this;
 			panel.init(DikenEngine.getEngine());
 		}
 		this.compoments.add(compoment);
 	}
 	
-	public void remove(GuiCompoment compoment) {
-		if (compoment instanceof Panel panel) {
-			panel.parent = null;
-		}
+	public void remove(GuiComponent compoment) {
+		if (compoment == null) return;
+		
+		compoment.parent = null;
 		this.compoments.remove(compoment);
 	}
 	
@@ -51,20 +53,20 @@ public class Panel extends GuiCompoment {
 	}
 	
 	public void remove(int index) {
-		GuiCompoment compoment = this.compoments.remove(index);
+		GuiComponent compoment = this.compoments.remove(index);
 		
-		if (compoment != null && compoment instanceof Panel panel) {
-			panel.parent = null;
+		if (compoment != null) {
+			parent = null;
 		}
 	}
 	
-	public GuiCompoment get(int index) {
+	public GuiComponent get(int index) {
 		return this.compoments.get(index);
 	}
 	
-	public GuiCompoment get(Point point) {
+	public GuiComponent get(Point point) {
 		for (int i = 0; i < this.compoments.size(); i++) {
-			GuiCompoment compoment = this.compoments.get(i);
+			GuiComponent compoment = this.compoments.get(i);
 			if (compoment == null) {
 				continue;
 			}
@@ -91,8 +93,8 @@ public class Panel extends GuiCompoment {
 			this.background.render(bitmap);
 		}
 		for (int i = 0; i < this.compoments.size(); i++) {
-			GuiCompoment compoment = this.compoments.get(i);
-			if (compoment != null) {
+			GuiComponent compoment = this.compoments.get(i);
+			if (compoment != null && compoment.visible) {
 				bitmap.draw(compoment.render(), compoment.x, compoment.y);
 			}
 		}
@@ -105,7 +107,7 @@ public class Panel extends GuiCompoment {
 		}
 		
 		for (int i = 0; i < this.compoments.size(); i++) {
-			GuiCompoment compoment = this.compoments.get(i);
+			GuiComponent compoment = this.compoments.get(i);
 			if (engine != null && compoment != null) {
 				compoment.tick(engine);
 			}
@@ -114,7 +116,7 @@ public class Panel extends GuiCompoment {
 
 	public void keyPressed(char var1, int var2) {
 		for (int i = 0; i < this.compoments.size(); i++) {
-			GuiCompoment compoment = this.compoments.get(i);
+			GuiComponent compoment = this.compoments.get(i);
 			if (active && compoment != null)
 				compoment.keyPressed(var1, var2);
 		}
@@ -125,11 +127,11 @@ public class Panel extends GuiCompoment {
 	    
 	    // HATAYI ÖNLEYEN KRİTİK NOKTA: Listenin o anki elemanlarını yeni bir diziye alıyoruz.
 	    // Böylece döngü sırasında compoments listesine ekleme/çıkarma yapılsa bile döngü patlamaz.
-	    GuiCompoment[] tempElements = this.compoments.toArray(new GuiCompoment[0]);
+	    GuiComponent[] tempElements = this.compoments.toArray(new GuiComponent[0]);
 
 	    // Tersten dönmeye devam (En üstteki bileşen için)
 	    for (int i = tempElements.length - 1; i >= 0; i--) {
-	        GuiCompoment compoment = tempElements[i];
+	        GuiComponent compoment = tempElements[i];
 	        if (compoment == null) {
 				continue;
 			}
@@ -151,7 +153,7 @@ public class Panel extends GuiCompoment {
 
 	public void mouseGetInfo(int relMouseX, int relMouseY, boolean isTouch2) {
 		for (int i = 0; i < this.compoments.size(); i++) {
-			GuiCompoment compoment = compoments.get(i);
+			GuiComponent compoment = compoments.get(i);
 			if (compoment == null) {
 				continue;
 			}
@@ -184,13 +186,13 @@ public class Panel extends GuiCompoment {
 	 * 
 	 * @return List of GuiCompoment objects.
 	 */
-	public List<GuiCompoment> getCompoments() {
+	public List<GuiComponent> getCompoments() {
 		return compoments;
 	}
 
-	public boolean isVaild(GuiCompoment compoment) {
+	public boolean isVaild(GuiComponent compoment) {
 		for (int i = 0; i < compoments.size(); i++) {
-			GuiCompoment custom = compoments.get(i);
+			GuiComponent custom = compoments.get(i);
 			
 			if (custom == compoment) {
 				return true;

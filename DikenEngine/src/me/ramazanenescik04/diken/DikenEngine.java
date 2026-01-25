@@ -24,6 +24,9 @@ import org.lwjgl.openal.AL;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL21;
 
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.gui.UniFont;
@@ -50,8 +53,8 @@ import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
  * @author Ramazanenescik04
  */
 public class DikenEngine implements Runnable {	
-	public static final String VERSION = "1.1.2";
-	public static final int protocolVersion = 15;
+	public static final String VERSION = "1.2.0";
+	public static final int protocolVersion = 16;
 
 	public Canvas canvas;
 	private Canvas oldCanvas;
@@ -68,7 +71,6 @@ public class DikenEngine implements Runnable {
 	public boolean running = true;
 
 	private int screenTextureID;
-	private ByteBuffer screenBuffer;
 	public Bitmap screenBitmap;
 
 	public UniFont defaultFont;
@@ -380,8 +382,10 @@ public class DikenEngine implements Runnable {
 		lang.addLangValue("en-US", "dmainmenu.reportbug=Report Bug");
 	}
 
-	/** Bu Kodu Şöyle Başlat: new Thread(dikenengine).start(); */
 	public void run() {
+		// PBO ID değişkeni
+		int pboID = 0;
+
 		try {
 			DikenEngine.log("DikenEngine " + VERSION + " Starting...");
 
@@ -419,7 +423,7 @@ public class DikenEngine implements Runnable {
 			Display.setResizable(isResizable);
 			Display.setTitle(title);
 			Display.setIcon(this.displayIcons);
-			Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
+			Display.setVSyncEnabled(this.config.getOrDefaultSetting("sync", Boolean.class, false).getValue());
 			
 			try {
 				Display.create();
@@ -442,7 +446,14 @@ public class DikenEngine implements Runnable {
 			}
 
 			screenBitmap = new Bitmap(getWidth(), getHeight());
-			screenBuffer = BufferUtils.createByteBuffer(screenBitmap.pixels.capacity() * 4);
+
+			// --- PBO OLUŞTURMA (INIT) ---
+			pboID = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
+			// Buffer boyutunu ayarla (Width * Height * 4 byte)
+			GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, getWidth() * getHeight() * 4, GL15.GL_STREAM_DRAW);
+			GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
+			// ---------------------------
 
 			// Dokulamaları etkinleştir
 			GL11.glEnable(GL11.GL_TEXTURE_2D);
@@ -455,16 +466,16 @@ public class DikenEngine implements Runnable {
 
 			// Doku oluştur
 			screenTextureID = GL11.glGenTextures();
-			// run() metodunda doku oluşturma kısmındaki parametreleri şu şekilde
-			// değiştirin:
+			
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-			// Doku parametrelerini NEAREST olarak ayarla
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
-			// Piksel paketleme hizalaması
-			GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+			// İlk boş doku verisini gönder (Null pointer ile)
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, getWidth(), getHeight(), 0,
+					GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
 
+			GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
 			GL11.glViewport(0, 0, width, height);
 
 			long fixedUpdateTime = 1000000000L / 60; // Fixed update rate at 60Hz
@@ -489,28 +500,39 @@ public class DikenEngine implements Runnable {
 
 				render(screenBitmap);
 
-				// Buffer'ı hazırla
-				screenBuffer.clear();
-				screenBitmap.pixels.rewind();
-				for (int i = 0; i < screenBitmap.pixels.capacity(); i++) {
-					// Değerleri 0-255 aralığına dönüştür
-					int color = screenBitmap.pixels.get(i);
-					byte bgR = (byte) ((color >> 16) & 0xff);
-					byte bgG = (byte) ((color >> 8) & 0xff);
-					byte bgB = (byte) (color & 0xff);
-					byte bgA = (byte) ((color >> 24) & 0xff);
+				// --- PBO UPDATE BAŞLANGICI ---
+				
+				// 1. PBO'yu bağla
+				GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
+				
+				// "Orphaning" (Eski buffer'ı çöpe atıp yeni istemek - Senkronizasyonu engeller, hızı artırır)
+				GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, getWidth() * getHeight() * 4, GL15.GL_STREAM_DRAW);
 
-					// Pikseli buffer'a ekle
-					screenBuffer.put(bgR).put(bgG).put(bgB).put(bgA);
+				// 2. GPU Belleğini Map'le (Yazılabilir olarak aç)
+				ByteBuffer mappedBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
+				
+				if (mappedBuffer != null) {
+					screenBitmap.pixels.rewind();
+					// IntBuffer'ı doğrudan ByteBuffer'a döküyoruz. (For döngüsü yok! Çok hızlı.)
+					// Not: Java Int'leri Little Endian sistemde BGRA olarak görünür, bu yüzden aşağıda formatı değiştireceğiz.
+					mappedBuffer.asIntBuffer().put(screenBitmap.pixels);
+					
+					// 3. İşimiz bitti, kapıyı kapat (Unmap)
+					GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
 				}
-
-				// Buffer'ı okuma için hazırla
-				screenBuffer.flip();
-
-				// Dokuyu güncelle
+				
+				// 4. Dokuyu PBO'dan güncelle
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-				GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, getWidth(), getHeight(), 0,
-						GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, screenBuffer);
+				
+				// Son parametre '0' olmalı, bu veriyi RAM yerine bağlı olan PBO'dan çekmesi gerektiğini söyler.
+				// Format: GL_BGRA ve Type: GL_UNSIGNED_INT_8_8_8_8_REV kullanıyoruz ki renkler doğru çıksın.
+				GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, getWidth(), getHeight(),
+						GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, 0);
+
+				// 5. PBO bağlantısını kes
+				GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
+
+				// --- PBO UPDATE BİTİŞİ ---
 
 				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
 
@@ -550,9 +572,17 @@ public class DikenEngine implements Runnable {
 					GL11.glMatrixMode(GL11.GL_MODELVIEW);
 
 					this.refreshScreenBuffer();
+					
+					// Resize durumunda dokuyu ve PBO boyutunu güncellememiz gerekir
+					GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
+					GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, getWidth(), getHeight(), 0,
+							GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
+					
+					// PBO boyutunu güncelle
+					GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
+					GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, getWidth() * getHeight() * 4, GL15.GL_STREAM_DRAW);
+					GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
 				}
-				
-				Thread.sleep(1);
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -571,6 +601,11 @@ public class DikenEngine implements Runnable {
 				SoundResource.destroySounds();
 				AL.destroy();
 
+				// PBO Temizliği
+				if (pboID != 0) {
+					GL15.glDeleteBuffers(pboID);
+				}
+
 				try {
 					GL11.glDisable(GL11.GL_TEXTURE_2D);
 					GL11.glDeleteTextures(screenTextureID);
@@ -585,7 +620,6 @@ public class DikenEngine implements Runnable {
 				        Display.destroy();
 				    }
 				} catch (IllegalStateException e) {
-				    // Eğer shutdown halindeyse hatayı görmezden gel, zaten kapanıyoruz.
 				    if (!e.getMessage().equals("Shutdown in progress")) {
 				        throw e;
 				    }
@@ -604,7 +638,6 @@ public class DikenEngine implements Runnable {
 			System.gc();
 		}	
 	}
-
 	/**
 	 * Bu kod her 1 saniyede 60 kez çalışır.
 	 * 
@@ -640,7 +673,7 @@ public class DikenEngine implements Runnable {
 			this.oldCanvas = this.canvas;
 			
 			Display.setResizable(isResizable);
-			Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
+			Display.setVSyncEnabled(this.config.getOrDefaultSetting("sync", Boolean.class, false).getValue());
 			Display.setParent(canvas);
 			Display.update();
 		}
@@ -666,8 +699,7 @@ public class DikenEngine implements Runnable {
 				}
 
 				if (Keyboard.getEventKey() == Keyboard.KEY_F3) {
-					this.config.setProperty("debug",
-							this.config.getProperty("debug").equals("true") ? "false" : "true");
+					this.config.setSetting("debug", !this.config.getSetting("debug", Boolean.class).getValue());
 				}
 
 				if (Keyboard.getEventKey() == Keyboard.KEY_F9) {
@@ -714,7 +746,7 @@ public class DikenEngine implements Runnable {
 
 		wManager.render(bitmap);
 
-		if (this.config.getProperty("debug").equals("true")) {
+		if (this.config.getSetting("debug", Boolean.class).getValue()) {
 			bitmap.blendFill(0, 0, 120, 52, 0x2f000000);
 			bitmap.drawText("FPS: " + currentFPS, 2, 2, false);
 			bitmap.drawText("Screen: " + (currentScreen != null ? currentScreen.getClass().getSimpleName() : "null"), 2,
@@ -835,7 +867,7 @@ public class DikenEngine implements Runnable {
 
 				
 				Display.setFullscreen(this.fullscreen);
-				Display.setVSyncEnabled(this.config.getOrDefault("sync", "false").equals("true"));
+				Display.setVSyncEnabled(this.config.getOrDefaultSetting("sync", Boolean.class, false).getValue());
 				Display.update();
 			} catch (Exception var2) {
 				var2.printStackTrace();
@@ -862,7 +894,6 @@ public class DikenEngine implements Runnable {
 			height = 1;
 		}
 		screenBitmap = new Bitmap(width, height);
-		screenBuffer = BufferUtils.createByteBuffer(screenBitmap.pixels.capacity() * 4);
 
 		System.gc();
 	}

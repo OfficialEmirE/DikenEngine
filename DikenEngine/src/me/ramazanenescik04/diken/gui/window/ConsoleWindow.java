@@ -2,10 +2,7 @@ package me.ramazanenescik04.diken.gui.window;
 
 import org.lwjgl.input.Keyboard;
 
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
-import me.ramazanenescik04.diken.gui.compoment.TextField;
-import me.ramazanenescik04.diken.gui.compoment.TextLine;
+import me.ramazanenescik04.diken.gui.compoment.*;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
 import me.ramazanenescik04.diken.tools.ListAdapter;

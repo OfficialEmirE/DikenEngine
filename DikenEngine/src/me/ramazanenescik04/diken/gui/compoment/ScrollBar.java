@@ -9,7 +9,7 @@ import me.ramazanenescik04.diken.InputHandler;
 import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public class ScrollBar extends GuiCompoment {
+public class ScrollBar extends GuiComponent {
 
 	private static final long serialVersionUID = 9174661067316376835L;
 
@@ -43,22 +43,28 @@ public class ScrollBar extends GuiCompoment {
 			upButton = new Button("/\\", 1, 1, width - 2, 20).setRunnable(() -> {
 				setScrollValue(scrollValue - 0.05f);
 			});
+			upButton.parent = this;
 			
 			downButton = new Button("\\/", 1, height - 21, width - 2, 20).setRunnable(() -> {
 				setScrollValue(scrollValue + 0.05f);
 			});
+			downButton.parent = this;
 			
-			sliderButton = new Button("", 1, 21, width - 2, handleHeight);
+			sliderButton = new Button("=", 1, 21, width - 2, handleHeight);
+			sliderButton.parent = this;
 		} else {
 			upButton = new Button("<", 1, 1, 20, height - 2).setRunnable(() -> {
 				setScrollValue(scrollValue - 0.05f);
 			});
+			upButton.parent = this;
 			
 			downButton = new Button(">", width - 21, 1, 20, height - 2).setRunnable(() -> {
 				setScrollValue(scrollValue + 0.05f);
 			});
+			downButton.parent = this;
 			
 			sliderButton = new Button("=", 21, 1, handleHeight, height - 2);
+			sliderButton.parent = this;
 		}
 		buttons = new Button[] { upButton, downButton, sliderButton };
 	}
@@ -89,16 +95,16 @@ public class ScrollBar extends GuiCompoment {
     
     public void updateHandleSize(int panelHeight, int contentHeight) {
         if (contentHeight <= panelHeight) {
-            this.handleHeight = this.height; // Her şey görünüyor, handle tam boy
-            //this.visible = false; // İstersen scrollbar'ı gizleyebilirsin
+            this.handleHeight = this.height - 40; // Butonlar hariç tam boy (20+20=40 varsayımıyla)
+            this.scrollValue = 0; // İçerik sığıyorsa en başa çek
         } else {
+            // Hareket alanı butonlar çıktığında kalan mesafedir
+            int trackHeight = this.height - 40; 
             float ratio = (float) panelHeight / contentHeight;
-            this.handleHeight = (int) (this.height * ratio);
             
-            // Minimum boy sınırı (Çok küçülüp kaybolmasın)
-            if (this.handleHeight < 20) this.handleHeight = 20;
+            this.handleHeight = (int) (trackHeight * ratio);
             
-            //this.visible = true;
+            if (this.handleHeight < 5) this.handleHeight = 5;
         }
     }
 
@@ -177,8 +183,8 @@ public class ScrollBar extends GuiCompoment {
 			
 			// Sürükleme işlemi
 			boolean mouseDown = Mouse.isButtonDown(0);
-			int mouseX = InputHandler.getMousePosition().x - this.x;
-			int mouseY = InputHandler.getMousePosition().y - this.y;
+			int mouseX = InputHandler.getMousePosition().x - this.getGlobalX();
+			int mouseY = InputHandler.getMousePosition().y - this.getGlobalY();
 			
 			if (mouseDown && !prevMouseDown) {
 				// Mouse tıklandığında
@@ -219,8 +225,8 @@ public class ScrollBar extends GuiCompoment {
 			
 			// Sürükleme işlemi
 			boolean mouseDown = Mouse.isButtonDown(0);
-			int mouseX = InputHandler.getMousePosition().x - this.x;
-			int mouseY = InputHandler.getMousePosition().y - this.y;
+			int mouseX = InputHandler.getMousePosition().x - this.getGlobalX();
+			int mouseY = InputHandler.getMousePosition().y - this.getGlobalY();
 			
 			if (mouseDown && !prevMouseDown) {
 				// Mouse tıklandığında
@@ -257,36 +263,36 @@ public class ScrollBar extends GuiCompoment {
 	}
 
 	public void mouseClicked(int relMouseX, int relMouseY, int button, boolean isTouch2) {
-	    for (GuiCompoment compoment : this.buttons) {
-	        
-	        // --- DÜZELTME BAŞLANGICI ---
-	        
-	        // Farenin bu component (çocuk) üzerinde olup olmadığını kontrol et.
-	        // relMouseX/Y zaten 'this' paneline göre olduğu için, sadece çocuğun sınırlarına bakıyoruz.
-	        // InputHandler kullanmıyoruz, yukarıdan gelen koordinata güveniyoruz.
-	        
+	    boolean claimed = false;
+	    
+	    // HATAYI ÖNLEYEN KRİTİK NOKTA: Listenin o anki elemanlarını yeni bir diziye alıyoruz.
+	    // Böylece döngü sırasında compoments listesine ekleme/çıkarma yapılsa bile döngü patlamaz.
+	    GuiComponent[] tempElements = this.buttons;
+
+	    // Tersten dönmeye devam (En üstteki bileşen için)
+	    for (int i = tempElements.length - 1; i >= 0; i--) {
+	        GuiComponent compoment = tempElements[i];
+	        if (compoment == null) {
+				continue;
+			}
+
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&
 	                            (relMouseY >= compoment.y && relMouseY <= compoment.y + compoment.height);
 
-	        // Eğer senin 'intersects' metodun özel bir hitbox şekli (daire vs.) kullanıyorsa:
-	        // Hitbox childHitbox = new Hitbox(compoment.x, compoment.y, compoment.width, compoment.height);
-	        // Hitbox mousePoint = new Hitbox(relMouseX, relMouseY, 1, 1);
-	        // boolean isHovered = childHitbox.intersects(mousePoint);
-
-	        boolean isTouch = isHovered && isTouch2;
-
-	        if (active) {
-	            // Çocuğa koordinat gönderirken, ÇOCUĞUN konumunu çıkarıyoruz.
-	            // Böylece çocuk da kendi içindeki (0,0) noktasına göre fareyi alıyor.
-	            compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch);
+	        if (!claimed && isHovered) {
+	            if (active) {
+	                compoment.mouseClicked(relMouseX - compoment.x, relMouseY - compoment.y, button, isTouch2);
+	            }
+	            claimed = true; 
+	        } else {
+	            // Focus kaybetme mantığı burada çalışmaya devam eder
+	            compoment.mouseClicked(-1, -1, button, false);
 	        }
-	        
-	        // --- DÜZELTME BİTİŞİ ---
 	    }
 	}
 
 	public void mouseGetInfo(int relMouseX, int relMouseY, boolean isTouch2) {
-	    for (GuiCompoment compoment : this.buttons) {
+	    for (GuiComponent compoment : this.buttons) {
 	        // Mantık burada da aynı: InputHandler yok, bağıl matematik var.
 	        
 	        boolean isHovered = (relMouseX >= compoment.x && relMouseX <= compoment.x + compoment.width) &&

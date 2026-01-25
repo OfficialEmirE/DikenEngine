@@ -6,7 +6,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public class TextLine extends GuiCompoment {
+public class TextLine extends GuiComponent {
 	
 	private static final long serialVersionUID = 1L;
 	private boolean isFocused = false;

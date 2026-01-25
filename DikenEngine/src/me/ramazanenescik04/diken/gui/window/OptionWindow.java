@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.GuiCompoment;
+import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
 import me.ramazanenescik04.diken.gui.compoment.Text;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
@@ -167,7 +167,7 @@ public class OptionWindow extends Window {
 	    int margin = 6;
 
 	    for (int i = 0; i < contentPane.count(); i++) {
-	        GuiCompoment comp = contentPane.get(i);
+	        GuiComponent comp = contentPane.get(i);
 	        totalComponentsWidth += comp.width + (i > 0 ? padding : 0);
 	        maxComponentHeight = Math.max(maxComponentHeight, comp.height);
 	    }
@@ -196,7 +196,7 @@ public class OptionWindow extends Window {
 	    // 5. Bileşenleri (Butonları) yatayda ortalayarak veya hizalı diz
 	    int currentX = margin;
 	    for (int i = 0; i < contentPane.count(); i++) {
-	        GuiCompoment comp = contentPane.get(i);
+	        GuiComponent comp = contentPane.get(i);
 	        comp.x = currentX;
 	        // Y pozisyonunu güncellenmiş panel boyuna göre ayarla
 	        comp.y = (this.getContentPane().getHeight() - comp.height - margin);

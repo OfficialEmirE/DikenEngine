@@ -1,30 +1,30 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
+import java.util.function.Consumer;
+
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
-public class Button extends GuiCompoment {
+public class Button extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	public String text = "";
-	public int renderX, renderY, xa, ya, tColor = 0xff000000, bColor = 0xffffffff;
+	public int tColor = 0xff000000, bColor = 0xffffffff;
 	
 	private int textOffset = 0; // Yazı kaydırma için offset
     private boolean movingRight = true; // Yazının hareket yönü
     private final double SCROLL_SPEED = 0.49888d; // Kaydırma hızı
     private double textOffsetLong = 0;
     
-    private Runnable runnable;
+    private Consumer<Button> runnable;
+    private Bitmap icon;
     
     private boolean isTouching = false;
+    private boolean isIconLeft = true;
 	
 	public Button(String text, int x, int y, int width, int height) {
 		super(x, y, width, height);
-		this.xa = x;
-		this.ya = y;
-		this.renderX = xa;
-		this.renderY = ya;
 		this.text = text;	
 	}
 	
@@ -36,6 +36,24 @@ public class Button extends GuiCompoment {
 	public Button setButtonColor(int color) {
 		this.bColor = color;
 		return this;
+	}
+	
+	public Button setButtonIcon(Bitmap icon) {
+		this.icon = icon;
+		return this;
+	}
+	
+	public Bitmap getButtonIcon() {
+		return this.icon;
+	}
+	
+	public Button setButtonIconLeft(boolean iconLeft) {
+		this.isIconLeft = iconLeft;
+		return this;
+	}
+	
+	public boolean isButtonIconLeft() {
+		return this.isIconLeft;
 	}
 	
 	public Bitmap render() {
@@ -63,17 +81,50 @@ public class Button extends GuiCompoment {
 		bitmap.blendDraw(buttonBitmap, 0, 0, bColor);
 		
 		// Yazı genişliğini kontrol et
-        int textWidth = Text.stringBitmapWidth(text, DikenEngine.getEngine().defaultFont);
+        int textWidth = Text.stringBitmapWidth(text, DikenEngine.getEngine().defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);
         
         if (textWidth > width) {     
-            Text.render(text, bitmap, -textOffset + 10, ((height / 2) - 4), tColor);
+        	int spacing = 6;
+        	int startPosition = -textOffset + 10;
+
+        	if (this.icon != null) {
+        	    if (isIconLeft) {
+        	        // İKON SOLDA: Önce ikonu çiz, sonra startPosition'ı kaydır
+        	        bitmap.draw(this.icon, startPosition, (height / 2) - (this.icon.h / 2));
+        	        Text.render(text, bitmap, startPosition + this.icon.w + spacing, (height / 2) - 4, tColor);
+        	    } else {
+        	        // İKON SAĞDA: Önce metni çiz, yanına ikonu ekle
+        	        Text.render(text, bitmap, startPosition, (height / 2) - 4, tColor);
+        	        bitmap.draw(this.icon, startPosition + textWidth + spacing, (height / 2) - (this.icon.h / 2));
+        	    }
+        	} else {
+        	    // İkon yoksa sadece metni çiz
+        	    Text.render(text, bitmap, startPosition, (height / 2) - 4, tColor);
+        	}
         } else {
-            // Normal merkezi render
-            Text.renderCenter(text, bitmap, width / 2, ((height / 2) - 4), tColor);
+        	int spacing = 6;
+
+        	// Grubun başlangıç noktası (Tam merkezi hesaplama)
+        	int startX = (width - textWidth) / 2;
+
+        	if (this.icon != null) {
+        	    if (isIconLeft) {
+        	        // [İKON] [METİN]
+        	        bitmap.draw(this.icon, startX, (height / 2) - (this.icon.h / 2));
+        	        Text.render(text, bitmap, startX + this.icon.w + spacing, (height / 2) - 4, tColor);
+        	    } else {
+        	        // [METİN] [İKON]
+        	        Text.render(text, bitmap, startX, (height / 2) - 4, tColor);
+        	        bitmap.draw(this.icon, startX + (textWidth - this.icon.w - spacing), (height / 2) - (this.icon.h / 2));
+        	    }
+        	} else {
+        	    // Sadece metni ortala
+        	    Text.render(text, bitmap, startX, (height / 2) - 4, tColor);
+        	}
         }
         
         if (isTouching) {
-        	bitmap.box(0, 0, width - 1, height - 1, 0xffffffff);
+        	bitmap.box(0, 0, width - 1, height - 1, 0xffFFDF00);
         }
         
         if (!active) {
@@ -84,7 +135,7 @@ public class Button extends GuiCompoment {
 	}
 
 	public void tick(DikenEngine engine) {
-		int textWidth = Text.stringBitmapWidth(text, engine.defaultFont);
+		int textWidth = Text.stringBitmapWidth(text, engine.defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);;
 		if (textWidth > width) {
 			// Yazı genişlikten büyükse kaydırma işlemi yap
             if (movingRight) {
@@ -105,19 +156,22 @@ public class Button extends GuiCompoment {
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {
 		if (isTouch || isTouching) {
 			if (button == 0 && runnable != null && this.active) {
-				runnable.run();
+				runnable.accept(this);
 			}
 		}
 	}
 	
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
-		if (active)
-			this.isTouching = isTouch;
-		else
-			this.isTouching = false;
+		if (active) this.isTouching = isTouch;
+		else this.isTouching = false;
 	}
 
 	public Button setRunnable(Runnable runnable) {
+		this.runnable = (e) -> {runnable.run();};
+		return this;
+	}
+	
+	public Button setRunnable(Consumer<Button> runnable) {
 		this.runnable = runnable;
 		return this;
 	}

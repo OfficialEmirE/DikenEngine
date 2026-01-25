@@ -50,11 +50,10 @@ public class IOResource {
 
 	    for(int x = 0; x < xSlices; ++x) {
 	    	for(int y = 0; y < ySlices; ++y) {
-	        	result[x][y] = new Bitmap(sw, sh);
-	        	int[] pixels = new int[sw * sh];
+	    		int[] pixels = new int[sw * sh];
 	        	img.getRGB(x * sw, y * sh, sw, sh, pixels, 0, sw);
-	        	result[x][y].pixels.clear();
-	        	result[x][y].pixels.rewind().put(pixels);
+	    		
+	        	result[x][y] = new Bitmap(sw, sh, pixels);
 	        }
 	    }
 

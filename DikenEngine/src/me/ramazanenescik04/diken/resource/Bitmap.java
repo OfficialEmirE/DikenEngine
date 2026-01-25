@@ -58,6 +58,18 @@ public class Bitmap implements IResource, Cleanable {
 	    this.pixels.rewind();
 	}
 	
+	public Bitmap(int w, int h, int[] copy) {
+		this.w = (w <= 0) ? 1 : w;
+	    this.h = (h <= 0) ? 1 : h;
+	    this.pixels = ByteBuffer
+	        .allocateDirect(copy.length * 4)
+	        .order(ByteOrder.nativeOrder())
+	        .asIntBuffer();
+	    this.pixels.put(copy);
+	    this.pixels.rewind();
+	}
+	
+	
 	public void rewind() {
 		this.pixels.rewind();
 	}

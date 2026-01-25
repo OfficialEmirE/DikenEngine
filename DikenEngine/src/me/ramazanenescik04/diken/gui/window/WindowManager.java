@@ -8,12 +8,14 @@ import org.lwjgl.input.Mouse;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.InputHandler;
+import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class WindowManager {
-    private ArrayList<Window> windows;
+    // List interface'i kullanmak daha esnektir
+    private List<Window> windows;
     public Window activeWindow;
 
     private Point dragStartPoint;
@@ -21,251 +23,283 @@ public class WindowManager {
     private boolean scaleMode = false;
     private int boyutlandirmaBolgesi = 0; // 0:hiçbiri, 1:sağ, 2:alt, 3:sağ-alt köşe
     
-    // Window position offset for dragging
+    // Pencere sürükleme offset'i
     private int dragOffsetX;
     private int dragOffsetY;
 
+    // Önceki mouse durumunu saklamak için değişkenler
+    private boolean prevMouseDown = false;
+	private Point lastMousePos = new Point(0, 0);
+    
+    // Sabitler
+    private final int MIN_WINDOW_WIDTH = 100;
+    private final int MIN_WINDOW_HEIGHT = 80;
+    private final int RESIZE_BORDER_SIZE = 8;
+    
+    private int startWindowWidth;  // Tıklama anındaki genişlik
+    private int startWindowHeight; // Tıklama anındaki yükseklik
+
     public WindowManager() {
-        windows = new ArrayList<Window>();
+        windows = new ArrayList<>();
     }
 
-    public void addWindow(Window window) {   	
-    	window.open();
-    	window.moved();
-    	window.resized();
-        windows.add(window);
-        activeWindow = window;
+    public void addWindow(Window window) {        
+        windows.add(window); // Listeye ekle
+        activeWindow = window; // Yeni açılan pencereyi aktif yap
+        
+        window.open();
+        window.moved();
+        window.resized();
     }
 
     public void render(Bitmap screen) {
+        // Listeyi güvenli bir şekilde dolaş
         for (Window window : windows) {
             if(window.active) {
+                // Gölge efekti vs.
                 screen.blendFill(window.x + 5, window.y + 5, window.x + window.width + 5, window.y + window.height + 5, 0x64000000);
             }
-            
             screen.draw(window.render(), window.x, window.y);
         }
     }
 
-    // Önceki mouse durumunu saklamak için değişkenler
-    private boolean prevMouseDown = false;
-    @SuppressWarnings("unused")
-	private Point lastMousePos = new Point(0, 0);
-    
-    // Pencere boyutlandırma için minimum boyutlar
-    private final int MIN_WINDOW_WIDTH = 100;
-    private final int MIN_WINDOW_HEIGHT = 80;
-    
-    // Kenarlardaki resize bölgesi genişliği
-    private final int RESIZE_BORDER_SIZE = 8;
-    
     public void tick() {
-    	DikenEngine engine = DikenEngine.getEngine();
+        DikenEngine engine = DikenEngine.getEngine();
         Point currentMousePoint = InputHandler.getMousePosition();
-        boolean button0 = Mouse.isButtonDown(0);
         
-        if(activeWindow != null) {
-            if(!isWindowVaild(activeWindow)) {
-                activeWindow.close();
-                activeWindow = null;
-            }
+        boolean button0 = Mouse.isButtonDown(0);
+        // Mouse sadece bu "tick" anında mı basıldı? (Basılı tutma değil, ilk tıklama anı)
+        boolean mouseJustClicked = button0 && !prevMouseDown;
+        
+        // --- 1. Temizlik Aşaması ---
+        // Kapanmış pencereleri listeden güvenli bir şekilde temizle (Java 8+ removeIf)
+        windows.removeIf(w -> w.closed);
+
+        // Aktif pencere listeden silindiyse veya geçersizse referansı temizle
+        if(activeWindow != null && (!windows.contains(activeWindow) || activeWindow.closed)) {
+            activeWindow = null;
+            // Eğer pencere kapandıysa sürükleme modlarını da iptal et
+            dragMode = false;
+            scaleMode = false;
         }
 
+        // --- 2. Aktiflik Durumu Güncellemesi ---
         for (Window window : windows) {
-            if(window.closed) {
-                windows.remove(window);
-                break;
-            }
-
-            if (window != activeWindow) {
-                window.active = false;
-            } else {
-                window.active = true;
-            }
-            
-            if(window.closeButtonClicked(currentMousePoint) && button0 && !dragMode && !scaleMode) {
-    			window.close();
-    		}
-
+            window.active = (window == activeWindow);
             window.tick(engine);
         }
+
+        // --- 3. Kapatma İşlemi (Öncelikli) ---
+        // Sadece AKTİF pencere kapatılabilir ve sadece tıklama anında (mouseJustClicked) işlem yapılır.
+        // Bu sayede arkadaki pencerelerin yanlışlıkla kapanması engellenir.
+        if (activeWindow != null && mouseJustClicked && !dragMode && !scaleMode) {
+            if (activeWindow.closeButtonClicked(currentMousePoint)) {
+                activeWindow.close();
+                // Pencere kapandığı an işlemi bitir, başka tıklama algılama
+                prevMouseDown = button0;
+                lastMousePos = new Point(currentMousePoint);
+                return; 
+            }
+        }
         
+        // --- 4. İmleç ve Boyutlandırma Alanı Kontrolü ---
         if (activeWindow != null && !dragMode && !scaleMode) {
             boyutlandirmaBolgesi = checkResizeArea(activeWindow, currentMousePoint);
             setResizeCursor(boyutlandirmaBolgesi);
         }
         
-        // Mouse butonuna ilk tıkladığımızda (önceki durum false, şimdiki durum true)
-        if(!prevMouseDown && button0) {
+        // --- 5. Pencere Seçimi (Focus) ---
+        // Eğer bir yere tıklandıysa ve şu an sürükleme/boyutlandırma yapılmıyorsa
+        if (mouseJustClicked && !dragMode && !scaleMode) {
             Window eskiAktivPencere = activeWindow;
-            findActiveWindow(currentMousePoint);
+            findActiveWindow(currentMousePoint); // Tıklanan pencereyi bul ve activeWindow yap
 
-            // Return if no window is found
             if (activeWindow == null) {
-                // Diğer modları sıfırla
-                dragMode = false;
-                scaleMode = false;
+                // Boşluğa tıklandı
                 boyutlandirmaBolgesi = 0;
             } else {
-                // Reset operation modes if active window changed
+                // Başka bir pencereye geçildiyse modları sıfırla
                 if (eskiAktivPencere != activeWindow) {
-                    dragMode = false;
-                    scaleMode = false;
                     boyutlandirmaBolgesi = 0;
                 }
                 
-                // Önce boyutlandırma bölgesini kontrol et
+                // Tıklama anında boyutlandırma bölgesinde miyiz?
                 boyutlandirmaBolgesi = checkResizeArea(activeWindow, currentMousePoint);
                 
                 if (boyutlandirmaBolgesi != 0 && activeWindow.resizable) {
-                    // Boyutlandırma modunu başlat
                     scaleMode = true;
                     dragStartPoint = new Point(currentMousePoint);
+                    // TIKLAMA ANINDAKİ BOYUTLARI KAYDET (Referans noktası)
+                    startWindowWidth = activeWindow.width;
+                    startWindowHeight = activeWindow.height;
                     setResizeCursor(boyutlandirmaBolgesi);
                 }
-                // Boyutlandırma bölgesi değilse title bar'ı kontrol et
-                else if (!dragMode && isInTitleBar(currentMousePoint)) {
+                // Başlık çubuğunda mıyız? (Sürükleme başlat)
+                else if (isInTitleBar(currentMousePoint)) {
                     dragMode = true;
                     dragStartPoint = new Point(currentMousePoint);
-                    
-                    // Calculate offset between mouse position and window position
                     dragOffsetX = activeWindow.x - currentMousePoint.x;
                     dragOffsetY = activeWindow.y - currentMousePoint.y;
                 }
             }
         }
         
-        // Mouse butonunu bıraktığımızda (önceki durum true, şimdiki durum false)
+        // --- 6. Mouse Bırakma (Reset) ---
         if (prevMouseDown && !button0) {
-            // Mouse released, end all modes
             dragMode = false;
             scaleMode = false;
-            // İmleç tipini resetlemiyoruz - fare konumuna göre otomatik ayarlanacak
         }
         
-        // Ensure window stays within screen bounds
+        // --- 7. Sürükleme ve Boyutlandırma Mantığı ---
         int screenWidth = engine.getWidth();
         int screenHeight = engine.getHeight();
         
-        // Handle dragging when in drag mode
+        // Sürükleme
         if (dragMode && activeWindow != null && button0) {
-            // Update window position based on mouse movement and initial offset
             activeWindow.x = currentMousePoint.x + dragOffsetX;
             activeWindow.y = currentMousePoint.y + dragOffsetY;
             
+            // Ekran sınırları kontrolü
             if (activeWindow.x < 0) activeWindow.x = 0;
             if (activeWindow.y < 0) activeWindow.y = 0;
-            if (activeWindow.x + activeWindow.width > screenWidth) activeWindow.x = screenWidth - activeWindow.width;
-            if (activeWindow.y + activeWindow.height > screenHeight) activeWindow.y = screenHeight - activeWindow.height;
+            // Pencerenin tamamen kaybolmasını engelle
+            if (activeWindow.x > screenWidth - 20) activeWindow.x = screenWidth - 20; 
+            if (activeWindow.y > screenHeight - 20) activeWindow.y = screenHeight - 20;
             
             activeWindow.moved();
         }
         
-        // Handle resizing when in scale mode
-        if (scaleMode && activeWindow != null && button0) {
-            int deltaX = currentMousePoint.x - dragStartPoint.x;
-            int deltaY = currentMousePoint.y - dragStartPoint.y;
-            
-            // Başlangıç boyutlarını kaydet
-            int originalWidth = activeWindow.width;
-            int originalHeight = activeWindow.height;
-            
-            // Resize moduna göre boyutlandır
-            switch (boyutlandirmaBolgesi) {
-                case 1: // Sağ kenar - sadece genişlik değişir
-                    activeWindow.width = Math.max(originalWidth + deltaX, MIN_WINDOW_WIDTH);
-                    break;
-                    
-                case 2: // Alt kenar - sadece yükseklik değişir
-                    activeWindow.height = Math.max(originalHeight + deltaY, MIN_WINDOW_HEIGHT);
-                    break;
-                    
-                case 3: // Sağ-alt köşe - hem genişlik hem yükseklik değişir
-                    activeWindow.width = Math.max(originalWidth + deltaX, MIN_WINDOW_WIDTH);
-                    activeWindow.height = Math.max(originalHeight + deltaY, MIN_WINDOW_HEIGHT);
-                    break;
-            }
-            
-            /*if (!activeWindow.fullscreen) {
-            	activeWindow.tmpWidth = activeWindow.width;
-            	activeWindow.tmpHeight = activeWindow.height;
-            }*/
-            
-            if (activeWindow.x + activeWindow.width > screenWidth) {
-                activeWindow.width = screenWidth - activeWindow.x;
-            }
-            
-            if (activeWindow.y + activeWindow.height > screenHeight) {
-                activeWindow.height = screenHeight - activeWindow.y;
-            }
-            
-            activeWindow.resized();
-            
-            // Başlangıç noktasını güncelle
-            dragStartPoint = new Point(currentMousePoint);
-        }
+        Setting<Boolean> useOldScaleSystem = engine.config.getOrDefaultSetting("useOldScaleCode", Boolean.class, false);
         
-        // Güncellenen mouse durumunu ve konumunu sakla
+        if (useOldScaleSystem.getValue()) {
+        	// Boyutlandırma
+            if (scaleMode && activeWindow != null && button0) {
+                int newWidth = activeWindow.width;
+                int newHeight = activeWindow.height;
+
+                // Mouse'un son kareden bu kareye ne kadar oynadığı (delta değil movement)
+                int moveX = currentMousePoint.x - lastMousePos.x;
+                int moveY = currentMousePoint.y - lastMousePos.y;
+
+                switch (boyutlandirmaBolgesi) {
+                    case 1: // Sağ
+                        newWidth += moveX;
+                        break;
+                    case 2: // Alt
+                        newHeight += moveY;
+                        break;
+                    case 3: // Sağ-Alt
+                        newWidth += moveX;
+                        newHeight += moveY;
+                        break;
+                }
+
+                activeWindow.width = Math.max(newWidth, MIN_WINDOW_WIDTH);
+                activeWindow.height = Math.max(newHeight, MIN_WINDOW_HEIGHT);
+                
+                // Sınırlara çarpma kontrolü
+                if (activeWindow.x + activeWindow.width > screenWidth) {
+                    activeWindow.width = screenWidth - activeWindow.x;
+                }
+                if (activeWindow.y + activeWindow.height > screenHeight) {
+                    activeWindow.height = screenHeight - activeWindow.y;
+                }
+                
+                activeWindow.resized();
+                
+                // dragStartPoint güncellemesi resize mantığında kafa karıştırabilir, 
+                // burada gerek yok çünkü moveX/Y kullanıyoruz.
+            }
+        } else {
+        	// --- tick metodu içindeki scaleMode bloğu ---
+
+            if (scaleMode && activeWindow != null && button0) {
+                // 1. Toplam farkı hesapla (Tıklanan ilk noktadan şu anki mouse konumuna)
+                int deltaX = currentMousePoint.x - dragStartPoint.x;
+                int deltaY = currentMousePoint.y - dragStartPoint.y;
+                
+                // 2. Boyutlandırma bölgesine göre yeni boyutları hesapla
+                // NOT: Burada 'originalWidth' ve 'originalHeight' değerlerinin 
+                // scaleMode başladığı AN (yani mouseJustClicked içinde) kaydedilmesi gerekir.
+                
+                switch (boyutlandirmaBolgesi) {
+                    case 1: // Sağ kenar
+                        activeWindow.width = Math.max(startWindowWidth + deltaX, MIN_WINDOW_WIDTH);
+                        break;
+                        
+                    case 2: // Alt kenar
+                        activeWindow.height = Math.max(startWindowHeight + deltaY, MIN_WINDOW_HEIGHT);
+                        break;
+                        
+                    case 3: // Sağ-alt köşe
+                        activeWindow.width = Math.max(startWindowWidth + deltaX, MIN_WINDOW_WIDTH);
+                        activeWindow.height = Math.max(startWindowHeight + deltaY, MIN_WINDOW_HEIGHT);
+                        break;
+                }
+                
+                // Ekran sınırlarını kontrol et
+                if (activeWindow.x + activeWindow.width > screenWidth) {
+                    activeWindow.width = screenWidth - activeWindow.x;
+                }
+                if (activeWindow.y + activeWindow.height > screenHeight) {
+                    activeWindow.height = screenHeight - activeWindow.y;
+                }
+                
+                activeWindow.resized();
+                
+                // DİKKAT: Burada dragStartPoint'i GÜNCELLEMİYORUZ. 
+                // Çünkü delta'yı her zaman en baştaki tıklama noktasına göre alıyoruz.
+            }
+        }
+
+        // Mouse durumunu güncelle
         prevMouseDown = button0;
         lastMousePos = new Point(currentMousePoint);
     }
     
-    // Helper method to determine if a point is in the title bar area of the active window
+    // --- Helper Methods ---
+
     private boolean isInTitleBar(Point p) {
         if (activeWindow == null) return false;
-        
-        // Assuming the title bar is the top 20 pixels of the window
         int titleBarHeight = 20;
-        
         return p.x >= activeWindow.x && 
                p.x <= activeWindow.x + activeWindow.width && 
                p.y >= activeWindow.y && 
                p.y <= activeWindow.y + titleBarHeight;
     }
     
-    // Fare koordinatının pencerenin hangi boyutlandırma bölgesinde olduğunu kontrol eder
     private int checkResizeArea(Window window, Point p) {
         if (window == null) return 0;
         
-        boolean onRightEdge = Math.abs(p.x - (window.x + window.width)) <= RESIZE_BORDER_SIZE && 
-                              p.y >= window.y && 
-                              p.y <= window.y + window.height;
-                              
-        boolean onBottomEdge = Math.abs(p.y - (window.y + window.height)) <= RESIZE_BORDER_SIZE && 
-                               p.x >= window.x && 
-                               p.x <= window.x + window.width;
-                               
-        boolean onBottomRightCorner = Math.abs(p.x - (window.x + window.width)) <= RESIZE_BORDER_SIZE && 
-                                     Math.abs(p.y - (window.y + window.height)) <= RESIZE_BORDER_SIZE;
+        // Kenar toleransını biraz artırdım, tutması daha kolay olsun
+        int border = RESIZE_BORDER_SIZE;
         
-        if (onBottomRightCorner) return 3; // Sağ-alt köşe
-        if (onRightEdge) return 1; // Sağ kenar
-        if (onBottomEdge) return 2; // Alt kenar
+        boolean inXRange = p.x >= window.x && p.x <= window.x + window.width + border;
+        boolean inYRange = p.y >= window.y && p.y <= window.y + window.height + border;
         
-        return 0; // Hiçbir resize bölgesinde değil
+        boolean onRightEdge = Math.abs(p.x - (window.x + window.width)) <= border && inYRange;
+        boolean onBottomEdge = Math.abs(p.y - (window.y + window.height)) <= border && inXRange;
+        
+        if (onRightEdge && onBottomEdge) return 3; // Sağ-alt köşe (öncelikli)
+        if (onRightEdge) return 1;
+        if (onBottomEdge) return 2;
+        
+        return 0;
     }
     
-    // Resize modu için imleç tipini ayarlar
-    private void setResizeCursor(int resizeArea) {    
-    	DikenEngine engine = DikenEngine.getEngine();
-    	CursorResource cursorResource = null;
-        switch (resizeArea) {
-            case 1: // Sağ kenar - horizontal resize
-            	cursorResource = (CursorResource) ResourceLocator.getResource("cursor-0");
-            	engine.setCursor(cursorResource); // Köşe resize imleci
-                break;
-            case 2: // Alt kenar - vertical resize
-            	cursorResource = (CursorResource) ResourceLocator.getResource("cursor-2");
-            	engine.setCursor(cursorResource); // Köşe resize imleci
-                break;
-            case 3: // Sağ-alt köşe - diagonal resize
-            	cursorResource = (CursorResource) ResourceLocator.getResource("cursor-1");
-            	engine.setCursor(cursorResource); // Köşe resize imleci
-                break;
-            default:
-                if (!dragMode) {
-                    engine.setCursor(null); // Varsayılan imleç
-                }
+    private void setResizeCursor(int resizeArea) {      
+        DikenEngine engine = DikenEngine.getEngine();
+        // ResourceLocator null dönebilir, güvenli cast yapalım
+        try {
+            switch (resizeArea) {
+                case 1: engine.setCursor((CursorResource) ResourceLocator.getResource("cursor-0")); break;
+                case 2: engine.setCursor((CursorResource) ResourceLocator.getResource("cursor-2")); break;
+                case 3: engine.setCursor((CursorResource) ResourceLocator.getResource("cursor-1")); break;
+                default: if (!dragMode) engine.setCursor(null);
+            }
+        } catch (Exception e) {
+            // Resource bulunamazsa varsayılan cursor kalsın, oyun çökmesin
+            if (!dragMode) engine.setCursor(null);
         }
     }
 
@@ -274,12 +308,12 @@ public class WindowManager {
     }
 
     public void closeAll() {
+        // removeIf kullanmadan önce pencerelerin kapatma metodunu çağırıyoruz
         for (Window window : windows) {
             window.close();
         }
-        if(activeWindow != null) {
-		    activeWindow.close();
-		}
+        windows.clear();
+        activeWindow = null;
     }
 
     public int size() {
@@ -291,80 +325,72 @@ public class WindowManager {
     }
 
     private boolean findActiveWindow(Point p) {
-        Window oldActiceWindow = activeWindow;
+        Window oldActiveWindow = activeWindow;
         activeWindow = null;
-        // Check from end to start (top windows first)
+        
+        // Tersten döngü (Z-order): En üstteki pencere listenin sonundadır.
         for (int i = windows.size() - 1; i >= 0; i--) {
             Window pencere = windows.get(i);
             if (pencere.isTouching(p)) {
                 activeWindow = pencere;
                 
-                // Move the active window to the end of the list (top of the z-order)
-                if (i < windows.size() - 1) {
-                    windows.remove(i);
-                    windows.add(activeWindow);
-                }
-                
+                // Aktif pencereyi listenin sonuna (en üste) taşı
+                windows.remove(i);
+                windows.add(activeWindow);
                 break;
             }
         }
-        // Reset cursor if active window changed
-        if (oldActiceWindow != activeWindow) {
-            DikenEngine.getEngine().setCursor(null); // Varsayılan imleç
+        
+        if (oldActiveWindow != activeWindow) {
+            DikenEngine.getEngine().setCursor(null);
         }
 
-        if(activeWindow != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return activeWindow != null;
     }
     
+    // Yardımcı metod: Sadece tıklanan yerin altında pencere var mı diye bakar (sıralamayı bozmaz)
     public boolean findActiveWindow2(Point point) {
-        // Check from end to start (top windows first)
         for (int i = windows.size() - 1; i >= 0; i--) {
-            Window pencere = windows.get(i);
-            if (pencere.isTouching(point)) {
+            if (windows.get(i).isTouching(point)) {
                 return true;
             }
         }
         return false;
-	}
+    }
     
     public boolean screenActionMode(Point point) {
-    	if(!findActiveWindow2(point) && !scaleMode) {
-			return true;
-		}
-    	return false;
+        return !findActiveWindow2(point) && !scaleMode;
     }
     
     public void keyboardEvent() {
-    	if (activeWindow != null) {
-    		activeWindow.keyPressed(Keyboard.getEventCharacter(), Keyboard.getEventKey());
-    	}
+        if (activeWindow != null) {
+            activeWindow.keyPressed(Keyboard.getEventCharacter(), Keyboard.getEventKey());
+        }
     }
     
     public void mouseEvent() {
-    	if (activeWindow != null) {
-    		Point mousePos = InputHandler.getMousePosition();
-    		int mouseButton = Mouse.getEventButton();
-    		boolean isTouch = activeWindow.isTouching(mousePos);
-    		
-    		if (Mouse.getEventButtonState()) {
-    			activeWindow.mouseClicked(mousePos.x, mousePos.y, mouseButton, isTouch);
-    		}
-    		
-    		activeWindow.mouseGetInfo(mousePos.x, mousePos.y, isTouch);
-    	}
+        if (activeWindow != null) {
+            Point mousePos = InputHandler.getMousePosition();
+            int mouseButton = Mouse.getEventButton();
+            boolean isTouch = activeWindow.isTouching(mousePos);
+            
+            // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
+            if (Mouse.getEventButton() != -1 && Mouse.getEventButtonState()) {
+                activeWindow.mouseClicked(mousePos.x, mousePos.y, mouseButton, isTouch);
+            }
+            
+            activeWindow.mouseGetInfo(mousePos.x, mousePos.y, isTouch);
+        }
     }
 
-	public boolean isWindowActive(Class<?> class1) {
-		for (Window window : windows) {
-			if (window.getClass() == class1) {
-				activeWindow = window;
-				return true;
-			}
-		}
-		return false;
-	}
+    public boolean isWindowActive(Class<?> class1) {
+        for (Window window : windows) {
+            if (window.getClass() == class1) {
+                // Burada activeWindow'u değiştirmiyoruz, sadece kontrol ediyoruz.
+                // İstersen: activeWindow = window; yapabilirsin ama findActiveWindow mantığıyla çakışabilir.
+                return activeWindow == window;
+            }
+        }
+        return false;
+    }
 }

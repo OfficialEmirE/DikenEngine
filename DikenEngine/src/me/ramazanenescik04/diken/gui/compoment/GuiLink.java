@@ -4,7 +4,7 @@ import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
 
-public class GuiLink extends GuiCompoment {
+public class GuiLink extends GuiComponent {
 	
  	public GuiLink(int x, int y, int width, int height) {
 		super(x, y, width, height);

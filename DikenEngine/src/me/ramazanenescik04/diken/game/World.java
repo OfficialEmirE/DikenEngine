@@ -24,7 +24,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.gui.Hitbox;
-import me.ramazanenescik04.diken.gui.compoment.GuiCompoment;
+import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
 
 public class World extends Panel implements Cloneable {
@@ -98,8 +98,8 @@ public class World extends Panel implements Cloneable {
         root.y = oldY;
 
         // GUI Bileşenlerini çiz (Kameradan etkilenmezler, sabit kalırlar)
-        List<GuiCompoment> compoments = this.getCompoments();
-        for (GuiCompoment compoment : compoments) {
+        List<GuiComponent> compoments = this.getCompoments();
+        for (GuiComponent compoment : compoments) {
             worldBitmap.draw(compoment.render(), compoment.x, compoment.y);
         }
 

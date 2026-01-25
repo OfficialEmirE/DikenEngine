@@ -1,15 +1,16 @@
 package me.ramazanenescik04.diken.gui.window;
 
-import java.awt.Color;
 import java.awt.Point;
 
 import org.lwjgl.input.Keyboard;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.Config;
+import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.gui.compoment.*;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public class Window extends GuiCompoment {
+public class Window extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	
 	private String title = "";
@@ -22,10 +23,18 @@ public class Window extends GuiCompoment {
 	public boolean closed;
 	public boolean resizable;
 	
+	@SuppressWarnings("unchecked")
+	protected Setting<Integer> nonActiveWindowColor = (Setting<Integer>) Config.defaultConfig.get("windowColor");
+	@SuppressWarnings("unchecked")
+	protected Setting<Integer> activeWindowColor = (Setting<Integer>) Config.defaultConfig.get("activeWindowColor");
+	
 	public Window(int x, int y, int width, int height) {
 		super(x, y, width, height);
 		contentPane.setBounds(this.x + 1, this.y + BAR_HEIGHT + 1, width - 2, height - BAR_HEIGHT - 2);
-		contentPane.init(DikenEngine.getEngine());
+		DikenEngine engine = DikenEngine.getEngine();
+		contentPane.init(engine);
+		nonActiveWindowColor = engine.config.getSetting("windowColor", Integer.class);
+		activeWindowColor = engine.config.getSetting("activeWindowColor", Integer.class);
 		
 		barButtons[0] = new Button("X", width - 18, 2, 16, 16).setButtonColor(0xffff0000).setTextColor(0xffffffff);
 	}
@@ -95,8 +104,9 @@ public class Window extends GuiCompoment {
 		bitmap.fill(px, py, pg, py2, 0xffffffff);
 		
 		bitmap.draw(contentPane.render(), 1, BAR_HEIGHT + 1);
+
 		
-		bitmap.fill(px, py, pg, BAR_HEIGHT, active ? 0xff000080: Color.GRAY.getRGB());
+		bitmap.fill(px, py, pg, BAR_HEIGHT, active ? activeWindowColor.getValue() : nonActiveWindowColor.getValue());
 		
 		bitmap.box(px, py, pg - 1, py2 - 1, 0xff000000);
 		bitmap.drawLine(px, py + BAR_HEIGHT, px + pg, py + BAR_HEIGHT, 0xff000000, 1);
@@ -145,19 +155,19 @@ public class Window extends GuiCompoment {
 	}
 
 	public void keyPressed(char var1, int var2) {
-		contentPane.keyPressed(var1, var2);
+		if (this.active) contentPane.keyPressed(var1, var2);
 		
-		if (var2 == Keyboard.KEY_ESCAPE) {
+		if (var2 == Keyboard.KEY_ESCAPE && this.active) {
 			close();
 		}
 	}
 
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {
-		contentPane.mouseClicked(x - contentPane.x, y - contentPane.y, button, isTouch);
+		if (this.active) contentPane.mouseClicked(x - contentPane.x, y - contentPane.y, button, isTouch);
 	}
 
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
-		contentPane.mouseGetInfo(x - contentPane.x, y - contentPane.y, isTouch);
+		if (this.active) contentPane.mouseGetInfo(x - contentPane.x, y - contentPane.y, isTouch);
 		barButtons[0].mouseGetInfo(x, y, closeButtonClicked(new Point(x, y)));
 	}
 
