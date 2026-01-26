@@ -177,4 +177,13 @@ public class TextLine extends GuiComponent {
 	@Override
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
 	}
+	
+	public void autoSetSize() {
+		String[] array = this.textLines.toArray(new String[0]);
+		
+		int w = Text.stringBitmapAverageWidth(array, font);
+		int h = Text.stringBitmapAverageHeight(array, font) * (array.length + 2);
+		
+		this.setSize(w, h);
+	}
 }

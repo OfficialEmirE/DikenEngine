@@ -13,6 +13,8 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 public class Window extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	
+	private long startTime;
+	
 	private String title = "";
 	private Bitmap icon;
 	private final static int BAR_HEIGHT = 20;
@@ -37,6 +39,9 @@ public class Window extends GuiComponent {
 		activeWindowColor = engine.config.getSetting("activeWindowColor", Integer.class);
 		
 		barButtons[0] = new Button("X", width - 18, 2, 16, 16).setButtonColor(0xffff0000).setTextColor(0xffffffff);
+		
+		this.contentPane.active = false;
+		this.startTime = System.currentTimeMillis();
 	}
 	
 	protected void open() {};
@@ -152,6 +157,12 @@ public class Window extends GuiComponent {
 			contentPane.tick(engine);
 		}
 		barButtons[0].tick(engine);
+		
+		long currentTime = System.currentTimeMillis();
+		
+		if (!this.contentPane.active && (currentTime - this.startTime > 200)) {
+		    this.contentPane.active = true;
+		}
 	}
 
 	public void keyPressed(char var1, int var2) {

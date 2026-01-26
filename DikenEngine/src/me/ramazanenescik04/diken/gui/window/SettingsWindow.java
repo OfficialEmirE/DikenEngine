@@ -8,6 +8,7 @@ import java.util.Map;
 import org.lwjgl.input.Mouse;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.gui.compoment.*;
@@ -115,6 +116,8 @@ public class SettingsWindow extends Window {
 							public void closed() {
 								SettingsWindow.this.getContentPane().active = true;
 								SettingsWindow.this.setCloseable(true);
+								
+								engine.wManager.activeWindow = SettingsWindow.this;
 							}
         				});
         				engine.wManager.addWindow(window);
@@ -147,6 +150,18 @@ public class SettingsWindow extends Window {
         	addSettingComponent(component);
             i++;
         }
+        
+        Button resetButton = new Button("Ayarları Sıfırla", 2, i * itemHeight, 176, itemHeight).setRunnable(() -> {
+        	OptionWindow.showMessageNoWait("Ayarlar Sıfırlamak İstediğinden \nEmin Misin?", "Soru", OptionWindow.PLAIN_MESSAGE, OptionWindow.YES_NO_OPTION, (e) -> {
+        		if (e == OptionWindow.YES_BUTTON) {
+        			this.close();
+        			
+        			engine.config.getConfig().clear();
+        			engine.config.getConfig().putAll(Config.defaultConfig);
+        		}
+        	});
+        });
+        addSettingComponent(resetButton); 
 
 	    // 2. Sabit Butonlar Paneli (Footer)
 	    Panel footer = new Panel(0, mainPanel.getHeight() - footerHeight, mainPanel.getWidth(), footerHeight);
@@ -196,7 +211,10 @@ public class SettingsWindow extends Window {
 	        comp.y = (i - currentIndex) * itemHeight;
 	        
 	        // Panel dışındakileri görünmez yapabilirsin (Performans için)
-	        comp.setVisible((comp.y >= 0 && comp.y < scrollArea.getHeight()));
+	        boolean shouldBeVisible = (comp.y >= 0 && comp.y < scrollArea.getHeight());
+	        if (comp.isVisible() != shouldBeVisible) {
+	            comp.setVisible(shouldBeVisible);
+	        }
 	    }
 	}
 

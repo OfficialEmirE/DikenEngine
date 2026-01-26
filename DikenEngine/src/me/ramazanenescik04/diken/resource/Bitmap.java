@@ -39,16 +39,24 @@ public class Bitmap implements IResource, Cleanable {
 	}
 
 	public Bitmap(int w, int h) {
-		this.w = (w <= 0) ? 1 : w;
-		this.h = (h <= 0) ? 1 : h;
+		w = (w <= 0) ? 1 : w;
+		h = (h <= 0) ? 1 : h;
+		
+		this.w = w;
+	    this.h = h;
+		
 		ByteBuffer buffer = ByteBuffer.allocateDirect(w * h * 4)
 		        .order(ByteOrder.nativeOrder());
 		this.pixels = buffer.asIntBuffer();
 	}
 	
 	public Bitmap(int w, int h, IntBuffer copy) {
-		this.w = (w <= 0) ? 1 : w;
-	    this.h = (h <= 0) ? 1 : h;
+		w = (w <= 0) ? 1 : w;
+		h = (h <= 0) ? 1 : h;
+		
+		this.w = w;
+	    this.h = h;
+	    
 	    this.pixels = ByteBuffer
 	        .allocateDirect(copy.capacity() * 4)
 	        .order(ByteOrder.nativeOrder())
@@ -59,8 +67,12 @@ public class Bitmap implements IResource, Cleanable {
 	}
 	
 	public Bitmap(int w, int h, int[] copy) {
-		this.w = (w <= 0) ? 1 : w;
-	    this.h = (h <= 0) ? 1 : h;
+		w = (w <= 0) ? 1 : w;
+		h = (h <= 0) ? 1 : h;
+		
+		this.w = w;
+	    this.h = h;
+	    
 	    this.pixels = ByteBuffer
 	        .allocateDirect(copy.length * 4)
 	        .order(ByteOrder.nativeOrder())

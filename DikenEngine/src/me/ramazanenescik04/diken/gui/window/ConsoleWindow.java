@@ -3,12 +3,16 @@ package me.ramazanenescik04.diken.gui.window;
 import org.lwjgl.input.Keyboard;
 
 import me.ramazanenescik04.diken.gui.compoment.*;
+import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
+import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 
 public class ConsoleWindow extends Window {
 	private static final long serialVersionUID = 1L;
+	
+	private TextLine textLine;
 
 	public ConsoleWindow(int x, int y, int width, int height) {
 		super(x, y, width, height);
@@ -18,31 +22,41 @@ public class ConsoleWindow extends Window {
 
 	protected void open() {
 		Panel contentPane = this.getContentPane();
-		TextLine textLine = new TextLine(0, 0, contentPane.width, contentPane.height - 20);
+		this.getContentPane().setBackground(new StaticBackground(Bitmap.createClearedBitmap(16, 16, 0xffa0a0a0)));
+		
+		ScrollPanel panel = new ScrollPanel(0, 0, contentPane.width, contentPane.height - 20);
+		contentPane.add(panel);
+		
+		textLine = new TextLine(0, 0, contentPane.width, contentPane.height - 20);
 		textLine.setTextLines(ConsoleLog.getLogsToString());
+		textLine.autoSetSize();
 		textLine.setEditable(false);
 		textLine.setFocused(false);
 		textLine.setActive(false);
-		contentPane.add(textLine);
+		panel.setScrollComponent(textLine);
 		
 		ConsoleLog.setListAdapter(new ListAdapter<LogText>() {
 			@Override
 			public void onAdd(LogText item) {
 				textLine.add(item.toString());
+				textLine.autoSetSize();
 			}
 
 			@Override
 			public void onRemove(LogText item) {
 				textLine.remove(item.toString());
+				textLine.autoSetSize();
 			}
 
 			@Override
 			public void onUpdate() {
+				textLine.autoSetSize();
 			}
 
 			@Override
 			public void onClear() {
 				textLine.clear();
+				textLine.setBounds(0, 0, contentPane.width, contentPane.height - 20);
 			}
 		});
 		
@@ -64,7 +78,7 @@ public class ConsoleWindow extends Window {
 		super.resized();
 		
 		Panel contentPane = this.getContentPane();
-		TextLine textLine = (TextLine) contentPane.get(0);
+		ScrollPanel textLine = (ScrollPanel) contentPane.get(0);
 		textLine.setSize(contentPane.width, contentPane.height - 20);
 		
 		Button sendButton = (Button) contentPane.get(1);
@@ -81,7 +95,6 @@ public class ConsoleWindow extends Window {
 		if (var2 == Keyboard.KEY_RETURN || var2 == Keyboard.KEY_NUMPADENTER) {
 			Panel contentPane = this.getContentPane();
 			TextField textField = (TextField) contentPane.get(2);
-			TextLine textLine = (TextLine) contentPane.get(0);
 			
 			String text = textField.text;
 			if (!text.isEmpty()) {

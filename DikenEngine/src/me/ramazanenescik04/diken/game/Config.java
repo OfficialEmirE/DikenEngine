@@ -24,7 +24,7 @@ public class Config {
 		defaultConfig.put("lang", new Setting<String>("Dil", "tr-TR", String.class, EnumSettingType.TEXT_FIELD));
 		
 		defaultConfig.put("activeWindowColor", new Setting<Integer>("Aktif Pencere Rengi", 0xff000080, Integer.class, EnumSettingType.COLOR_PICKER));
-		defaultConfig.put("windowColor", new Setting<Integer>("Pencere Rengi", Color.GRAY.getRGB(), Integer.class, EnumSettingType.COLOR_PICKER));
+		defaultConfig.put("windowColor", new Setting<Integer>("Aktif Olmayan Pencere Rengi", Color.GRAY.getRGB(), Integer.class, EnumSettingType.COLOR_PICKER));
 		
 		defaultConfig.put("guiScale", new Setting<Double>("GUI Ölceği", 1.0d, Double.class, EnumSettingType.SLIDER));
 		

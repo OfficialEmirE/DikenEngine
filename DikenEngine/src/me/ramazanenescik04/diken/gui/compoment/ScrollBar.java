@@ -63,7 +63,7 @@ public class ScrollBar extends GuiComponent {
 			});
 			downButton.parent = this;
 			
-			sliderButton = new Button("=", 21, 1, handleHeight, height - 2);
+			sliderButton = new Button("||", 21, 1, handleHeight, height - 2);
 			sliderButton.parent = this;
 		}
 		buttons = new Button[] { upButton, downButton, sliderButton };
@@ -93,17 +93,19 @@ public class ScrollBar extends GuiComponent {
 		}
     }
     
-    public void updateHandleSize(int panelHeight, int contentHeight) {
-        if (contentHeight <= panelHeight) {
-            this.handleHeight = this.height - 40; // Butonlar hariç tam boy (20+20=40 varsayımıyla)
-            this.scrollValue = 0; // İçerik sığıyorsa en başa çek
+    public void updateHandleSize(int viewportSize, int totalContentSize) {
+        // trackSize: Barın toplam hareket yolu (üst/alt butonlar arası mesafe)
+        int trackSize = (type == VERTICAL) ? this.height - 40 : this.width - 40;
+
+        if (totalContentSize <= viewportSize) {
+            // İçerik ekrana sığıyor, düğme tam boy (veya gizli)
+            this.handleHeight = trackSize;
         } else {
-            // Hareket alanı butonlar çıktığında kalan mesafedir
-            int trackHeight = this.height - 40; 
-            float ratio = (float) panelHeight / contentHeight;
-            
-            this.handleHeight = (int) (trackHeight * ratio);
-            
+            // ALTIN KURAL: Düğme Boyu = (Görünür Alan / Toplam İçerik) * Bar Yolu
+            float ratio = (float) viewportSize / totalContentSize;
+            this.handleHeight = (int) (trackSize * ratio);
+
+            // Düğme çok küçülüp kaybolmasın (min 15px)
             if (this.handleHeight < 5) this.handleHeight = 5;
         }
     }
@@ -112,6 +114,7 @@ public class ScrollBar extends GuiComponent {
 	public Bitmap render() {
 		Bitmap btp = super.render();
 		
+		btp.clear(0xffa0a0a0);
 		btp.draw(upButton.render(), upButton.x, upButton.y);
 		btp.draw(downButton.render(), downButton.x, downButton.y);
 		btp.draw(sliderButton.render(), sliderButton.x, sliderButton.y);

@@ -54,7 +54,9 @@ public class WindowManager {
 
     public void render(Bitmap screen) {
         // Listeyi güvenli bir şekilde dolaş
-        for (Window window : windows) {
+    	Window[] windowArray = windows.toArray(new Window[0]);
+        for (int i = 0; i < windowArray.length; i++) {
+        	Window window = windowArray[i];
             if(window.active) {
                 // Gölge efekti vs.
                 screen.blendFill(window.x + 5, window.y + 5, window.x + window.width + 5, window.y + window.height + 5, 0x64000000);
@@ -371,12 +373,11 @@ public class WindowManager {
     public void mouseEvent() {
         if (activeWindow != null) {
             Point mousePos = InputHandler.getMousePosition();
-            int mouseButton = Mouse.getEventButton();
             boolean isTouch = activeWindow.isTouching(mousePos);
             
             // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
-            if (Mouse.getEventButton() != -1 && Mouse.getEventButtonState()) {
-                activeWindow.mouseClicked(mousePos.x, mousePos.y, mouseButton, isTouch);
+            if (Mouse.getEventButtonState()) {
+                activeWindow.mouseClicked(mousePos.x, mousePos.y, Mouse.getEventButton(), isTouch);
             }
             
             activeWindow.mouseGetInfo(mousePos.x, mousePos.y, isTouch);

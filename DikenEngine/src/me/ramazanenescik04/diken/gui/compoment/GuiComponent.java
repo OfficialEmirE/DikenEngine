@@ -46,4 +46,8 @@ public abstract class GuiComponent extends Hitbox implements java.io.Serializabl
 		return visible;
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		return this == obj;
+	}
 }
