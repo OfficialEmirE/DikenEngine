@@ -1,28 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21">
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk-25.0.1.8-hotspot">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="res"/>
-	<classpathentry kind="lib" path="libs/jinput.jar" sourcepath="D:/RetroMCP/libraries/net/java/jinput/jinput/2.0.5/jinput-2.0.5-sources.jar">
+	<classpathentry kind="lib" path="libs/lwjgl.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip">
 		<attributes>
-			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
+			<attribute name="javadoc_location" value="jar:file:/C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="libs/lwjgl_util.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-source-2.9.3.zip">
+	<classpathentry kind="lib" path="libs/lwjgl-glfw.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip">
 		<attributes>
-			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
+			<attribute name="javadoc_location" value="jar:file:/C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="libs/lwjgl.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-source-2.9.3.zip">
+	<classpathentry kind="lib" path="libs/lwjgl-glfw-natives-linux.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-glfw-natives-macos.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-glfw-natives-windows.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-natives-linux.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-natives-macos.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-natives-windows.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-openal.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip">
 		<attributes>
-			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
+			<attribute name="javadoc_location" value="jar:file:/C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip!/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="libs/jna-5.12.1.jar"/>
-	<classpathentry kind="lib" path="libs/ReportBugs.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-openal-natives-linux.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-openal-natives-macos.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-openal-natives-windows.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-opengl.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libs/lwjgl-opengl-natives-linux.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-opengl-natives-macos.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-opengl-natives-windows.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-stb.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip!/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="libs/lwjgl-stb-natives-linux.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-stb-natives-macos.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-stb-natives-windows.jar"/>
+	<classpathentry kind="lib" path="libs/lwjgl-unsafe.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip">
+		<attributes>
+			<attribute name="javadoc_location" value="jar:file:/C:/Users/Ramazanenescik04/Downloads/lwjgl-release-3.4.0-custom(1).zip!/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

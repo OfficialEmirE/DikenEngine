@@ -20,6 +20,8 @@ public class Config {
 		defaultConfig.put("sync", new Setting<Boolean>("V-Sync", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("debug", new Setting<Boolean>("Hata Ayıklama", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("useOldScaleCode", new Setting<Boolean>("Eski Boyutlandırma Sistemi Kullan", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("fullscreen", new Setting<Boolean>("Tam Ekran", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("saveLogs", new Setting<Boolean>("Logları Kaydet", true, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		defaultConfig.put("lang", new Setting<String>("Dil", "tr-TR", String.class, EnumSettingType.TEXT_FIELD));
 		
@@ -102,7 +104,7 @@ public class Config {
 	) {
 	    return (Setting<T>) config.computeIfAbsent(
 	        key,
-	        k -> new Setting<>(key, defaultValue, type, null)
+	        _ -> new Setting<>(key, defaultValue, type, null)
 	    );
 	}
 	

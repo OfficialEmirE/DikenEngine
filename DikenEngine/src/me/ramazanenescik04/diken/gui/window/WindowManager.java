@@ -3,11 +3,9 @@ package me.ramazanenescik04.diken.gui.window;
 import java.awt.Point;
 import java.util.*;
 
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
+import org.lwjgl.glfw.GLFW;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.InputHandler;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
@@ -64,12 +62,13 @@ public class WindowManager {
             screen.draw(window.render(), window.x, window.y);
         }
     }
-
+    
+    Point currentMousePoint = new Point();
     public void tick() {
         DikenEngine engine = DikenEngine.getEngine();
-        Point currentMousePoint = InputHandler.getMousePosition();
+        currentMousePoint.setLocation(engine.getMouseX(), engine.getMouseY());
         
-        boolean button0 = Mouse.isButtonDown(0);
+        boolean button0 = engine.isMouseButtonPressed(0);
         // Mouse sadece bu "tick" anında mı basıldı? (Basılı tutma değil, ilk tıklama anı)
         boolean mouseJustClicked = button0 && !prevMouseDown;
         
@@ -364,20 +363,20 @@ public class WindowManager {
         return !findActiveWindow2(point) && !scaleMode;
     }
     
-    public void keyboardEvent() {
-        if (activeWindow != null) {
-            activeWindow.keyPressed(Keyboard.getEventCharacter(), Keyboard.getEventKey());
+    public void keyboardEvent(char character, int key, int action) {
+        if (activeWindow != null && (action == GLFW.GLFW_PRESS || action == GLFW.GLFW_REPEAT || action == -2)) {
+            activeWindow.keyPressed(character, key);
         }
     }
     
-    public void mouseEvent() {
+    public void mouseEvent(int action, int clickedButton, int x, int y) {
         if (activeWindow != null) {
-            Point mousePos = InputHandler.getMousePosition();
+            Point mousePos = new Point(x, y);
             boolean isTouch = activeWindow.isTouching(mousePos);
             
             // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
-            if (Mouse.getEventButtonState()) {
-                activeWindow.mouseClicked(mousePos.x, mousePos.y, Mouse.getEventButton(), isTouch);
+            if (action == GLFW.GLFW_PRESS) {
+                activeWindow.mouseClicked(mousePos.x, mousePos.y, clickedButton, isTouch);
             }
             
             activeWindow.mouseGetInfo(mousePos.x, mousePos.y, isTouch);

@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
-import org.lwjgl.input.Mouse;
-
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.Hitbox;
 
@@ -138,7 +136,7 @@ public class ScrollPanel extends Panel {
             updateBars();
         }
         
-        int wheel = Mouse.getDWheel();
+        double wheel = engine.getScrollY();
         if (this.active) {
         	onMouseWheel(wheel);
         }
@@ -164,11 +162,11 @@ public class ScrollPanel extends Panel {
         this.verticalScrollBar.updateHandleSize(viewH, contentH);
     }
     
-    public void onMouseWheel(int direction) {
+    public void onMouseWheel(double direction) {
         // direction genellikle yukarı için -1, aşağı için 1 döner
         // Scroll bar'ın değerini biraz arttır/azalt
         float currentPos = this.verticalScrollBar.getScrollValue();
-        this.verticalScrollBar.setScrollValue(currentPos + (direction * 0.05f)); 
+        this.verticalScrollBar.setScrollValue((float) (currentPos + (direction * 0.05f))); 
         
         // Değer değiştikçe listener tetikleneceği için içerik otomatik kayacaktır
     }

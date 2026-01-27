@@ -1,10 +1,8 @@
 package me.ramazanenescik04.diken.gui.screen;
 
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
+import org.lwjgl.glfw.GLFW;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.InputHandler;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
@@ -26,8 +24,8 @@ public abstract class Screen {
 		}
 	}
 	
-	public void keyboardEvent() {
-		this.keyDown( Keyboard.getEventCharacter(), Keyboard.getEventKey());
+	public void keyboardEvent(char character, int key, int action) {
+		if (action == GLFW.GLFW_PRESS || action == GLFW.GLFW_REPEAT || action == -2) this.keyDown(character, key);
 	}
 
 	public void keyDown(char eventCharacter, int eventKey) {
@@ -63,14 +61,14 @@ public abstract class Screen {
 	}
 
 
-	public void mouseEvent() {
-		int mouseX = InputHandler.getMousePosition().x;
-		int mouseY = InputHandler.getMousePosition().y;
+	public void mouseEvent(int action, boolean isMouseOnScreen, int clickedButton) {
+		int mouseX = (int) engine.getMouseX();
+		int mouseY = (int) engine.getMouseY();
 		if (this.engine != null) {
-			this.mouseGetInfo(mouseX, mouseY, (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))), (InputHandler.isMouseOnScreen()));
+			this.mouseGetInfo(mouseX, mouseY, (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))), isMouseOnScreen);
 		
-			if (Mouse.getEventButtonState()) {
-				this.mouseClick(mouseX, mouseY, Mouse.getEventButton(), (InputHandler.isMouseOnScreen()), (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))));
+			if (action == GLFW.GLFW_PRESS) {
+				this.mouseClick(mouseX, mouseY, clickedButton, isMouseOnScreen, (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))));
 			}
 		}
 	}
