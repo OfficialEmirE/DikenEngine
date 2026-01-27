@@ -42,7 +42,7 @@ import javax.swing.JOptionPane;
 
 public class DikenEngine implements Runnable {
 	public static final String VERSION = "1.3.0";
-	public static final int protocolVersion = -1;
+	public static final int protocolVersion = 15;
     private static DikenEngine defaultEngine;
 
 	public UniFont defaultFont;
@@ -576,12 +576,24 @@ public class DikenEngine implements Runnable {
      * Ana render döngüsü
      */
     private void loop() {
+    	long fixedUpdateTime = 1000000000L / 60;
+    	long lastUpdateTime = System.nanoTime();
+    	double accumulator = 0;
+    	
         while (running && !glfwWindowShouldClose(window)) {
-            // Input'ları işle
-            processInput();
-            
-            // Güncelleme
-            update();
+        	long currentTime = System.nanoTime();
+        	
+        	long updateDelta = currentTime - lastUpdateTime;
+        	accumulator += updateDelta;
+        	lastUpdateTime = currentTime;
+        	while (accumulator >= fixedUpdateTime) {
+        		// Input'ları işle
+                processInput();
+                
+                // Güncelleme
+                update();
+        		accumulator -= fixedUpdateTime;
+        	}
             
             // Ekranı temizle
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -608,8 +620,9 @@ public class DikenEngine implements Runnable {
      * Oyun mantığını günceller
      */
     private void update() {
-    	if (title != newTitle) {
-    		newTitle = title;
+    	if (!newTitle.equals(title)) {
+    		title = newTitle;
+    		
     		glfwSetWindowTitle(window, newTitle);
     	}
     	
@@ -815,7 +828,6 @@ public class DikenEngine implements Runnable {
     public static void main(String[] args) {
         DikenEngine engine = new DikenEngine(1280, 720, 2.0f);
         engine.setCurrentScreen(new DefaultMainMenuScreen());
-        engine.setFullscreen(true);
         engine.start();
     }
 

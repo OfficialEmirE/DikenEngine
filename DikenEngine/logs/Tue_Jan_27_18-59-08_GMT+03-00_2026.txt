@@ -1,2 +1,0 @@
-Opening screen: DefaultMainMenuScreen
-Loaded Font: default_font
