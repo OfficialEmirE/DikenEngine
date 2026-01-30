@@ -167,7 +167,7 @@ public class Button extends GuiComponent {
 	}
 
 	public Button setRunnable(Runnable runnable) {
-		this.runnable = (_) -> {runnable.run();};
+		this.runnable = (e) -> {runnable.run();};
 		return this;
 	}
 	

@@ -1,6 +1,6 @@
 package me.ramazanenescik04.diken.gui.window;
 
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.input.Keyboard;
 
 import me.ramazanenescik04.diken.gui.compoment.*;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
@@ -65,7 +65,7 @@ public class ConsoleWindow extends Window {
 		Button sendButton = new Button("Gönder", 0, contentPane.height - 20, 50, 20).setRunnable(() -> {
 			String text = textField.text;
 			if (!text.isEmpty()) {
-				ConsoleLog.sendLog(text);
+				textLine.add(text);
 				textField.text = "";
 			}
 		});
@@ -92,7 +92,7 @@ public class ConsoleWindow extends Window {
 	public void keyPressed(char var1, int var2) {
 		super.keyPressed(var1, var2);
 		
-		if (var2 == GLFW.GLFW_KEY_ENTER || var2 == GLFW.GLFW_KEY_KP_ENTER) {
+		if (var2 == Keyboard.KEY_RETURN || var2 == Keyboard.KEY_NUMPADENTER) {
 			Panel contentPane = this.getContentPane();
 			TextField textField = (TextField) contentPane.get(2);
 			

@@ -3,92 +3,86 @@ package me.ramazanenescik04.diken.resource;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWImage;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.input.Cursor;
 
 public class CursorResource implements IResource {
+	private static final long serialVersionUID = 1L;
+	public Bitmap cursorBitmap;
+	private transient Cursor cursor;
+	
+	public CursorResource() {
+		cursorBitmap = IOResource.missingTexture;
+	}
+	
+	private Cursor generateCursor() {
+		if (cursorBitmap == null)
+			cursorBitmap = IOResource.missingTexture;
+		
+		IntBuffer buffer = BufferUtils.createIntBuffer(cursorBitmap.pixels.capacity());
+		
+		// Buffer'ı hazırla
+		buffer.clear();
+        
+		int width = cursorBitmap.w;
+		int height = cursorBitmap.h;
+		IntBuffer pixels = cursorBitmap.pixels;
+		for (int y = 0; y < height; y++) {
+		    for (int x = 0; x < width; x++) {
+		        int mirroredX = width - 1 - x;
+		        int color = pixels.get(y * width + mirroredX);
+		        buffer.put(color);
+		    }
+		}
 
-    private static final long serialVersionUID = 1L;
-
-    public Bitmap cursorBitmap;
-    private transient long cursorHandle = 0;
-
-    public CursorResource() {
-        cursorBitmap = IOResource.missingTexture;
-    }
-
-    private long generateCursor() {
-        if (cursorBitmap == null)
-            cursorBitmap = IOResource.missingTexture;
-
-        int width = cursorBitmap.w;
-        int height = cursorBitmap.h;
-
-        // RGBA ByteBuffer
-        ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * 4);
-
-        // OpenGL uyumlu Y flip
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int pixel = cursorBitmap.pixels.get(y * width + x);
-
-                buffer.put((byte) ((pixel >> 16) & 0xFF)); // R
-                buffer.put((byte) ((pixel >> 8) & 0xFF));  // G
-                buffer.put((byte) (pixel & 0xFF));         // B
-                buffer.put((byte) ((pixel >> 24) & 0xFF)); // A
-            }
-        }
-
+        
+        // Buffer'ı okuma için hazırla
         buffer.flip();
+		
+        Cursor cursor = null;
+		try {
+			cursor = new Cursor(cursorBitmap.w, cursorBitmap.h, 2, cursorBitmap.h - 2, 1, buffer, null);
+		} catch (LWJGLException e) {
+			e.printStackTrace();
+		}
+		
+		return cursor;
+	}
+	
+	public Cursor getCursor() {
+		if (cursor == null) {
+			cursor = generateCursor();
+		}
+		
+		return cursor;
+	}
 
-        GLFWImage image = GLFWImage.malloc();
-        image.set(width, height, buffer);
+	@Override
+	public void saveResource(DataOutputStream out) throws IOException {
+		byte[] array = cursorBitmap.toBytes("png");
+		out.writeInt(array.length);
+		out.write(array);
+	}
 
-        // hotspot (eski kodundaki mantık)
-        long cursor = GLFW.glfwCreateCursor(
-                image,
-                2,
-                height - 2
-        );
+	@Override
+	public void loadResource(DataInputStream in) throws IOException {
+		int lenght = in.readInt();
+		byte[] image = new byte[lenght];
+		in.readFully(image);
+		cursorBitmap = Bitmap.fromBytes(image);
+	}
 
-        image.free();
-
-        return cursor;
-    }
-
-    public long getCursor() {
-        if (cursorHandle == 0) {
-            cursorHandle = generateCursor();
-        }
-        return cursorHandle;
-    }
-
-    @Override
-    public void saveResource(DataOutputStream out) throws IOException {
-        byte[] array = cursorBitmap.toBytes("png");
-        out.writeInt(array.length);
-        out.write(array);
-    }
-
-    @Override
-    public void loadResource(DataInputStream in) throws IOException {
-        int length = in.readInt();
-        byte[] image = new byte[length];
-        in.readFully(image);
-        cursorBitmap = Bitmap.fromBytes(image);
-    }
-
-    public EnumResource getResourceType() {
-        return EnumResource.CURSOR;
-    }
-
-    @Override
-    public IResource clone() {
-        CursorResource cloned = new CursorResource();
-        cloned.cursorBitmap = this.cursorBitmap;
-        return cloned;
-    }
+	public EnumResource getResourceType() {
+		return EnumResource.CURSOR;
+	}
+	
+	public IResource clone() {
+		CursorResource clonedCursor = new CursorResource();
+		clonedCursor.cursorBitmap = this.cursorBitmap;
+		clonedCursor.generateCursor();
+		return clonedCursor;
+	}
 }

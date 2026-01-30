@@ -20,7 +20,7 @@ public class WhereAmIScreen extends Screen {
 	}
 
 	public void openScreen() {
-		darknessTimer = new Timer((ct, mt, _, _, isEnd) -> {
+		darknessTimer = new Timer((ct, mt, st, et, isEnd) -> {
 			if (isEnd) {
 				alpha = 0; // Ekran tamamen görünür olacak
 			} else {

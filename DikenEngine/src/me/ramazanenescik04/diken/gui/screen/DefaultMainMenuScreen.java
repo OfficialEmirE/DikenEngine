@@ -22,7 +22,7 @@ public class DefaultMainMenuScreen extends Screen {
 	private int alpha = 1; // Ekranın başlangıçta görünürlüğü
 
 	public void openScreen() {		
-		darknessTimer = new Timer((ct, mt, _, _, isEnd) -> {
+		darknessTimer = new Timer((ct, mt, st, et, isEnd) -> {
 			if (isEnd) {
 				engine.setCurrentScreen(new WhereAmIScreen());
 			} else {
@@ -84,7 +84,7 @@ public class DefaultMainMenuScreen extends Screen {
 				engine.wManager.addWindow(new SettingsWindow()); 
 			}));
 			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 100 + (2 * 20), 200, 20).setRunnable(() -> {
-				engine.stop();
+				engine.close();
 			}));
 			add(new LinkButton("Github", 10, engine.getHeight() - (1 * 20), 200, 20).setURI(URI.create("https://github.com/Ramazanenesisik010/DikenEngine")));
 			add(new Button(lang.languageValue("dmainmenu.about"), 10, engine.getHeight() - (2 * 20), 100, 20).setRunnable(() -> {

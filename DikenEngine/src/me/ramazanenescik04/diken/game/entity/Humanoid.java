@@ -7,6 +7,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Vec2D;
 import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
 import me.ramazanenescik04.diken.game.nodes.Tool;
@@ -38,6 +39,7 @@ public class Humanoid extends Part {
 	private void init() {
 		this.name = "Humanoid";
 		this.setAnchored(false);
+		this.addChild(new Folder("Tools"));
 	}
 
 	@Override

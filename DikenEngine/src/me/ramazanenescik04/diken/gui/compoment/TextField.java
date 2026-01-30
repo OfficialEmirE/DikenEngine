@@ -2,7 +2,7 @@ package me.ramazanenescik04.diken.gui.compoment;
 
 import java.util.function.Consumer;
 
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.input.Keyboard;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.UniFont;
@@ -81,17 +81,16 @@ public class TextField extends GuiComponent {
 
 	public void keyPressed(char var1, int var2) {
 		UniFont defaultFont = DikenEngine.getEngine().defaultFont;
-		
 		if (isFocused) {
-			if (var2 == GLFW.GLFW_KEY_BACKSPACE) {
+			if (var2 == Keyboard.KEY_BACK) {
 				if (text.length() > 0) {
 					text = text.substring(0, text.length() - 1);
 				}
-			} else if (var2 == GLFW.GLFW_KEY_ENTER) {
+			} else if (var2 == Keyboard.KEY_RETURN) {
 				isFocused = false;
-			} else if (var2 == GLFW.GLFW_KEY_ESCAPE) {
+			} else if (var2 == Keyboard.KEY_ESCAPE) {
 				isFocused = false;
-			} else if (var2 == GLFW.GLFW_KEY_DELETE) {
+			} else if (var2 == Keyboard.KEY_DELETE) {
 				text = "";
 				if (textChanced != null) {
 					textChanced.accept(text);

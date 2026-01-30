@@ -64,11 +64,6 @@ public class ConsoleLog {
 	}
 	
 	public static void saveLogs() {
-		if (!(me.ramazanenescik04.diken.DikenEngine.getEngine()
-				.config.getSetting("saveLogs", Boolean.class)
-				.getValue())) 
-			return;
-		
 		StringBuilder builder = new StringBuilder();
 		
 		for (LogText text : logs) {
@@ -76,7 +71,6 @@ public class ConsoleLog {
 		}
 		
 		try {
-			Files.createDirectories(logsFile.toPath());
 			File logFile = new File(logsFile, new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".txt");
 			
 			Files.writeString(logFile.toPath(), builder.toString(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
@@ -93,8 +87,6 @@ public class ConsoleLog {
 	
 	public static enum LogType {
 		SERVER,
-		CLIENT,
-		SYSTEM,
-		ERROR
+		CLIENT
 	}
 }
