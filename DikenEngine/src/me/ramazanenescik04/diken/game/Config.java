@@ -26,8 +26,7 @@ public class Config {
 		defaultConfig.put("activeWindowColor", new Setting<Integer>("Aktif Pencere Rengi", 0xff000080, Integer.class, EnumSettingType.COLOR_PICKER));
 		defaultConfig.put("windowColor", new Setting<Integer>("Aktif Olmayan Pencere Rengi", Color.GRAY.getRGB(), Integer.class, EnumSettingType.COLOR_PICKER));
 		
-		defaultConfig.put("guiScale", new Setting<Double>("GUI Ölceği", 1.0d, Double.class, EnumSettingType.SLIDER));
-		
+		defaultConfig.put("guiScale", new Setting<Integer>("GUI Ölceği", 1, 1, 4, Integer.class, EnumSettingType.SLIDER));
 		
 		this.config.putAll(defaultConfig);
 		this.loadConfig(defaultConfigFile);
@@ -86,8 +85,8 @@ public class Config {
 	    if (setting == null)
 	        throw new IllegalArgumentException("Setting not found: " + key);
 
-	    if (setting.getTypeClass() != type)
-	        throw new IllegalArgumentException("Type mismatch");
+	    if (setting.getTypeClass() != type) 
+	    	throw new IllegalArgumentException("Type mismatch");
 
 	    @SuppressWarnings("unchecked")
 	    Setting<T> s = (Setting<T>) setting;
@@ -102,7 +101,7 @@ public class Config {
 	) {
 	    return (Setting<T>) config.computeIfAbsent(
 	        key,
-	        k -> new Setting<>(key, defaultValue, type, null)
+	        _ -> new Setting<>(key, defaultValue, type, null)
 	    );
 	}
 	
@@ -116,7 +115,7 @@ public class Config {
 	        return;
 	    }
 
-	    if (!setting.getTypeClass().isInstance(value)) {
+	    if (!setting.getTypeClass().isInstance(value)) {	    	
 	        throw new IllegalArgumentException(
 	            "Type mismatch. Expected " + setting.getTypeClass().getName()
 	            + " but got " + value.getClass().getName()

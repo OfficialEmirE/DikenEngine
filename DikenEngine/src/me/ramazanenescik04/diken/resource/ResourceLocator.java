@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class ResourceLocator {
 	
-	private static Map<String, IResource> resMap = new ConcurrentHashMap<String, IResource>();
+	private static Map<ResourceKey, IResource> resMap = new ConcurrentHashMap<ResourceKey, IResource>();
 	
 	public static void addResource(String resourceName, IResource res) {
 		addResource(new ResourceKey(resourceName), res);
@@ -18,18 +18,18 @@ public class ResourceLocator {
 			res = IOResource.missingTexture;
 		}
 		
-		resMap.put(key.toString(), res);
+		resMap.put(key, res);
 	}
 	
 	public static IResource getResource(String resName) {
-		return resMap.getOrDefault(new ResourceKey(resName).toString(), IOResource.missingTexture);
+		return resMap.getOrDefault(new ResourceKey(resName), IOResource.missingTexture);
 	}
 	
 	public static IResource getResource(ResourceKey key) {
-		return resMap.getOrDefault(key.toString(), IOResource.missingTexture);
+		return resMap.getOrDefault(key, IOResource.missingTexture);
 	}
 	
-	public static final class ResourceKey {
+	public static class ResourceKey {
 		private final String gameID;
 		private final String resourceName;
 		
@@ -38,18 +38,13 @@ public class ResourceLocator {
 		}
 		
 		public ResourceKey(String _resourceName) {
-			Objects.requireNonNull(_resourceName);
-			
 			this.gameID = "diken";
-			this.resourceName = _resourceName;
+			this.resourceName = Objects.requireNonNull(_resourceName);;
 		}
 
 		public ResourceKey(String _gameID, String _resourceName) {
-			Objects.requireNonNull(_gameID);
-			Objects.requireNonNull(_resourceName);
-			
-			this.gameID = _gameID;
-			this.resourceName = _resourceName;
+			this.gameID = Objects.requireNonNull(_gameID);;
+			this.resourceName = Objects.requireNonNull(_resourceName);;
 		}
 		
 		public String getGameID() {
@@ -63,11 +58,5 @@ public class ResourceLocator {
 		public final String toString() {
 			return gameID+":"+resourceName;
 		}
-
-		protected Object clone() throws CloneNotSupportedException {
-			throw new CloneNotSupportedException("not cloneable");
-		}
-		
-		
 	}
 }

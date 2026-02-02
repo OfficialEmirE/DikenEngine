@@ -1,131 +1,85 @@
 package me.ramazanenescik04.diken;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public class NativeManager {
-	private static File nativeDir;
-	
-	static {
-		nativeDir = new File(System.getProperty("user.home") + "/AppData/Local/diken-natives");
-		nativeDir.mkdirs();
-		nativeDir.deleteOnExit();
-	}
-	
-	public static void loadLibraryFromJar(String path) throws IOException {
-		SystemInfo.OS os = SystemInfo.instance.getOS();
-		
-		path = "/natives/" + path;
-		
-		if(!path.endsWith(getLibraryExtension(os))) {
-			DikenEngine.log("Native kütüphanenin uzantısı uyumsuz: " + path + " != " + getLibraryExtension(os));
-			return;
-		}
-		
-        // InputStream ile kaynağı oku
-        InputStream in = NativeManager.class.getResourceAsStream(path);
-        if (in == null) {
-            throw new IOException("Library not found: " + path);
-        }
-        
-        // Dosya uzantısını belirle (Windows: .dll, Linux: .so, Mac: .dylib)
-        String libExtension = getLibraryExtension();
-        String libName = getLibraryName(path);
-        
-        if (!getLibraryExtension(os).equals(libExtension)) {
-			DikenEngine.log("Native kütüphanenin uzantısı uyumsuz: " + libExtension);
-			return;
-		}
-        
-        // Geçici dosya oluştur
-        File temp = new File(nativeDir, libName + libExtension);
-        
-        cloneNativeFile(in, temp);
-        
-        // Native kütüphaneyi yükle
-        System.load(temp.getAbsolutePath());
-    }
-	
-	public static void loadLibraryFromOSPathFromJar(String path) throws IOException {
-		SystemInfo.OS os = SystemInfo.instance.getOS();
-		
-		path = "/natives/" + os.name() + path;
-		
-		if(!path.endsWith(getLibraryExtension(os))) {
-			DikenEngine.log("Native kütüphanenin uzantısı uyumsuz: " + path + " != " + getLibraryExtension(os));
-			return;
-		}
-		
-        // InputStream ile kaynağı oku
-        InputStream in = NativeManager.class.getResourceAsStream(path);
-        if (in == null) {
-            throw new IOException("Library not found: " + path);
-        }
-        
-        // Dosya uzantısını belirle (Windows: .dll, Linux: .so, Mac: .dylib)
-        String libExtension = getLibraryExtension();
-        String libName = getLibraryName(path);
-        
-        if (!getLibraryExtension(os).equals(libExtension)) {
-			DikenEngine.log("Native kütüphanenin uzantısı uyumsuz: " + libExtension);
-			return;
-		}
-        
-        // Geçici dosya oluştur
-        File temp = new File(nativeDir, libName + libExtension);
-        
-        cloneNativeFile(in, temp);
-        
-        // Native kütüphaneyi yükle
-        System.load(temp.getAbsolutePath());
-    }
-	
-	private static void cloneNativeFile(InputStream in, File temp) throws IOException {
-		if (!temp.exists()) {
-			// InputStream'den geçici dosyaya kopyala
-	        try (FileOutputStream out = new FileOutputStream(temp)) {
-	            byte[] buffer = new byte[4096];
-	            int bytesRead;
-	            while ((bytesRead = in.read(buffer)) != -1) {
-	                out.write(buffer, 0, bytesRead);
-	            }
-	        } finally {
-	            in.close();
-	        }
-		}
-	}
-	
-	public static void loadedNativeSetProperty(String property) {
-		System.setProperty(property, nativeDir.getAbsolutePath());
-	}
+    private static final Path NATIVE_DIR;
     
-    private static String getLibraryExtension() {
-    	SystemInfo.OS os = SystemInfo.instance.getOS();
-        if (os == SystemInfo.OS.WINDOWS) {
-            return ".dll";
-        } else if (os == SystemInfo.OS.MACOS) {
-            return ".dylib";
-        } else {
-            return ".so";
+    static {
+        NATIVE_DIR = Path.of(System.getProperty("user.home"), "AppData", "Local", "diken-natives");
+        try {
+            Files.createDirectories(NATIVE_DIR);
+            NATIVE_DIR.toFile().deleteOnExit();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create native directory", e);
         }
+    }
+    
+    public static void loadLibraryFromJar(String path) throws IOException {
+        var os = SystemInfo.instance.getOS();
+        var fullPath = "/natives/" + path;
+        var expectedExtension = getLibraryExtension(os);
+        
+        if (!fullPath.endsWith(expectedExtension)) {
+            DikenEngine.log("Native kütüphanenin uzantısı uyumsuz: %s != %s".formatted(fullPath, expectedExtension));
+            return;
+        }
+        
+        loadNativeLibrary(fullPath, os);
+    }
+    
+    public static void loadLibraryFromOSPathFromJar(String path) throws IOException {
+        var os = SystemInfo.instance.getOS();
+        var fullPath = "/natives/%s%s".formatted(os.name(), path);
+        var expectedExtension = getLibraryExtension(os);
+        
+        if (!fullPath.endsWith(expectedExtension)) {
+            DikenEngine.log("Native kütüphanenin uzantısı uyumsuz: %s != %s".formatted(fullPath, expectedExtension));
+            return;
+        }
+        
+        loadNativeLibrary(fullPath, os);
+    }
+    
+    private static void loadNativeLibrary(String resourcePath, SystemInfo.OS os) throws IOException {
+        try (InputStream in = NativeManager.class.getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                throw new IOException("Library not found: " + resourcePath);
+            }
+            
+            var libExtension = getLibraryExtension(os);
+            var libName = getLibraryName(resourcePath);
+            var tempFile = NATIVE_DIR.resolve(libName + libExtension);
+            
+            // Dosya yoksa kopyala
+            if (Files.notExists(tempFile)) {
+                Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+            
+            // Native kütüphaneyi yükle
+            System.load(tempFile.toAbsolutePath().toString());
+        }
+    }
+    
+    public static void loadedNativeSetProperty(String property) {
+        System.setProperty(property, NATIVE_DIR.toAbsolutePath().toString());
     }
     
     private static String getLibraryExtension(SystemInfo.OS os) {
-        if (os == SystemInfo.OS.WINDOWS) {
-            return ".dll";
-        } else if (os == SystemInfo.OS.MACOS) {
-            return ".dylib";
-        } else {
-            return ".so";
-        }
+        return switch (os) {
+            case WINDOWS -> ".dll";
+            case MACOS -> ".dylib";
+            default -> ".so";
+        };
     }
 
     private static String getLibraryName(String path) {
-        String[] parts = path.split("/");
-        String fileName = parts[parts.length - 1];
-        int dotIndex = fileName.lastIndexOf('.');
-        return (dotIndex > 0) ? fileName.substring(0, dotIndex) : fileName;
+        var fileName = Path.of(path).getFileName().toString();
+        var dotIndex = fileName.lastIndexOf('.');
+        return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
     }
 }

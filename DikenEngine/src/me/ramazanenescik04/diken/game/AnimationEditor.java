@@ -43,10 +43,10 @@ public class AnimationEditor extends JFrame {
         playBtn = new JButton("Oynat");
         JButton fpsBtn = new JButton("FPS Ayarla");
 
-        addBtn.addActionListener(e -> addFrames());
-        removeBtn.addActionListener(e -> removeSelectedFrame());
-        playBtn.addActionListener(e -> togglePlay());
-        fpsBtn.addActionListener(e -> setFPS());
+        addBtn.addActionListener(_ -> addFrames());
+        removeBtn.addActionListener(_ -> removeSelectedFrame());
+        playBtn.addActionListener(_ -> togglePlay());
+        fpsBtn.addActionListener(_ -> setFPS());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(addBtn);
@@ -61,7 +61,7 @@ public class AnimationEditor extends JFrame {
         getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 
         // --- Timer ---
-        playTimer = new Timer(1000 / animation.getFPS(), e -> updatePreview());
+        playTimer = new Timer(1000 / animation.getFPS(), _ -> updatePreview());
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(640, 400);
@@ -74,22 +74,22 @@ public class AnimationEditor extends JFrame {
         menuBar.add(mnDosya);
         
         JMenuItem mnıtmAnimasyonDosyasYkle = new JMenuItem("Aç");
-        mnıtmAnimasyonDosyasYkle.addActionListener(e -> loadAnimationFile());
+        mnıtmAnimasyonDosyasYkle.addActionListener(_ -> loadAnimationFile());
         mnDosya.add(mnıtmAnimasyonDosyasYkle);
         
         JMenuItem mnıtmAnimasyonDosyasnKaydet = new JMenuItem("Kaydet");
-        mnıtmAnimasyonDosyasnKaydet.addActionListener(e -> saveAnimationFile());
+        mnıtmAnimasyonDosyasnKaydet.addActionListener(_ -> saveAnimationFile());
         mnDosya.add(mnıtmAnimasyonDosyasnKaydet);
         
         JMenuItem mnıtmResimleriDaryaAktar = new JMenuItem("Kareleri Dışarıya Aktar");
-        mnıtmResimleriDaryaAktar.addActionListener(e -> saveAnimationFrames());
+        mnıtmResimleriDaryaAktar.addActionListener(_ -> saveAnimationFrames());
         mnDosya.add(mnıtmResimleriDaryaAktar);
         
         JMenu mnYardm = new JMenu("Yardım");
         menuBar.add(mnYardm);
         
         JMenuItem mnıtmHakknda = new JMenuItem("Hakkında");
-        mnıtmHakknda.addActionListener(e -> JOptionPane.showMessageDialog(this, "Diken Animation Editor \nYapan: Ramazanenescik04\n\nSürüm: " + DikenEngine.VERSION));
+        mnıtmHakknda.addActionListener(_ -> JOptionPane.showMessageDialog(this, "Diken Animation Editor \nYapan: Ramazanenescik04\n\nSürüm: " + DikenEngine.VERSION));
         mnYardm.add(mnıtmHakknda);
         setVisible(true);
     }

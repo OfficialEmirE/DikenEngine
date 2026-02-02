@@ -131,16 +131,19 @@ public class SettingsWindow extends Window {
         			addSettingComponent(component);
         			i++;
         			ScrollBar scroll = new ScrollBar(2, i * itemHeight, 176, itemHeight, ScrollBar.HORIZONTAL).addDraggedListener((val) -> {
-        				Number number = val;
         				Class<?> type = setting.getTypeClass();
         				if (type.isAssignableFrom(Float.class)) {
-        					forceUpdate(setting, number.floatValue());
+        					forceUpdate(setting, map(val, 0.0, 1.0, (Float)setting.getMin(), (Float)setting.getMax()).floatValue());
         				} else if (type.isAssignableFrom(Double.class)) {
-        					forceUpdate(setting, number.doubleValue());
+        					forceUpdate(setting, map(val, 0.0, 1.0, (Double)setting.getMin(), (Double)setting.getMax()).doubleValue());
         				} else if (type.isAssignableFrom(Integer.class)) {
-        					forceUpdate(setting, number.intValue());
+        					forceUpdate(setting, map(val, 0.0, 1.0, (Integer)setting.getMin(), (Integer)setting.getMax()).intValue());
         				}
         			});
+        			Number number = (Number) setting.getValue();
+        			Number min = (Number) setting.getMin();
+        			Number max = (Number) setting.getMax();
+        			scroll.setScrollValue((number.floatValue() - min.floatValue()) / (max.floatValue() - min.floatValue()));
         			component = scroll;
         			break;
         		default:
@@ -230,4 +233,13 @@ public class SettingsWindow extends Window {
 		    updateItemsPosition(bar.getScrollValue());
 		}
 	}
+	
+	private static Double map(
+	        double value,
+	        double inMin, double inMax,
+	        double outMin, double outMax) {
+
+	    return outMin + (value - inMin) * (outMax - outMin) / (inMax - inMin);
+	}
+
 }

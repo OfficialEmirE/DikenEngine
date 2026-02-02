@@ -71,6 +71,9 @@ public class ConsoleLog {
 		}
 		
 		try {
+			if (!logsFile.exists())
+				logsFile.mkdirs();
+			
 			File logFile = new File(logsFile, new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".txt");
 			
 			Files.writeString(logFile.toPath(), builder.toString(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);

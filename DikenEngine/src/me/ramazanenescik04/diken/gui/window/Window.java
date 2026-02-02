@@ -109,7 +109,6 @@ public class Window extends GuiComponent {
 		bitmap.fill(px, py, pg, py2, 0xffffffff);
 		
 		bitmap.draw(contentPane.render(), 1, BAR_HEIGHT + 1);
-
 		
 		bitmap.fill(px, py, pg, BAR_HEIGHT, active ? activeWindowColor.getValue() : nonActiveWindowColor.getValue());
 		

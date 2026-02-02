@@ -8,8 +8,8 @@ import me.ramazanenescik04.diken.gui.Hitbox;
 
 public class InputHandler {
 	private static Hitbox mouseHitbox = new Hitbox(0, 0, 2, 2);
-	
 	private static Point mousePosition = new Point(0, 0);
+	private static boolean isMouseOnScreen;
 	
 	/**
 	 * Returns the mouse hitbox, which is a 2x2 box at the current mouse position.
@@ -45,10 +45,11 @@ public class InputHandler {
 	 */
 	public static void updateMousePosition() {
 		DikenEngine engine = DikenEngine.getEngine();
-		int mouseX = (int) (Mouse.getX() / engine.scale);
-		int mouseY = (int) (engine.getHeight() - (Mouse.getY() / engine.scale));
+		int mouseX = (int) (Mouse.getX() / engine.oldScale);
+		int mouseY = (int) (engine.getHeight() - (Mouse.getY() / engine.oldScale));
 		mousePosition.setLocation(mouseX, mouseY);
 		mouseHitbox.setLocation(mouseX, mouseY);
+		isMouseOnScreen = Mouse.isInsideWindow();
 	}
 	
 	/**
@@ -59,6 +60,6 @@ public class InputHandler {
 	 * @return mouse on screen
 	 */
 	public static boolean isMouseOnScreen() {
-		return Mouse.isInsideWindow();
+		return isMouseOnScreen;
 	}
 }

@@ -22,7 +22,7 @@ public class DefaultMainMenuScreen extends Screen {
 	private int alpha = 1; // Ekranın başlangıçta görünürlüğü
 
 	public void openScreen() {		
-		darknessTimer = new Timer((ct, mt, st, et, isEnd) -> {
+		darknessTimer = new Timer((ct, mt, _, _, isEnd) -> {
 			if (isEnd) {
 				engine.setCurrentScreen(new WhereAmIScreen());
 			} else {

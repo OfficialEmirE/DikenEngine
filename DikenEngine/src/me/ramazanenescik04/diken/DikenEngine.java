@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -44,7 +45,6 @@ import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.resource.SoundResource;
 import me.ramazanenescik04.diken.tools.*;
-import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
 
 /**
  * Bu sınıf Diken Engine'in ana sınıfıdır. Bu sınıf, LWJGL kütüphanesini
@@ -53,8 +53,8 @@ import me.ramazanenescik04.reportbugs.gui.ReportBugGUI;
  * @author Ramazanenescik04
  */
 public class DikenEngine implements Runnable {	
-	public static final String VERSION = "1.2.0";
-	public static final int protocolVersion = 16;
+	public static final String VERSION = "1.3.0";
+	public static final int protocolVersion = 17;
 
 	public Canvas canvas;
 	private Canvas oldCanvas;
@@ -62,7 +62,7 @@ public class DikenEngine implements Runnable {
 	private int height, tmpheight;
 	private boolean fullscreen;
 	private boolean isResizable = true;
-	public float scale = 1.0f; // Ölçeklendirme faktörü
+	int oldScale;
 	private String title;
 
 	private long lastFPSTime = System.currentTimeMillis(); // Son FPS hesaplama zamanı
@@ -88,23 +88,20 @@ public class DikenEngine implements Runnable {
 	private static DikenEngine instance;
 
 	public DikenEngine(/* Nullable */Canvas canvas, int width, int height) {
-		this(canvas, width, height, 2.0f);
+		this(canvas, width, height, 2);
 	}
 
-	public DikenEngine(/* Nullable */Canvas canvas, int width, int height, float scale) {
-		this.scale = scale;
+	public DikenEngine(/* Nullable */Canvas canvas, int width, int height, int scale) {
+		config = new Config();
+		config.setSetting("guiScale", oldScale = scale);
 
-		int scaleWidth = (int) (width * scale);
-		int scaleHeight = (int) (height * scale);
-		
 		this.canvas = this.oldCanvas = canvas;
-		this.width = scaleWidth;
-		this.height = scaleHeight;
-		this.tmpwidth = scaleWidth;
-		this.tmpheight = scaleHeight;
+		this.width = width;
+		this.height = height;
+		this.tmpwidth = width;
+		this.tmpheight = height;
 		this.fullscreen = false;
 
-		config = new Config();
 		title = "DikenEngine " + VERSION;
 		instance = this;
 	}
@@ -333,8 +330,8 @@ public class DikenEngine implements Runnable {
 		int error = GL11.glGetError();
 		if (error != 0) {
 			log("------------------");
-			log("GL Error: " + GL11.glGetString(error));
-			log("-------------------");
+			log("GL Error: " + GL11.glGetString(error) + " - " + error);
+			log("------------------");
 		}
 	}
 
@@ -445,13 +442,13 @@ public class DikenEngine implements Runnable {
 				AL.create();
 			}
 
-			screenBitmap = new Bitmap(getWidth(), getHeight());
+			screenBitmap = new Bitmap(width, height);
 
 			// --- PBO OLUŞTURMA (INIT) ---
 			pboID = GL15.glGenBuffers();
 			GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
 			// Buffer boyutunu ayarla (Width * Height * 4 byte)
-			GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, getWidth() * getHeight() * 4, GL15.GL_STREAM_DRAW);
+			GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, width * height * 4, GL15.GL_STREAM_DRAW);
 			GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
 			// ---------------------------
 
@@ -472,7 +469,7 @@ public class DikenEngine implements Runnable {
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
 			// İlk boş doku verisini gönder (Null pointer ile)
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, getWidth(), getHeight(), 0,
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0,
 					GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
 
 			GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
@@ -506,7 +503,7 @@ public class DikenEngine implements Runnable {
 				GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
 				
 				// "Orphaning" (Eski buffer'ı çöpe atıp yeni istemek - Senkronizasyonu engeller, hızı artırır)
-				GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, getWidth() * getHeight() * 4, GL15.GL_STREAM_DRAW);
+				GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, width * height * 4, GL15.GL_STREAM_DRAW);
 
 				// 2. GPU Belleğini Map'le (Yazılabilir olarak aç)
 				ByteBuffer mappedBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
@@ -526,7 +523,7 @@ public class DikenEngine implements Runnable {
 				
 				// Son parametre '0' olmalı, bu veriyi RAM yerine bağlı olan PBO'dan çekmesi gerektiğini söyler.
 				// Format: GL_BGRA ve Type: GL_UNSIGNED_INT_8_8_8_8_REV kullanıyoruz ki renkler doğru çıksın.
-				GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, getWidth(), getHeight(),
+				GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height,
 						GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, 0);
 
 				// 5. PBO bağlantısını kes
@@ -535,9 +532,12 @@ public class DikenEngine implements Runnable {
 				// --- PBO UPDATE BİTİŞİ ---
 
 				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
+				
+				GL11.glPushMatrix();
+				GL11.glScaled(this.oldScale, this.oldScale, 1.0d);
 
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-
+				
 				GL11.glBegin(GL11.GL_QUADS);
 				GL11.glTexCoord2f(0, 0);
 				GL11.glVertex2f(0, 0);
@@ -551,6 +551,8 @@ public class DikenEngine implements Runnable {
 				GL11.glTexCoord2f(0, 1);
 				GL11.glVertex2f(0, height);
 				GL11.glEnd();
+				
+				GL11.glPopMatrix();
 
 				updateFPS();
 
@@ -575,12 +577,12 @@ public class DikenEngine implements Runnable {
 					
 					// Resize durumunda dokuyu ve PBO boyutunu güncellememiz gerekir
 					GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-					GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, getWidth(), getHeight(), 0,
+					GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0,
 							GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
 					
 					// PBO boyutunu güncelle
 					GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
-					GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, getWidth() * getHeight() * 4, GL15.GL_STREAM_DRAW);
+					GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, width * height * 4, GL15.GL_STREAM_DRAW);
 					GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
 				}
 			}
@@ -681,7 +683,7 @@ public class DikenEngine implements Runnable {
 		while (Keyboard.next()) {
 			if (Keyboard.getEventKeyState()) {
 				if (Keyboard.getEventKey() == Keyboard.KEY_F2) {
-					Bitmap screenshotBitmap = new Bitmap(getWidth(), getHeight());
+					Bitmap screenshotBitmap = new Bitmap(width, height);
 					screenshotBitmap.clear(0xFF000000);
 					screenshotBitmap.draw(screenBitmap, 0, 0);
 					try {
@@ -738,7 +740,8 @@ public class DikenEngine implements Runnable {
 	}
 
 	private void render(Bitmap bitmap) {
-		bitmap.clear(0xFF000000);
+		//Clear yapmak fps düşürür. özellikle büyük ekran ise
+		//bitmap.clear(0xFF000000);
 
 		if (currentScreen != null) {
 			currentScreen.render(bitmap);
@@ -752,7 +755,7 @@ public class DikenEngine implements Runnable {
 			bitmap.drawText("Screen: " + (currentScreen != null ? currentScreen.getClass().getSimpleName() : "null"), 2,
 					12, false);
 			bitmap.drawText("Width: " + getWidth() + " Height: " + getHeight(), 2, 22, false);
-			bitmap.drawText("Scale: " + scale, 2, 32, false);
+			bitmap.drawText("Scale: " + this.oldScale, 2, 32, false);
 			java.awt.Point point = InputHandler.getMousePosition();
 			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 42, false);
 
@@ -791,11 +794,11 @@ public class DikenEngine implements Runnable {
 	}
 
 	public int getHeight() {
-		return (int) (height / scale);
+		return (int) (this.height / this.oldScale);
 	}
 
 	public int getWidth() {
-		return (int) (width / scale);
+		return (int) (this.width / this.oldScale);
 	}
 
 	public final Screen getCurrentScreen() {
@@ -818,6 +821,9 @@ public class DikenEngine implements Runnable {
 	        }
 	    } else if (Display.wasResized()) {
 	        needsResize = true;
+	    } else if (this.oldScale != this.config.getSetting("guiScale", Integer.class).getValue()) {
+	    	this.oldScale = this.config.getSetting("guiScale", Integer.class).getValue();
+	    	needsResize = true;
 	    }
 
 	    if (needsResize) {
@@ -883,8 +889,6 @@ public class DikenEngine implements Runnable {
 
 	private void refreshScreenBuffer() {
 		screenBitmap.clean();
-		int width = getWidth();
-		int height = getHeight();
 		
 		if (width <= 0) {
 			width = 1;
@@ -964,6 +968,7 @@ public class DikenEngine implements Runnable {
 		} else {
 			desc.append("No stack trace available.\n");
 		}
-		ReportBugGUI.showError(title, desc.toString().trim());
+		
+		JOptionPane.showMessageDialog(null, desc.toString().trim(), title, JOptionPane.ERROR_MESSAGE);
 	}
 }

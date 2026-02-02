@@ -1,19 +1,17 @@
 package me.ramazanenescik04.diken.tools;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 public class Utils {
 	public static String[] readFileArray(File file) {
@@ -22,14 +20,8 @@ public class Utils {
 		}
 
 		try {
-			BufferedReader d = new BufferedReader(new InputStreamReader(new FileInputStream(file)));
-			ArrayList<String> list = new ArrayList<>();
-			String value = "";
-			while ((value = d.readLine()) != null) {
-				list.add(value);
-			}
-			value = "";
-			d.close();
+			Path filePath = file.toPath();
+			List<String> list = Files.readAllLines(filePath);
 
 			return list.toArray(new String[list.size()]);
 		} catch (Exception e) {
@@ -56,11 +48,15 @@ public class Utils {
 				file.createNewFile();
 			}
 
-			BufferedWriter d = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file)));
+			ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(file));
 			for (T var : array) {
-				d.write(var.toString());
+				if (var instanceof java.io.Serializable) {
+					stream.writeObject(var);
+				} else {
+					stream.writeUTF(var.toString());
+				}
 			}
-			d.close();
+			stream.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
