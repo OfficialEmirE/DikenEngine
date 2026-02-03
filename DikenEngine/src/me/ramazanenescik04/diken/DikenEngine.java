@@ -53,8 +53,8 @@ import me.ramazanenescik04.diken.tools.*;
  * @author Ramazanenescik04
  */
 public class DikenEngine implements Runnable {	
-	public static final String VERSION = "1.3.0";
-	public static final int protocolVersion = 17;
+	public static final String VERSION = "1.3.1";
+	public static final int protocolVersion = 18;
 
 	public Canvas canvas;
 	private Canvas oldCanvas;

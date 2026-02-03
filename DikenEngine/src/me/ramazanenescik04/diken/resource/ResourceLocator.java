@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public class ResourceLocator {
 	
-	private static Map<ResourceKey, IResource> resMap = new ConcurrentHashMap<ResourceKey, IResource>();
+	private static Map<String, IResource> resMap = new ConcurrentHashMap<String, IResource>();
 	
 	public static void addResource(String resourceName, IResource res) {
 		addResource(new ResourceKey(resourceName), res);
@@ -18,15 +18,15 @@ public class ResourceLocator {
 			res = IOResource.missingTexture;
 		}
 		
-		resMap.put(key, res);
+		resMap.put(key.toString(), res);
 	}
 	
 	public static IResource getResource(String resName) {
-		return resMap.getOrDefault(new ResourceKey(resName), IOResource.missingTexture);
+		return getResource(new ResourceKey(resName));
 	}
 	
 	public static IResource getResource(ResourceKey key) {
-		return resMap.getOrDefault(key, IOResource.missingTexture);
+		return resMap.getOrDefault(key.toString(), IOResource.missingTexture);
 	}
 	
 	public static class ResourceKey {
@@ -39,12 +39,12 @@ public class ResourceLocator {
 		
 		public ResourceKey(String _resourceName) {
 			this.gameID = "diken";
-			this.resourceName = Objects.requireNonNull(_resourceName);;
+			this.resourceName = Objects.requireNonNull(_resourceName);
 		}
 
 		public ResourceKey(String _gameID, String _resourceName) {
 			this.gameID = Objects.requireNonNull(_gameID);;
-			this.resourceName = Objects.requireNonNull(_resourceName);;
+			this.resourceName = Objects.requireNonNull(_resourceName);
 		}
 		
 		public String getGameID() {
