@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.lwjgl.input.Mouse;
-
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.Setting;
@@ -58,7 +56,7 @@ public class SettingsWindow extends Window {
 			settings.put(entry.getKey(), new Setting<>(entry.getValue())); 
 		}
 		
-		this.setLocation(engine.getWidth() / 2 - this.width / 2, engine.getHeight() / 2 - this.height / 2);
+		this.setLocation(engine.getScaledWidth() / 2 - this.width / 2, engine.getScaledHeight() / 2 - this.height / 2);
 		this.getContentPane().setBackground(new StaticBackground(Bitmap.createClearedBitmap(16, 16, 0xffa0a0a0)));
 		Panel mainPanel = this.getContentPane();
 	    
@@ -225,7 +223,7 @@ public class SettingsWindow extends Window {
 	public void tick(DikenEngine engine) {
 		super.tick(engine);
 		
-		int wheel = Mouse.getDWheel(); // Fare tekerleği hareketi
+		int wheel = engine.input.getWheelValue(); // Fare tekerleği hareketi
 		if (wheel != 0 && this.active) {
 		    // Tekerlek döndükçe scrollValue'yu 0.0 ile 1.0 arasında değiştir
 		    float step = 1.0f / (settingsItems.size() - (bar.getHeight() / itemHeight));

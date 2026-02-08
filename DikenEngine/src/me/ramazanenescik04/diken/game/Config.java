@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.*;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 
 public class Config {
@@ -26,15 +27,15 @@ public class Config {
 		defaultConfig.put("activeWindowColor", new Setting<Integer>("Aktif Pencere Rengi", 0xff000080, Integer.class, EnumSettingType.COLOR_PICKER));
 		defaultConfig.put("windowColor", new Setting<Integer>("Aktif Olmayan Pencere Rengi", Color.GRAY.getRGB(), Integer.class, EnumSettingType.COLOR_PICKER));
 		
-		defaultConfig.put("guiScale", new Setting<Integer>("GUI Ölceği", 1, 1, 4, Integer.class, EnumSettingType.SLIDER));
+		defaultConfig.put("guiScale", new Setting<Integer>("GUI Ölceği", 1, 1, 3, Integer.class, EnumSettingType.SLIDER));
+		defaultConfig.put("screenshotPath", new Setting<String>("Ekran Görüntüsü Kaydetme Konumu", "./", String.class, EnumSettingType.TEXT_FIELD));
 		
 		this.config.putAll(defaultConfig);
-		this.loadConfig(defaultConfigFile);
 	}
 
 	public boolean loadConfig(File configFile) {
-		if(configFile == null) {
-			System.err.println("File is Null!");
+		if(configFile == null || !configFile.exists()) {
+			DikenEngine.errorLog("file is not exist or null: " + configFile);
 			return false;
 		}
 		try (DataInputStream stream = new DataInputStream(new FileInputStream(configFile))) {
@@ -55,6 +56,10 @@ public class Config {
 	
 	public void saveConfig(File configFile) {
 	    if(configFile == null) return;
+	    
+	    if(configFile.getParentFile() != null) {
+	        configFile.getParentFile().mkdirs();
+	    }
 	    
 	    // GZIPOutputStream'i ayrı bir değişkende tutarak kontrolü garantileyelim
 	    try (FileOutputStream fos = new FileOutputStream(configFile);

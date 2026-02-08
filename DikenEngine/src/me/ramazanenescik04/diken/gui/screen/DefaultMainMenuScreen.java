@@ -32,7 +32,7 @@ public class DefaultMainMenuScreen extends Screen {
 			}
 		}, 0, 1200000); // 20 dakika sonra karanlıklaşacak
 		ArrayBitmap icon = (ArrayBitmap) ResourceLocator.getResource("bgd-tiles");
-		DMMPanel panel = new DMMPanel(engine.getWidth(), engine.getHeight());
+		DMMPanel panel = new DMMPanel(engine.getScaledWidth(), engine.getScaledHeight());
 		panel.setBackground(new DownBackground(icon.bitmap[0][0]));		
 		this.setContentPane(panel);
 		darknessTimer.start();
@@ -43,7 +43,7 @@ public class DefaultMainMenuScreen extends Screen {
 		
 		var color = PixelToColor.toColor(alpha, 0, 0, 0);
 		
-		bitmap.blendFill(0, 0, engine.getWidth(), engine.getHeight(), color);
+		bitmap.blendFill(0, 0, engine.getScaledWidth(), engine.getScaledHeight(), color);
 	}
 	
 	public void closeScreen() {
@@ -51,9 +51,9 @@ public class DefaultMainMenuScreen extends Screen {
 	}
 	
 	public void resized() {
-		this.getContentPane().get(3).setLocation(10, engine.getHeight() - (1 * 20));
-		this.getContentPane().get(4).setLocation(10, engine.getHeight() - (2 * 20));
-		this.getContentPane().get(5).setLocation(110, engine.getHeight() - (2 * 20));
+		this.getContentPane().get(3).setLocation(10, engine.getScaledHeight() - (1 * 20));
+		this.getContentPane().get(4).setLocation(10, engine.getScaledHeight() - (2 * 20));
+		this.getContentPane().get(5).setLocation(110, engine.getScaledHeight() - (2 * 20));
 	}
 	
 	private static class DMMPanel extends Panel {
@@ -84,13 +84,13 @@ public class DefaultMainMenuScreen extends Screen {
 				engine.wManager.addWindow(new SettingsWindow()); 
 			}));
 			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 100 + (2 * 20), 200, 20).setRunnable(() -> {
-				engine.close();
+				engine.stop();
 			}));
-			add(new LinkButton("Github", 10, engine.getHeight() - (1 * 20), 200, 20).setURI(URI.create("https://github.com/Ramazanenesisik010/DikenEngine")));
-			add(new Button(lang.languageValue("dmainmenu.about"), 10, engine.getHeight() - (2 * 20), 100, 20).setRunnable(() -> {
+			add(new LinkButton("Github", 10, engine.getScaledHeight() - (1 * 20), 200, 20).setURI(URI.create("https://github.com/Ramazanenesisik010/DikenEngine")));
+			add(new Button(lang.languageValue("dmainmenu.about"), 10, engine.getScaledHeight() - (2 * 20), 100, 20).setRunnable(() -> {
 				engine.wManager.addWindow(new AboutWindow());
 			}));
-			add(new Button(lang.languageValue("dmainmenu.reportbug"), 110, engine.getHeight() - (2 * 20), 100, 20).setRunnable(() -> {
+			add(new Button(lang.languageValue("dmainmenu.reportbug"), 110, engine.getScaledHeight() - (2 * 20), 100, 20).setRunnable(() -> {
 			}));
 		}
 		

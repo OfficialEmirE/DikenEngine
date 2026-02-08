@@ -48,8 +48,8 @@ public class Sky extends Node {
 
 	@Override
 	public void update(World world, DikenEngine engine) {
-		this.width = engine.getWidth() + 20;
-		this.height = engine.getHeight() + 20;
+		this.width = engine.getScaledWidth() + 20;
+		this.height = engine.getScaledHeight() + 20;
 		
 		this.x = (int) world.camera.x() - 10;
 		this.y = (int) world.camera.y() - 10;

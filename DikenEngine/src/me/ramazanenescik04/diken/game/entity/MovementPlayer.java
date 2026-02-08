@@ -1,8 +1,9 @@
 package me.ramazanenescik04.diken.game.entity;
 
+import java.awt.event.KeyEvent;
 import java.util.*;
 
-import org.lwjgl.input.Keyboard;
+import me.ramazanenescik04.diken.DikenEngine;
 
 public class MovementPlayer {
 	private Humanoid player;
@@ -13,49 +14,49 @@ public class MovementPlayer {
 	public boolean isMoving = false;
 	
 	public MovementPlayer(Humanoid player) {
-		keyMap.put("moveUpKey", Keyboard.KEY_W);
-		keyMap.put("moveLeftKey", Keyboard.KEY_A);
-		keyMap.put("moveDownKey", Keyboard.KEY_S);
-		keyMap.put("moveRightKey", Keyboard.KEY_D);
+		keyMap.put("moveUpKey", KeyEvent.VK_W);
+		keyMap.put("moveLeftKey", KeyEvent.VK_A);
+		keyMap.put("moveDownKey", KeyEvent.VK_S);
+		keyMap.put("moveRightKey", KeyEvent.VK_D);
 		
-		keyMap.put("moveUpArrowKey", Keyboard.KEY_UP);
-		keyMap.put("moveLeftArrowKey", Keyboard.KEY_LEFT);
-		keyMap.put("moveDownArrowKey", Keyboard.KEY_DOWN);
-		keyMap.put("moveRightArrowKey", Keyboard.KEY_RIGHT);
+		keyMap.put("moveUpArrowKey", KeyEvent.VK_UP);
+		keyMap.put("moveLeftArrowKey", KeyEvent.VK_LEFT);
+		keyMap.put("moveDownArrowKey", KeyEvent.VK_DOWN);
+		keyMap.put("moveRightArrowKey", KeyEvent.VK_RIGHT);
 		
-		keyMap.put("invertoryKey", Keyboard.KEY_B);
+		keyMap.put("invertoryKey", KeyEvent.VK_B);
 		
-		keyMap.put("invertoryShortcut1", Keyboard.KEY_1);
-		keyMap.put("invertoryShortcut2", Keyboard.KEY_2);
-		keyMap.put("invertoryShortcut3", Keyboard.KEY_3);
-		keyMap.put("invertoryShortcut4", Keyboard.KEY_4);
-		keyMap.put("invertoryShortcut5", Keyboard.KEY_5);
-		keyMap.put("invertoryShortcut6", Keyboard.KEY_6);
-		keyMap.put("invertoryShortcut7", Keyboard.KEY_7);
-		keyMap.put("invertoryShortcut8", Keyboard.KEY_8);
-		keyMap.put("invertoryShortcut9", Keyboard.KEY_9);
-		keyMap.put("invertoryShortcut0", Keyboard.KEY_0);
+		keyMap.put("invertoryShortcut1", KeyEvent.VK_1);
+		keyMap.put("invertoryShortcut2", KeyEvent.VK_2);
+		keyMap.put("invertoryShortcut3", KeyEvent.VK_3);
+		keyMap.put("invertoryShortcut4", KeyEvent.VK_4);
+		keyMap.put("invertoryShortcut5", KeyEvent.VK_5);
+		keyMap.put("invertoryShortcut6", KeyEvent.VK_6);
+		keyMap.put("invertoryShortcut7", KeyEvent.VK_7);
+		keyMap.put("invertoryShortcut8", KeyEvent.VK_8);
+		keyMap.put("invertoryShortcut9", KeyEvent.VK_9);
+		keyMap.put("invertoryShortcut0", KeyEvent.VK_0);
 		
 		this.player = player;
 	}
 	
-	public void tick() {
+	public void tick(DikenEngine engine) {
 		this.isMoving = false;
 		if (player.canMove) {
-			if (Keyboard.isKeyDown(this.keyMap.get("moveUpKey")) || Keyboard.isKeyDown(this.keyMap.get("moveUpArrowKey"))) {
+			if (engine.input.isKeyDown(this.keyMap.get("moveUpKey")) || engine.input.isKeyDown(this.keyMap.get("moveUpArrowKey"))) {
 				player.y -= player.speed;
 				this.isMoving = true;
 			}
-			if (Keyboard.isKeyDown(this.keyMap.get("moveDownKey")) || Keyboard.isKeyDown(this.keyMap.get("moveDownArrowKey"))) {
+			if (engine.input.isKeyDown(this.keyMap.get("moveDownKey")) || engine.input.isKeyDown(this.keyMap.get("moveDownArrowKey"))) {
 				player.y += player.speed;
 				this.isMoving = true;
 			}
-			if (Keyboard.isKeyDown(this.keyMap.get("moveLeftKey")) || Keyboard.isKeyDown(this.keyMap.get("moveLeftArrowKey"))) {
+			if (engine.input.isKeyDown(this.keyMap.get("moveLeftKey")) || engine.input.isKeyDown(this.keyMap.get("moveLeftArrowKey"))) {
 				player.x -= player.speed;
 				viewType = 0;
 				this.isMoving = true;
 			}
-			if (Keyboard.isKeyDown(this.keyMap.get("moveRightKey")) || Keyboard.isKeyDown(this.keyMap.get("moveRightArrowKey"))) {
+			if (engine.input.isKeyDown(this.keyMap.get("moveRightKey")) || engine.input.isKeyDown(this.keyMap.get("moveRightArrowKey"))) {
 				player.x += player.speed;
 				viewType = 1;
 				this.isMoving = true;

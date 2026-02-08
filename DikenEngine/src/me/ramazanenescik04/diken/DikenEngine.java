@@ -1,39 +1,26 @@
 package me.ramazanenescik04.diken;
 
-import java.awt.Canvas;
-import java.awt.Color;
-import java.awt.Graphics;
+import java.awt.Cursor;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Cursor;
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-import org.lwjgl.openal.AL;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL21;
+import javax.swing.JPanel;
 
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.gui.UniFont;
-import me.ramazanenescik04.diken.gui.screen.*;
+import me.ramazanenescik04.diken.gui.screen.DefaultMainMenuScreen;
+import me.ramazanenescik04.diken.gui.screen.Screen;
 import me.ramazanenescik04.diken.gui.window.ConsoleWindow;
 import me.ramazanenescik04.diken.gui.window.WindowManager;
+import me.ramazanenescik04.diken.input.IInputListener;
+import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -43,298 +30,317 @@ import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
-import me.ramazanenescik04.diken.resource.SoundResource;
-import me.ramazanenescik04.diken.tools.*;
+import me.ramazanenescik04.diken.tools.Utils;
 
-/**
- * Bu sınıf Diken Engine'in ana sınıfıdır. Bu sınıf, LWJGL kütüphanesini
- * kullanarak oyun motorunu başlatır ve çalıştırır.
- * 
- * @author Ramazanenescik04
- */
-public class DikenEngine implements Runnable {	
-	public static final String VERSION = "1.3.1";
-	public static final int protocolVersion = 18;
+public class DikenEngine extends JPanel implements Runnable, IInputListener {
+	private static final long serialVersionUID = 1L;
 
-	public Canvas canvas;
-	private Canvas oldCanvas;
-	private int width, tmpwidth;
-	private int height, tmpheight;
-	private boolean fullscreen;
-	private boolean isResizable = true;
-	int oldScale;
-	private String title;
-
-	private long lastFPSTime = System.currentTimeMillis(); // Son FPS hesaplama zamanı
-	public int currentFPS = -1; // Gösterilecek FPS
-
-	public boolean running = true;
-
-	private int screenTextureID;
-	public Bitmap screenBitmap;
-
-	public UniFont defaultFont;
-	public WindowManager wManager;
-
-	public Config config;
-
-	/** Şu Anki Ekran */
-	private Screen currentScreen;
-	// null = Varsayılan Fare İmleci
-	private CursorResource cursorResource = null;
-	private List<Runnable> onCloseRunnables = new ArrayList<>();
-	private ByteBuffer[] displayIcons;
+	public static final String VERSION = "2.0.0";
+	public static final int protocolVersion = 19;
 
 	private static DikenEngine instance;
+	
+	private boolean running = false;
+	private BufferedImage screenImage;
+	private Bitmap screenBitmap;
+	
+	private int width;
+	private int height;
+	private int scale = 1;
+	public int currentFPS = -1; // Gösterilecek FPS
+	
+	public UniFont defaultFont;
+	public WindowManager wManager;
+	private Screen currentScreen;
 
-	public DikenEngine(/* Nullable */Canvas canvas, int width, int height) {
-		this(canvas, width, height, 2);
-	}
-
-	public DikenEngine(/* Nullable */Canvas canvas, int width, int height, int scale) {
-		config = new Config();
-		config.setSetting("guiScale", oldScale = scale);
-
-		this.canvas = this.oldCanvas = canvas;
+	public InputHandler input;
+	public CursorResource cursorResource;
+	public Config config = new Config();
+	
+	public DikenEngine(int width, int height, int scale) {
+		setPreferredSize(new java.awt.Dimension(width, height));
+		
+		this.config.setSetting("guiScale", scale);
+		this.config.loadConfig();
+		
 		this.width = width;
 		this.height = height;
-		this.tmpwidth = width;
-		this.tmpheight = height;
-		this.fullscreen = false;
-
-		title = "DikenEngine " + VERSION;
+		this.scale = scale;
+		
 		instance = this;
 	}
-
+	
+	public void start() {
+		running = true;
+		new Thread(this, "DikenEngine Thread").start();
+	}
+	
+	public void stop() {
+		running = false;
+	}
+	
 	/** Bu kod, Diken Engine'de bir ekranı ayarlar. */
 	public void setCurrentScreen(Screen screen) {
 		if (currentScreen != null) {
 			currentScreen.closeScreen();
 		}
 		log("Opening screen: " + (screen != null ? screen.getClass().getSimpleName() : "null"));
-		this.currentScreen = screen;
 		System.gc();
 		if (screen != null) {
-			Keyboard.enableRepeatEvents(true);
 			screen.engine = this;
 			screen.openScreen();
-		} else {
-			Keyboard.enableRepeatEvents(false);
 		}
+		
+		this.currentScreen = screen;
+	}
+	
+	public Screen getCurrentScreen() {
+		return this.currentScreen;
 	}
 
 	public void setCursor(CursorResource cursor) {
 		this.cursorResource = cursor;
 	}
-
-	/** Bu kod, Diken Engine'i başlatır. */
-	public void start() {
-		this.running = true;
-		new Thread(this, "Engine Thread").start();
+	
+	public int getScaledWidth() {
+		return width / scale;
 	}
-
-	public void close() {
-		this.running = false;
+	
+	public int getScaledHeight() {
+		return height / scale;
 	}
+	
+	public int getScale() {
+		return scale;
+	}
+	
+	public static void log(String message) {
+		System.out.println("[DikenEngine] " + message);
+		ConsoleLog.sendLog(message);
+	}
+	
+	public static void errorLog(String message) {
+		System.err.println("[DikenEngine] " + message);
+		ConsoleLog.sendLog(ConsoleLog.LogType.ERROR, message);
+	}
+	
+	@Override
+	public void run() {
+		try {
+			log("Starting DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ")");
+			
+			defaultFont = UniFont.getFont("default_font");
+			wManager = new WindowManager();
+			
+			input = new InputHandler(this);
+			input.addListener(this);
+			
+			screenBitmap = new Bitmap(width / scale, height / scale);
+			screenImage = new BufferedImage(width / scale, height / scale, BufferedImage.TYPE_INT_ARGB);
+			
+			long fixedUpdateTime = 1000000000L / 60; // Fixed update rate at 60Hz
+			long lastUpdateTime = System.nanoTime();
+			long lastFPSTime = System.currentTimeMillis();
+			double accumulator = 0;
+			int frames = 0;
+			while (running) {
+				long currentTime = System.nanoTime();
+				long updateDelta = currentTime - lastUpdateTime;
+				accumulator += updateDelta;
+				lastUpdateTime = currentTime;
 
-	public static void main(String[] args) {
-		// Teşekküller Claude.ai
+				while (accumulator >= fixedUpdateTime) {
+					tick();
+					accumulator -= fixedUpdateTime;
+				}
+				
+				render(this.screenBitmap);
+				frames++;
+				
+				if (System.currentTimeMillis() - lastFPSTime >= 1000) {
+					currentFPS = frames;
+					frames = 0;
+					lastFPSTime = System.currentTimeMillis();
+				}
+				
+				// Bitmap -> BufferedImage
+				int[] data = ((DataBufferInt) screenImage.getRaster().getDataBuffer()).getData();
+				screenBitmap.pixels.rewind();
+				screenBitmap.pixels.get(data);
+				
+				// Repaint the panel
+				repaint();
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+			crash(e);
+		} finally {
+			log("Closing DikenEngine...");
+			
+			if (currentScreen != null) {
+				currentScreen.closeScreen();
+			}
 
-		// Argümanlardan anahtar-değer çiftlerini tutacak Map
-		Map<String, String> argMap = new HashMap<>();
-
-		// Argümanları işleme
-		for (int i = 0; i < args.length; i++) {
-			// Eğer argüman "-" ile başlıyorsa, bu bir anahtar olabilir
-			if (args[i].startsWith("-")) {
-				// Mevcut argüman anahtar, sonraki argüman değer olacak
-				String key = args[i];
-
-				// Sonraki argümanın var olduğunu ve "-" ile başlamadığını kontrol et
-				if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
-					String value = args[i + 1];
-					argMap.put(key, value);
-					// Değere işaret eden indeksi atla
-					i++;
-				} else {
-					// Değer yoksa, anahtarın değerini boş veya null olarak ayarla
-					argMap.put(key, "");
+			config.saveConfig();
+			wManager.closeAll();
+			
+			// TODO
+			//SoundResource.destroySounds();
+			
+			ConsoleLog.saveLogs();
+			System.gc();
+		}
+	}
+	
+	@Override
+	public void keyHandled(int inputMode, int key, char character) {
+		if (inputMode == InputHandler.INPUT_PRESSED) {
+			if (key == KeyEvent.VK_F2) {
+				try {
+					String fileName = "screenshot-"
+							+ new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
+					
+					File pathFile = new File(this.config.getOrDefaultSetting("screenshotPath", String.class, "./").getValue());
+					pathFile.mkdirs();
+					
+					File file = new File(pathFile, fileName);
+					ImageIO.write(screenBitmap.toImage(), "png", file);
+					
+					log("Screenshot saved as " + fileName);
+				} catch (IOException e) {
+					e.printStackTrace();
+					log("Screenshot failed to save.");
 				}
 			}
-		}
 
-		DikenEngine engine = useMap(argMap);
-		engine.start();
-	}
+			if (key == KeyEvent.VK_F3) {
+				this.config.setSetting("debug", !this.config.getSetting("debug", Boolean.class).getValue());
+			}
 
-	private static DikenEngine useMap(Map<String, String> argMap) {
-		DikenEngine object = null;
-		// Varsayılan Değerler
-		int w = 320;
-		int h = 240;
-		int s = 2;
-		boolean fullscreen = false;
-
-		if (argMap.containsKey("-w")) {
-			String wStr = (String) argMap.get("-w");
-
-			if (wStr != null && isNumeric(wStr)) {
-				w = Integer.parseInt(wStr);
+			if (key == KeyEvent.VK_F9) {
+				if (wManager.isWindowActive(ConsoleWindow.class)) {
+					return; // Konsol penceresi zaten açıksa, yeni bir tane açma
+				}
+				wManager.addWindow(new ConsoleWindow(2, 2, 200, 200));
 			}
 		}
-
-		if (argMap.containsKey("-h")) {
-			String wStr = (String) argMap.get("-h");
-
-			if (wStr != null && isNumeric(wStr)) {
-				h = Integer.parseInt(wStr);
-			}
-		}
-
-		if (argMap.containsKey("-s")) {
-			String wStr = (String) argMap.get("-s");
-
-			if (wStr != null && isNumeric(wStr)) {
-				s = Integer.parseInt(wStr);
-			}
-		}
-
-		if (argMap.containsKey("-fullscreen")) {
-			fullscreen = true;
-		}
-
-		object = new DikenEngine(null, w, h, s);
-		object.setFullscreen(fullscreen);
-
-		return object;
-	}
-
-	public static boolean isNumeric(String s) {
-		if (s == null || s.isEmpty())
-			return false;
-		for (int i = 0; i < s.length(); i++) {
-			if (!Character.isDigit(s.charAt(i)))
-				return false;
-		}
-		return true;
-	}
-
-	public void setFullscreen(boolean fullscreen2) {
-		this.fullscreen = fullscreen2;
-	}
-
-	public void setResizable(boolean resizable) {
-		this.isResizable = resizable;
-	}
-
-	public void setTitle(String var1) {
-		this.title = var1;
-	}
-	
-	public void appendTitle(String var1) {
-		this.title = this.title + var1;
-	}
-	
-	public void addOnCloseRunnable(Runnable runnable) {
-		this.onCloseRunnables.add(runnable);
-	}
-	
-	public List<Runnable> getOnCloseRunnables() {
-		return new ArrayList<>(this.onCloseRunnables);
-	}
-	
-	public void setIcon(Bitmap... icons) {
-		this.displayIcons = new ByteBuffer[icons.length];
 		
-		for (int j = 0; j < icons.length; j++) {
-			Bitmap iconBitmap = icons[j];
-			ByteBuffer icon = BufferUtils.createByteBuffer(iconBitmap.pixels.capacity() * 4);
-			iconBitmap.pixels.rewind();
-			
-			for (int i = 0; i < iconBitmap.pixels.capacity(); i++) {
-				int color = iconBitmap.pixels.get(i);
-				byte r = (byte) ((color >> 16) & 0xff);
-				byte g = (byte) ((color >> 8) & 0xff);
-				byte b = (byte) (color & 0xff);
-				byte a = (byte) ((color >> 24) & 0xff);
+		if (currentScreen != null) {
+			currentScreen.keyboardEvent(inputMode, key, character);
+		}
+		
+		wManager.keyboardEvent(inputMode, key, character);
+	}
 
-				icon.put(r).put(g).put(b).put(a);
+	@Override
+	public void mouseHandled(int inputMode, int x, int y, int clicked) {
+		if (currentScreen != null) {
+			currentScreen.mouseEvent(inputMode, x, y, clicked);
+		}
+		
+		wManager.mouseEvent(inputMode, x, y, clicked);
+	}
+	
+	private void render(Bitmap bitmap) {
+		if (currentScreen != null) {
+			currentScreen.render(bitmap);
+		}
+		
+		wManager.render(bitmap);
+		
+		if (this.config.getSetting("debug", Boolean.class).getValue()) {
+			bitmap.blendFill(0, 0, 120, 52, 0x2f000000);
+			bitmap.drawText("FPS: " + currentFPS, 2, 2, false);
+			bitmap.drawText("Screen: " + (currentScreen != null ? currentScreen.getClass().getSimpleName() : "null"), 2,
+					12, false);
+			bitmap.drawText("Width: " + getScaledWidth() + " Height: " + getScaledHeight(), 2, 22, false);
+			bitmap.drawText("Scale: " + this.getScale(), 2, 32, false);
+			java.awt.Point point = input.getMousePosition();
+			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 42, false);
+
+			Runtime runtime = Runtime.getRuntime();
+
+			// Byte cinsinden bilgileri al
+			long totalMemory = runtime.totalMemory(); // JVM tarafından tahsis edilen toplam hafıza
+			long freeMemory = runtime.freeMemory(); // Kullanılabilir boş hafıza
+			long usedMemory = totalMemory - freeMemory; // Kullanılmış hafıza
+			long maxMemory = runtime.maxMemory();
+
+			int percentageUse = Utils.toProccesBarValue(usedMemory, maxMemory, 94);
+			bitmap.blendFill(getScaledWidth() - 120, 0, getScaledWidth(), 52, 0x2f000000);
+			bitmap.drawText("Used Memory: " + usedMemory / 1024 / 1024 + " MB", getScaledWidth() - 118, 2, 0xffffffff, false);
+			bitmap.box(getScaledWidth() - 118, 12, getScaledWidth() - 30, 20, 0xffffffff);
+			bitmap.fill(getScaledWidth() - 117, 13, (getScaledWidth() - 117) + percentageUse, 19,
+					!(percentageUse > 85) ? 0xff00ff00 : 0xffff0000);
+			bitmap.drawText("%" + usedMemory * 100L / maxMemory, getScaledWidth() - 26, 13, false);
+			bitmap.drawText("Max Memory: " + (maxMemory / 1024 / 1024) + " MB", getScaledWidth() - 118, 22, false);
+		}
+	}
+
+	private void tick() {
+		input.update();
+		
+		checkResized();
+		
+		if (currentScreen != null) {
+			currentScreen.tick();
+		}
+		wManager.tick();
+		
+		if (this.cursorResource == null && this.getCursor() != Cursor.getDefaultCursor()) {
+			this.setCursor(Cursor.getDefaultCursor());
+		} else if (this.cursorResource != null) {
+			Cursor cursor = this.cursorResource.getCursor();
+
+			if (cursor != this.getCursor()) {
+				this.setCursor(cursor);
 			}
-			
-			icon.flip();
-			this.displayIcons[j] = icon;
 		}
 	}
+	
+	private void checkResized() {
+		boolean needsResize = false;
 
-	public String getTitle() {
-		return title;
+	    if (super.getWidth() != this.width || super.getHeight() != this.height) {
+	        needsResize = true;
+	    } else if (this.getScale() != this.config.getSetting("guiScale", Integer.class).getValue()) {
+	    	this.scale = this.config.getSetting("guiScale", Integer.class).getValue();
+	    	needsResize = true;
+	    }
+
+	    if (needsResize) {
+	        this.resize();
+	    }
 	}
+	
+	public void paintComponent(java.awt.Graphics g) {
+		super.paintComponent(g);
+		g.setColor(java.awt.Color.BLACK);
+		g.fillRect(0, 0, getWidth(), getHeight());
+		
+		g.drawImage(screenImage, 0, 0, getWidth(), getHeight(), null);
+	}
+	
+	private void resize() {
+		this.width = super.getWidth();
+		this.height = super.getHeight();
 
-	private static void loadLocalNatives() {
-		try {
-			SystemInfo.Architecture arch = SystemInfo.instance.getArch();
+		if (this.width <= 0) {
+			this.width = 1;
+		}
 
-			if (arch == SystemInfo.Architecture.X86) {
-				// Linux için
-				NativeManager.loadLibraryFromOSPathFromJar("/libjinput-linux.so");
-				NativeManager.loadLibraryFromOSPathFromJar("/liblwjgl.so");
-				NativeManager.loadLibraryFromOSPathFromJar("/libopenal.so");
+		if (this.height <= 0) {
+			this.height = 1;
+		}
 
-				// MacOS için
-				NativeManager.loadLibraryFromOSPathFromJar("/libjinput-osx.dylib");
-				NativeManager.loadLibraryFromOSPathFromJar("/liblwjgl.dylib");
-				NativeManager.loadLibraryFromOSPathFromJar("/openal.dylib");
-
-				// Windows için
-				NativeManager.loadLibraryFromOSPathFromJar("/jinput-dx8.dll");
-				NativeManager.loadLibraryFromOSPathFromJar("/jinput-raw.dll");
-				NativeManager.loadLibraryFromOSPathFromJar("/lwjgl.dll");
-				NativeManager.loadLibraryFromOSPathFromJar("/OpenAL32.dll");
-			} else if (arch == SystemInfo.Architecture.X86_64) {
-				// Linux için
-				NativeManager.loadLibraryFromOSPathFromJar("/libjinput-linux64.so");
-				NativeManager.loadLibraryFromOSPathFromJar("/liblwjgl64.so");
-				NativeManager.loadLibraryFromOSPathFromJar("/libopenal64.so");
-
-				// MacOS için
-				// MacOS için 64 bit mimari desteği yok
-
-				// Windows için
-				NativeManager.loadLibraryFromOSPathFromJar("/jinput-dx8_64.dll");
-				NativeManager.loadLibraryFromOSPathFromJar("/jinput-raw_64.dll");
-				NativeManager.loadLibraryFromOSPathFromJar("/lwjgl64.dll");
-				NativeManager.loadLibraryFromOSPathFromJar("/OpenAL64.dll");
-
-			} else {
-				System.err.println("HATA: Bilgisayarınızın mimarisi desteklenmiyor. Mimari: " + arch.name());
-				System.exit(0);
-			}
-
-			NativeManager.loadedNativeSetProperty("org.lwjgl.librarypath");
-		} catch (Exception e) {
-			e.printStackTrace();
+		this.screenBitmap = new Bitmap(width / scale, height / scale);
+		this.screenImage = new BufferedImage(width / scale, height / scale, BufferedImage.TYPE_INT_ARGB);
+		
+		if (this.currentScreen != null) {
+			currentScreen.resized();
 		}
 	}
-
-	static {
-		loadLocalNatives();
-		loadLocalImages();
-		UniFont.createFont("default_font");
-	}
-
-	public static DikenEngine getEngine() {
-		return DikenEngine.instance;
-	}
-
-	public void getGLError() {
-		int error = GL11.glGetError();
-		if (error != 0) {
-			log("------------------");
-			log("GL Error: " + GL11.glGetString(error) + " - " + error);
-			log("------------------");
-		}
-	}
-
+	
 	/** Bu kod yerel resimleri ve sesleri yükler. */
 	private static void loadLocalImages() {
 		IResource icon_x16 = IOResource.loadResource(DikenEngine.class.getResourceAsStream("/icon-x16.png"),
@@ -378,570 +384,30 @@ public class DikenEngine implements Runnable {
 		lang.addLangValue("tr-TR", "dmainmenu.reportbug=Hata Bildir");
 		lang.addLangValue("en-US", "dmainmenu.reportbug=Report Bug");
 	}
-
-	public void run() {
-		// PBO ID değişkeni
-		int pboID = 0;
-
-		try {
-			DikenEngine.log("DikenEngine " + VERSION + " Starting...");
-
-			defaultFont = UniFont.getFont("default_font");
-			wManager = new WindowManager();
-
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-				running = false;
-			}));
-
-			if (this.canvas != null) {
-				Graphics var1 = this.canvas.getGraphics();
-				if (var1 != null) {
-					var1.setColor(Color.BLACK);
-					var1.fillRect(0, 0, this.width, this.height);
-					var1.dispose();
-				}
-				
-				Display.setParent(this.canvas);
-			} else if (this.fullscreen) {
-				Display.setFullscreen(true);
-				this.width = Display.getDisplayMode().getWidth();
-				this.height = Display.getDisplayMode().getHeight();
-				if (this.width <= 0) {
-					this.width = 1;
-				}
-
-				if (this.height <= 0) {
-					this.height = 1;
-				}
-			} else {
-				Display.setDisplayMode(new DisplayMode(this.width, this.height));
-			}
-			
-			Display.setResizable(isResizable);
-			Display.setTitle(title);
-			Display.setIcon(this.displayIcons);
-			Display.setVSyncEnabled(this.config.getOrDefaultSetting("sync", Boolean.class, false).getValue());
-			
-			try {
-				Display.create();
-			} catch (LWJGLException var6) {
-				var6.printStackTrace();
-
-				try {
-					Thread.sleep(1000L);
-				} catch (InterruptedException var5) {
-				}
-
-				Display.create();
-			}
-
-			Mouse.create();
-			Keyboard.create();
-
-			if (!AL.isCreated()) {
-				AL.create();
-			}
-
-			screenBitmap = new Bitmap(width, height);
-
-			// --- PBO OLUŞTURMA (INIT) ---
-			pboID = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
-			// Buffer boyutunu ayarla (Width * Height * 4 byte)
-			GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, width * height * 4, GL15.GL_STREAM_DRAW);
-			GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
-			// ---------------------------
-
-			// Dokulamaları etkinleştir
-			GL11.glEnable(GL11.GL_TEXTURE_2D);
-			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			
-			GL11.glMatrixMode(GL11.GL_PROJECTION);
-			GL11.glLoadIdentity();
-			GL11.glOrtho(0, width, height, 0, 1, -1);
-			GL11.glMatrixMode(GL11.GL_MODELVIEW);
-
-			// Doku oluştur
-			screenTextureID = GL11.glGenTextures();
-			
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-
-			// İlk boş doku verisini gönder (Null pointer ile)
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0,
-					GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
-
-			GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
-			GL11.glViewport(0, 0, width, height);
-
-			long fixedUpdateTime = 1000000000L / 60; // Fixed update rate at 60Hz
-			long lastUpdateTime = System.nanoTime();
-			double accumulator = 0;
-
-			while (running) {
-				long currentTime = System.nanoTime();
-
-				if (this.canvas == null && Display.isCloseRequested()) {
-					running = false;
-				}
-
-				long updateDelta = currentTime - lastUpdateTime;
-				accumulator += updateDelta;
-				lastUpdateTime = currentTime;
-
-				while (accumulator >= fixedUpdateTime) {
-					tick();
-					accumulator -= fixedUpdateTime;
-				}
-
-				render(screenBitmap);
-
-				// --- PBO UPDATE BAŞLANGICI ---
-				
-				// 1. PBO'yu bağla
-				GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
-				
-				// "Orphaning" (Eski buffer'ı çöpe atıp yeni istemek - Senkronizasyonu engeller, hızı artırır)
-				GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, width * height * 4, GL15.GL_STREAM_DRAW);
-
-				// 2. GPU Belleğini Map'le (Yazılabilir olarak aç)
-				ByteBuffer mappedBuffer = GL15.glMapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, GL15.GL_WRITE_ONLY, null);
-				
-				if (mappedBuffer != null) {
-					screenBitmap.pixels.rewind();
-					// IntBuffer'ı doğrudan ByteBuffer'a döküyoruz. (For döngüsü yok! Çok hızlı.)
-					// Not: Java Int'leri Little Endian sistemde BGRA olarak görünür, bu yüzden aşağıda formatı değiştireceğiz.
-					mappedBuffer.asIntBuffer().put(screenBitmap.pixels);
-					
-					// 3. İşimiz bitti, kapıyı kapat (Unmap)
-					GL15.glUnmapBuffer(GL21.GL_PIXEL_UNPACK_BUFFER);
-				}
-				
-				// 4. Dokuyu PBO'dan güncelle
-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-				
-				// Son parametre '0' olmalı, bu veriyi RAM yerine bağlı olan PBO'dan çekmesi gerektiğini söyler.
-				// Format: GL_BGRA ve Type: GL_UNSIGNED_INT_8_8_8_8_REV kullanıyoruz ki renkler doğru çıksın.
-				GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, width, height,
-						GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, 0);
-
-				// 5. PBO bağlantısını kes
-				GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
-
-				// --- PBO UPDATE BİTİŞİ ---
-
-				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
-				
-				GL11.glPushMatrix();
-				GL11.glScaled(this.oldScale, this.oldScale, 1.0d);
-
-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-				
-				GL11.glBegin(GL11.GL_QUADS);
-				GL11.glTexCoord2f(0, 0);
-				GL11.glVertex2f(0, 0);
-
-				GL11.glTexCoord2f(1, 0);
-				GL11.glVertex2f(width, 0);
-
-				GL11.glTexCoord2f(1, 1);
-				GL11.glVertex2f(width, height);
-
-				GL11.glTexCoord2f(0, 1);
-				GL11.glVertex2f(0, height);
-				GL11.glEnd();
-				
-				GL11.glPopMatrix();
-
-				updateFPS();
-
-				Display.update();
-				tickDimension();
-
-				IntBuffer viewport = BufferUtils.createIntBuffer(16);
-				GL11.glGetInteger(GL11.GL_VIEWPORT, viewport);
-
-				int localWidth = viewport.get(2);
-				int localHeight = viewport.get(3);
-
-				if (localWidth != width || localHeight != height) {
-					GL11.glViewport(0, 0, width, height);
-
-					GL11.glMatrixMode(GL11.GL_PROJECTION);
-					GL11.glLoadIdentity();
-					GL11.glOrtho(0, width, height, 0, 1, -1);
-					GL11.glMatrixMode(GL11.GL_MODELVIEW);
-
-					this.refreshScreenBuffer();
-					
-					// Resize durumunda dokuyu ve PBO boyutunu güncellememiz gerekir
-					GL11.glBindTexture(GL11.GL_TEXTURE_2D, screenTextureID);
-					GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, width, height, 0,
-							GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
-					
-					// PBO boyutunu güncelle
-					GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, pboID);
-					GL15.glBufferData(GL21.GL_PIXEL_UNPACK_BUFFER, width * height * 4, GL15.GL_STREAM_DRAW);
-					GL15.glBindBuffer(GL21.GL_PIXEL_UNPACK_BUFFER, 0);
-				}
-			}
-		} catch (Throwable e) {
-			e.printStackTrace();
-			crash(e);
-		} finally {
-			if (currentScreen != null) {
-				currentScreen.closeScreen();
-			}
-
-			config.saveConfig();
-
-			wManager.closeAll();	
-			
-			try {
-				System.out.println("Stopping!");
-				SoundResource.destroySounds();
-				AL.destroy();
-
-				// PBO Temizliği
-				if (pboID != 0) {
-					GL15.glDeleteBuffers(pboID);
-				}
-
-				try {
-					GL11.glDisable(GL11.GL_TEXTURE_2D);
-					GL11.glDeleteTextures(screenTextureID);
-				} catch (Exception var6) {
-				}
-
-				Mouse.destroy();
-				Keyboard.destroy();
-			} finally {
-				try {
-				    if (Display.isCreated()) {
-				        Display.destroy();
-				    }
-				} catch (IllegalStateException e) {
-				    if (!e.getMessage().equals("Shutdown in progress")) {
-				        throw e;
-				    }
-				}
-			}
-			
-			for (Runnable runnable : onCloseRunnables) {
-				try {
-					runnable.run();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			
-			ConsoleLog.saveLogs();
-			System.gc();
-		}	
-	}
-	/**
-	 * Bu kod her 1 saniyede 60 kez çalışır.
-	 * 
-	 * @throws LWJGLException
-	 */
-	private void tick() throws LWJGLException {
-		getGLError();
-
-		if (currentScreen != null) {
-			currentScreen.tick();
-		}
-		wManager.tick();
-
-		if (this.cursorResource == null && Mouse.getNativeCursor() != null) {
-			Mouse.setNativeCursor(null);
-		} else if (this.cursorResource != null) {
-			Cursor cursor = this.cursorResource.getCursor();
-
-			if (cursor != Mouse.getNativeCursor()) {
-				try {
-					Mouse.setNativeCursor(cursor);
-				} catch (LWJGLException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		if (Display.getTitle() != title) {
-			Display.setTitle(title);
-		}
-		
-		if (this.canvas != this.oldCanvas) {
-			this.oldCanvas = this.canvas;
-			
-			Display.setResizable(isResizable);
-			Display.setVSyncEnabled(this.config.getOrDefaultSetting("sync", Boolean.class, false).getValue());
-			Display.setParent(canvas);
-			Display.update();
-		}
-
-		while (Keyboard.next()) {
-			if (Keyboard.getEventKeyState()) {
-				if (Keyboard.getEventKey() == Keyboard.KEY_F2) {
-					Bitmap screenshotBitmap = new Bitmap(width, height);
-					screenshotBitmap.clear(0xFF000000);
-					screenshotBitmap.draw(screenBitmap, 0, 0);
-					try {
-						String fileName = "screenshot-"
-								+ new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
-						ImageIO.write(screenshotBitmap.toImage(), "png", new File(fileName));
-						log("Screenshot saved as " + fileName);
-					} catch (IOException e) {
-						e.printStackTrace();
-						log("Screenshot failed to save.");
-					}
-				}
-				if (Keyboard.getEventKey() == Keyboard.KEY_F11) {
-					this.setFullscreen(!fullscreen);
-				}
-
-				if (Keyboard.getEventKey() == Keyboard.KEY_F3) {
-					this.config.setSetting("debug", !this.config.getSetting("debug", Boolean.class).getValue());
-				}
-
-				if (Keyboard.getEventKey() == Keyboard.KEY_F9) {
-					if (wManager.isWindowActive(ConsoleWindow.class)) {
-						continue; // Konsol penceresi zaten açıksa, yeni bir tane açma
-					}
-					wManager.addWindow(new ConsoleWindow(2, 2, 200, 200));
-				}
-
-				if (currentScreen != null) {
-					currentScreen.keyboardEvent();
-				}
-				wManager.keyboardEvent();
-			}
-		}
-		while (Mouse.next()) {
-			InputHandler.updateMousePosition();
-
-			if (currentScreen != null) {
-				currentScreen.mouseEvent();
-			}
-			wManager.mouseEvent();
-		}
-	}
-
-	/** FPS'i günceller. */
-	private volatile int frame;
-
-	private void updateFPS() {
-		if (System.currentTimeMillis() - lastFPSTime > 1000) {
-			currentFPS = frame;
-			frame = 0;
-			lastFPSTime = System.currentTimeMillis();
-		}
-		frame++;
-	}
-
-	private void render(Bitmap bitmap) {
-		//Clear yapmak fps düşürür. özellikle büyük ekran ise
-		//bitmap.clear(0xFF000000);
-
-		if (currentScreen != null) {
-			currentScreen.render(bitmap);
-		}
-
-		wManager.render(bitmap);
-
-		if (this.config.getSetting("debug", Boolean.class).getValue()) {
-			bitmap.blendFill(0, 0, 120, 52, 0x2f000000);
-			bitmap.drawText("FPS: " + currentFPS, 2, 2, false);
-			bitmap.drawText("Screen: " + (currentScreen != null ? currentScreen.getClass().getSimpleName() : "null"), 2,
-					12, false);
-			bitmap.drawText("Width: " + getWidth() + " Height: " + getHeight(), 2, 22, false);
-			bitmap.drawText("Scale: " + this.oldScale, 2, 32, false);
-			java.awt.Point point = InputHandler.getMousePosition();
-			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 42, false);
-
-			Runtime runtime = Runtime.getRuntime();
-
-			// Byte cinsinden bilgileri al
-			long totalMemory = runtime.totalMemory(); // JVM tarafından tahsis edilen toplam hafıza
-			long freeMemory = runtime.freeMemory(); // Kullanılabilir boş hafıza
-			long usedMemory = totalMemory - freeMemory; // Kullanılmış hafıza
-			long maxMemory = runtime.maxMemory();
-
-			int percentageUse = Utils.toProccesBarValue(usedMemory, maxMemory, 94);
-			bitmap.blendFill(getWidth() - 120, 0, getWidth(), 52, 0x2f000000);
-			bitmap.drawText("Used Memory: " + usedMemory / 1024 / 1024 + " MB", getWidth() - 118, 2, 0xffffffff, false);
-			bitmap.box(getWidth() - 118, 12, getWidth() - 30, 20, 0xffffffff);
-			bitmap.fill(getWidth() - 117, 13, (getWidth() - 117) + percentageUse, 19,
-					!(percentageUse > 85) ? 0xff00ff00 : 0xffff0000);
-			bitmap.drawText("%" + usedMemory * 100L / maxMemory, getWidth() - 26, 13, false);
-			bitmap.drawText("Max Memory: " + (maxMemory / 1024 / 1024) + " MB", getWidth() - 118, 22, false);
-		}
-	}
-
-	/**
-	 * Bu kod, Diken Engine'de hata ayıklama amacıyla kullanılır.
-	 * 
-	 * @param message mesajı yazdırılacak olan mesajdır.
-	 */
-	public static void log(String message) {
-		System.out.println("[DikenEngine] " + message);
-		ConsoleLog.sendLog(message);
-	}
-
-	public static void errorLog(String message) {
-		System.err.println("[DikenEngine] " + message);
-		ConsoleLog.sendLog("Error: " + message);
-	}
-
-	public int getHeight() {
-		return (int) (this.height / this.oldScale);
-	}
-
-	public int getWidth() {
-		return (int) (this.width / this.oldScale);
-	}
-
-	public final Screen getCurrentScreen() {
-		return this.currentScreen;
-	}
-
-	/**
-	 * Bu Kod, Ekranı Resize Edildiğinde Boyutunu Değiştirilir.
-	 * 
-	 * @throws LWJGLException
-	 */
-	private void tickDimension() throws LWJGLException {		
-	    // 1. ADIM: Boyut Değişikliği Kontrolü (Resize Logic)
-	    // Bunu fullscreen kontrolünden ayırdık, böylece ikisi de bağımsız çalışabilir.
-	    boolean needsResize = false;
-
-	    if (this.canvas != null) {
-	        if (this.canvas.getWidth() != this.width || this.canvas.getHeight() != this.height) {
-	            needsResize = true;
-	        }
-	    } else if (Display.wasResized()) {
-	        needsResize = true;
-	    } else if (this.oldScale != this.config.getSetting("guiScale", Integer.class).getValue()) {
-	    	this.oldScale = this.config.getSetting("guiScale", Integer.class).getValue();
-	    	needsResize = true;
-	    }
-
-	    if (needsResize) {
-	        resize();
-	    }
-	    
-	    if (this.fullscreen != Display.isFullscreen()) {
-	    	try {
-				if(this.fullscreen) {
-					this.tmpwidth = this.width;
-					this.tmpheight = this.height;
-					
-					Display.setDisplayMode(Display.getDesktopDisplayMode());
-					Display.setResizable(false);
-					this.width = Display.getDisplayMode().getWidth();
-					this.height = Display.getDisplayMode().getHeight();
-					if(this.width <= 0) {
-						this.width = 1;
-					}
-
-					if(this.height <= 0) {
-						this.height = 1;
-					}
-				} else {
-					if(this.canvas != null) {
-						this.width = this.canvas.getWidth();
-						this.height = this.canvas.getHeight();
-					} else {
-						this.width = this.tmpwidth;
-						this.height = this.tmpheight;
-					}
-
-					if(this.width <= 0) {
-						this.width = 1;
-					}
-
-					if(this.height <= 0) {
-						this.height = 1;
-					}
-					
-					Display.setDisplayMode(new DisplayMode(this.width, this.height));
-					Display.setResizable(this.isResizable);
-				}
-				
-				refreshScreenBuffer();
-				sendScreenResized();
-
-				
-				Display.setFullscreen(this.fullscreen);
-				Display.setVSyncEnabled(this.config.getOrDefaultSetting("sync", Boolean.class, false).getValue());
-				Display.update();
-			} catch (Exception var2) {
-				var2.printStackTrace();
-			}
-	    }
+	
+	public static DikenEngine getEngine() {
+		return instance;
 	}
 	
-	private void sendScreenResized() {
-		if (this.currentScreen != null) {
-			currentScreen.resized();
-		}
-	}
-
-	private void refreshScreenBuffer() {
-		screenBitmap.clean();
+	public static void main(String[] args) {
+		DikenEngine engine = new DikenEngine(800, 600, 2);
 		
-		if (width <= 0) {
-			width = 1;
-		}
+		JFrame frame = new JFrame("DikenEngine");
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.add(engine);
+		frame.pack();
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
 		
-		if (height <= 0) {
-			height = 1;
-		}
-		screenBitmap = new Bitmap(width, height);
-
-		System.gc();
-	}
-
-	private void resize() throws LWJGLException {
-		if (this.canvas != null) {
-			this.width = this.canvas.getWidth();
-			this.height = this.canvas.getHeight();
-		} else {
-			this.width = Display.getWidth();
-			this.height = Display.getHeight();
-		}
-
-		if (this.width <= 0) {
-			this.width = 1;
-		}
-
-		if (this.height <= 0) {
-			this.height = 1;
-		}
-
-		refreshScreenBuffer();
-		sendScreenResized();
-	}
-
-	public void setSize(int i, int j) {
-		this.width = i;
-		this.height = j;
-
-		if (this.canvas != null) {
-			this.canvas.setSize(i, j);
-		}
-
-		this.tmpwidth = i;
-		this.tmpheight = j;
-
-		refreshScreenBuffer();
-		sendScreenResized();
+		engine.setCurrentScreen(new DefaultMainMenuScreen());
+		engine.start();
 	}
 	
-	public void setParent(Canvas newCanvas) {
-		this.canvas = newCanvas;
+	static {
+		loadLocalImages();
+		UniFont.createFont("default_font");
 	}
-
+	
 	private void crash(Throwable e) {
 		ConsoleLog.sendLog(Utils.getStackTraceString(e));
 		ConsoleLog.saveLogs();

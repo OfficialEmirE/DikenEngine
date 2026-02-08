@@ -7,20 +7,5 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="res"/>
-	<classpathentry kind="lib" path="libs/jinput.jar" sourcepath="D:/RetroMCP/libraries/net/java/jinput/jinput/2.0.5/jinput-2.0.5-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="libs/lwjgl_util.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-source-2.9.3.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="libs/lwjgl.jar" sourcepath="C:/Users/Ramazanenescik04/Downloads/lwjgl-source-2.9.3.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="https://legacy.lwjgl.org/javadoc"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

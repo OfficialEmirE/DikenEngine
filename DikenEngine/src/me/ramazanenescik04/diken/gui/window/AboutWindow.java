@@ -27,8 +27,8 @@ public class AboutWindow extends Window {
 		
 		int w = 150;
 		int h = 100;
-		int x = (DikenEngine.getEngine().getWidth() - w) / 2;
-		int y = (DikenEngine.getEngine().getHeight() - h) / 2;
+		int x = (DikenEngine.getEngine().getScaledWidth() - w) / 2;
+		int y = (DikenEngine.getEngine().getScaledHeight() - h) / 2;
 		
 		this.setBounds(x, y, w, h);
 		this.setTitle("DikenEngine Hakkında");

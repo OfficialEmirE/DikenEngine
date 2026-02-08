@@ -3,12 +3,9 @@ package me.ramazanenescik04.diken.gui.window;
 import java.awt.Point;
 import java.util.*;
 
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.InputHandler;
 import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -67,9 +64,9 @@ public class WindowManager {
 
     public void tick() {
         DikenEngine engine = DikenEngine.getEngine();
-        Point currentMousePoint = InputHandler.getMousePosition();
+        Point currentMousePoint = engine.input.getMousePosition();
         
-        boolean button0 = Mouse.isButtonDown(0);
+        boolean button0 = engine.input.isMouseDown(0);
         // Mouse sadece bu "tick" anında mı basıldı? (Basılı tutma değil, ilk tıklama anı)
         boolean mouseJustClicked = button0 && !prevMouseDown;
         
@@ -153,8 +150,8 @@ public class WindowManager {
         }
         
         // --- 7. Sürükleme ve Boyutlandırma Mantığı ---
-        int screenWidth = engine.getWidth();
-        int screenHeight = engine.getHeight();
+        int screenWidth = engine.getScaledWidth();
+        int screenHeight = engine.getScaledHeight();
         
         // Sürükleme
         if (dragMode && activeWindow != null && button0) {
@@ -297,11 +294,11 @@ public class WindowManager {
                 case 1: engine.setCursor((CursorResource) ResourceLocator.getResource("cursor-0")); break;
                 case 2: engine.setCursor((CursorResource) ResourceLocator.getResource("cursor-2")); break;
                 case 3: engine.setCursor((CursorResource) ResourceLocator.getResource("cursor-1")); break;
-                default: if (!dragMode) engine.setCursor(null);
+                default: if (!dragMode) engine.setCursor((CursorResource) null);
             }
         } catch (Exception e) {
             // Resource bulunamazsa varsayılan cursor kalsın, oyun çökmesin
-            if (!dragMode) engine.setCursor(null);
+            if (!dragMode) engine.setCursor((CursorResource) null);
         }
     }
 
@@ -344,7 +341,7 @@ public class WindowManager {
         }
         
         if (oldActiveWindow != activeWindow) {
-            DikenEngine.getEngine().setCursor(null);
+            DikenEngine.getEngine().setCursor((CursorResource) null);
         }
 
         return activeWindow != null;
@@ -364,20 +361,22 @@ public class WindowManager {
         return !findActiveWindow2(point) && !scaleMode;
     }
     
-    public void keyboardEvent() {
+    public void keyboardEvent(int action, int key, char character) {
         if (activeWindow != null) {
-            activeWindow.keyPressed(Keyboard.getEventCharacter(), Keyboard.getEventKey());
+        	if (action == InputHandler.INPUT_PRESSED || action == InputHandler.INPUT_REPEATED) {
+        		activeWindow.keyPressed(character, key);
+        	}
         }
     }
     
-    public void mouseEvent() {
+    public void mouseEvent(int action, int x, int y, int button) {
         if (activeWindow != null) {
-            Point mousePos = InputHandler.getMousePosition();
+            Point mousePos = new Point(x, y);
             boolean isTouch = activeWindow.isTouching(mousePos);
             
             // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
-            if (Mouse.getEventButtonState()) {
-                activeWindow.mouseClicked(mousePos.x, mousePos.y, Mouse.getEventButton(), isTouch);
+            if (action == InputHandler.INPUT_PRESSED || action == InputHandler.INPUT_REPEATED) {
+                activeWindow.mouseClicked(mousePos.x, mousePos.y, button, isTouch);
             }
             
             activeWindow.mouseGetInfo(mousePos.x, mousePos.y, isTouch);
@@ -386,7 +385,7 @@ public class WindowManager {
 
     public boolean isWindowActive(Class<?> class1) {
         for (Window window : windows) {
-            if (window.getClass() == class1) {
+            if (window.getClass().isAssignableFrom(class1)) {
                 // Burada activeWindow'u değiştirmiyoruz, sadece kontrol ediyoruz.
                 // İstersen: activeWindow = window; yapabilirsin ama findActiveWindow mantığıyla çakışabilir.
                 return activeWindow == window;

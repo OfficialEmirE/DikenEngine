@@ -94,8 +94,8 @@ public class Humanoid extends Part {
 	}
 	
 	public void centerCamera(World world, DikenEngine engine, int width, int height) {
-		int centerX = -(engine.getWidth() / 2 - width / 2);
-	    int centerY = -(engine.getHeight() / 2 - height / 2);
+		int centerX = -(engine.getScaledWidth() / 2 - width / 2);
+	    int centerY = -(engine.getScaledHeight() / 2 - height / 2);
 		world.camera = new Vec2D(this.x + centerX, this.y + centerY);
 	}
 	

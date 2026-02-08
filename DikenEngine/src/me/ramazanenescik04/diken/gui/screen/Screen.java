@@ -1,11 +1,8 @@
 package me.ramazanenescik04.diken.gui.screen;
 
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.InputHandler;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 public abstract class Screen {
@@ -21,13 +18,15 @@ public abstract class Screen {
 		}
 		
 		if (this.engine != null) {
-			contentPane.setSize(engine.getWidth(), engine.getHeight());
+			contentPane.setSize(engine.getScaledWidth(), engine.getScaledHeight());
 			contentPane.tick(engine);
 		}
 	}
 	
-	public void keyboardEvent() {
-		this.keyDown( Keyboard.getEventCharacter(), Keyboard.getEventKey());
+	public void keyboardEvent(int action, int key, char character) {
+		if (action == InputHandler.INPUT_PRESSED || action == InputHandler.INPUT_REPEATED) {
+			this.keyDown(character, key);
+		}
 	}
 
 	public void keyDown(char eventCharacter, int eventKey) {
@@ -63,14 +62,12 @@ public abstract class Screen {
 	}
 
 
-	public void mouseEvent() {
-		int mouseX = InputHandler.getMousePosition().x;
-		int mouseY = InputHandler.getMousePosition().y;
+	public void mouseEvent(int inputMode, int x, int y, int clicked) {
 		if (this.engine != null) {
-			this.mouseGetInfo(mouseX, mouseY, (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))), (InputHandler.isMouseOnScreen()));
+			this.mouseGetInfo(x, y, (engine.wManager.screenActionMode(new java.awt.Point(x, y))), engine.input.isMouseOnScreen());
 		
-			if (Mouse.getEventButtonState()) {
-				this.mouseClick(mouseX, mouseY, Mouse.getEventButton(), (InputHandler.isMouseOnScreen()), (engine.wManager.screenActionMode(new java.awt.Point(mouseX, mouseY))));
+			if (inputMode == InputHandler.INPUT_PRESSED || inputMode == InputHandler.INPUT_REPEATED) {
+				this.mouseClick(x, y, clicked, engine.input.isMouseOnScreen(), (engine.wManager.screenActionMode(new java.awt.Point(x, y))));
 			}
 		}
 	}

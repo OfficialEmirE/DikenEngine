@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
-import org.lwjgl.input.Mouse;
-
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.Hitbox;
 
@@ -138,7 +136,7 @@ public class ScrollPanel extends Panel {
             updateBars();
         }
         
-        int wheel = Mouse.getDWheel();
+        int wheel = engine.input.getWheelValue();
         if (this.active) {
         	onMouseWheel(wheel);
         }

@@ -27,7 +27,7 @@ public class ColorPickWindow extends Window {
 	@Override
 	protected void open() {
 		DikenEngine engine = DikenEngine.getEngine();
-		this.setLocation(engine.getWidth() / 2 - this.width / 2, engine.getHeight() / 2 - this.height / 2);
+		this.setLocation(engine.getScaledWidth() / 2 - this.width / 2, engine.getScaledHeight() / 2 - this.height / 2);
 		this.getContentPane().setBackground(new StaticBackground(Bitmap.createClearedBitmap(16, 16, 0xffa0a0a0)));
 		Panel panel = this.getContentPane();
 		colorBitmap = new RenderImage(Bitmap.createClearedBitmap(16, 16, selectedColor), 77, 97) {

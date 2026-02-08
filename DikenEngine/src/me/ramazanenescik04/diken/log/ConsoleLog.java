@@ -90,6 +90,7 @@ public class ConsoleLog {
 	
 	public static enum LogType {
 		SERVER,
-		CLIENT
+		CLIENT,
+		ERROR,
 	}
 }

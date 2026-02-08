@@ -2,10 +2,7 @@ package me.ramazanenescik04.diken.gui.compoment;
 
 import java.util.function.Consumer;
 
-import org.lwjgl.input.Mouse;
-
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.InputHandler;
 import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
@@ -185,9 +182,9 @@ public class ScrollBar extends GuiComponent {
 			sliderButton.tick(engine);
 			
 			// Sürükleme işlemi
-			boolean mouseDown = Mouse.isButtonDown(0);
-			int mouseX = InputHandler.getMousePosition().x - this.getGlobalX();
-			int mouseY = InputHandler.getMousePosition().y - this.getGlobalY();
+			boolean mouseDown = engine.input.isMouseDown(0);
+			int mouseX = engine.input.getMousePosition().x - this.getGlobalX();
+			int mouseY = engine.input.getMousePosition().y - this.getGlobalY();
 			
 			if (mouseDown && !prevMouseDown) {
 				// Mouse tıklandığında
@@ -227,9 +224,9 @@ public class ScrollBar extends GuiComponent {
 			sliderButton.tick(engine);
 			
 			// Sürükleme işlemi
-			boolean mouseDown = Mouse.isButtonDown(0);
-			int mouseX = InputHandler.getMousePosition().x - this.getGlobalX();
-			int mouseY = InputHandler.getMousePosition().y - this.getGlobalY();
+			boolean mouseDown = engine.input.isMouseDown(0);
+			int mouseX = engine.input.getMousePosition().x - this.getGlobalX();
+			int mouseY = engine.input.getMousePosition().y - this.getGlobalY();
 			
 			if (mouseDown && !prevMouseDown) {
 				// Mouse tıklandığında

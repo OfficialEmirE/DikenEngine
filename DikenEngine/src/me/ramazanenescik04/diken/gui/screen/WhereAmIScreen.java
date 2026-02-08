@@ -27,12 +27,12 @@ public class WhereAmIScreen extends Screen {
 				alpha = ct < mt ? (int) ((1.0 - (double) ct / mt) * 255) : 0; // Ekran aydınlaşma hesaplaması
 			}
 		}, 0, Utils.timeToLong(5));
-		this.canvas = new Bitmap(engine.getWidth(), engine.getHeight());
+		this.canvas = new Bitmap(engine.getScaledWidth(), engine.getScaledHeight());
 	    
 	    Random rand = new Random();
 	    
 	    for (int i = 0; i < particles.length; i++) {
-            particles[i] = new Particle(engine.getWidth(), engine.getHeight(), rand);
+            particles[i] = new Particle(engine.getScaledWidth(), engine.getScaledHeight(), rand);
         }
 	    
 	    darknessTimer.start();
@@ -42,12 +42,12 @@ public class WhereAmIScreen extends Screen {
 		super.render(bitmap);
 		
 		if (canvas == null) {
-			canvas = new Bitmap(engine.getWidth(), engine.getHeight());
+			canvas = new Bitmap(engine.getScaledWidth(), engine.getScaledHeight());
 		}
 		bitmap.draw((canvas), 0, 0);
 		
 		var color = PixelToColor.toColor(alpha, 0, 0, 0);
-		bitmap.blendFill(0, 0, engine.getWidth(), engine.getHeight(), color);
+		bitmap.blendFill(0, 0, engine.getScaledWidth(), engine.getScaledHeight(), color);
 	}
 	
 	public void tick() {
@@ -72,7 +72,7 @@ public class WhereAmIScreen extends Screen {
 	}
 	
 	public void resized() {
-		this.canvas = new Bitmap(engine.getWidth(), engine.getHeight());
+		this.canvas = new Bitmap(engine.getScaledWidth(), engine.getScaledHeight());
 	}
 
 	static class Particle {

@@ -15,8 +15,8 @@ public class StaticBackground implements IBackground {
 	
 	public void render(Bitmap bitmap) {
 		Bitmap bg = new Bitmap(bitmap.w, bitmap.h);
-		for(int x = 0; x < (engine.getWidth() / this.bitmap.w) + 1; x++) {
-			for(int y = 0; y < (engine.getHeight() / this.bitmap.h) + 1; y++) {
+		for(int x = 0; x < (engine.getScaledWidth() / this.bitmap.w) + 1; x++) {
+			for(int y = 0; y < (engine.getScaledHeight() / this.bitmap.h) + 1; y++) {
 				bg.blendDraw(this.bitmap, x * this.bitmap.w, y * this.bitmap.h, 0xff7d7d7d);
 			}
 		}

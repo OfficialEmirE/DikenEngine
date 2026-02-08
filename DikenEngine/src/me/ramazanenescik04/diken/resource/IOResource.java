@@ -25,7 +25,8 @@ public class IOResource {
 			}
 			return Bitmap.toBitmap(img);
 		} else if (_enum == EnumResource.SOUND) {
-			return SoundResource.loadSound(stream);
+			//TODO 
+			//return SoundResource.loadSound(stream);
 		} else if (_enum == EnumResource.CURSOR) {
 			Bitmap cursorBitmap = (Bitmap) loadResource(stream, EnumResource.IMAGE);
 			CursorResource res = new CursorResource();

@@ -1,8 +1,7 @@
 package me.ramazanenescik04.diken.gui.window;
 
 import java.awt.Point;
-
-import org.lwjgl.input.Keyboard;
+import java.awt.event.KeyEvent;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Config;
@@ -167,7 +166,7 @@ public class Window extends GuiComponent {
 	public void keyPressed(char var1, int var2) {
 		if (this.active) contentPane.keyPressed(var1, var2);
 		
-		if (var2 == Keyboard.KEY_ESCAPE && this.active) {
+		if (var2 == KeyEvent.VK_ESCAPE && this.active) {
 			close();
 		}
 	}

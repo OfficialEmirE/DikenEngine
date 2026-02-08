@@ -227,8 +227,8 @@ public class OptionWindow extends Window {
 		window.setSizeAuto();
 		
 		window.setLocation(
-			(DikenEngine.getEngine().getWidth() / 2 - window.getWidth() / 2) ,
-			(DikenEngine.getEngine().getHeight()  / 2 - window.getHeight()  / 2)
+			(DikenEngine.getEngine().getScaledWidth() / 2 - window.getWidth() / 2) ,
+			(DikenEngine.getEngine().getScaledHeight()  / 2 - window.getHeight()  / 2)
 		);
 		
 		DikenEngine.getEngine().wManager.addWindow(window);
@@ -249,11 +249,13 @@ public class OptionWindow extends Window {
 	}
 	
 	public static void showMessageNoWait(String message, String title, int messageType, int optionType, Consumer<Integer> consumer) {		
-		new Thread(() -> {
+		Thread thread = new Thread(() -> {
 			int clicked = showMessage(message, title, messageType, optionType);
 			if (consumer != null) {
 				consumer.accept(clicked);
 			}
-		}, "OptionWindow-Wait-Thread-" + Math.random()).start();;
+		}, "OptionWindow-Wait-Thread-" + Math.random());
+		thread.setDaemon(true);
+		thread.start();
 	}
 }

@@ -1,6 +1,6 @@
 package me.ramazanenescik04.diken.gui.window;
 
-import org.lwjgl.input.Keyboard;
+import java.awt.event.KeyEvent;
 
 import me.ramazanenescik04.diken.gui.compoment.*;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
@@ -92,7 +92,7 @@ public class ConsoleWindow extends Window {
 	public void keyPressed(char var1, int var2) {
 		super.keyPressed(var1, var2);
 		
-		if (var2 == Keyboard.KEY_RETURN || var2 == Keyboard.KEY_NUMPADENTER) {
+		if (var2 == KeyEvent.VK_ENTER) {
 			Panel contentPane = this.getContentPane();
 			TextField textField = (TextField) contentPane.get(2);
 			

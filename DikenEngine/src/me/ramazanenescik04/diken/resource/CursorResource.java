@@ -1,13 +1,13 @@
 package me.ramazanenescik04.diken.resource;
 
+import java.awt.Cursor;
+import java.awt.Point;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.IntBuffer;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.input.Cursor;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class CursorResource implements IResource {
 	private static final long serialVersionUID = 1L;
@@ -22,33 +22,18 @@ public class CursorResource implements IResource {
 		if (cursorBitmap == null)
 			cursorBitmap = IOResource.missingTexture;
 		
-		IntBuffer buffer = BufferUtils.createIntBuffer(cursorBitmap.pixels.capacity());
-		
-		// Buffer'ı hazırla
-		buffer.clear();
-        
-		int width = cursorBitmap.w;
-		int height = cursorBitmap.h;
-		IntBuffer pixels = cursorBitmap.pixels;
-		for (int y = 0; y < height; y++) {
-		    for (int x = 0; x < width; x++) {
-		        int mirroredX = width - 1 - x;
-		        int color = pixels.get(y * width + mirroredX);
-		        buffer.put(color);
-		    }
-		}
+		// Source - https://stackoverflow.com/a/1984117
+		// Posted by coobird, modified by community. See post 'Timeline' for change history
+		// Retrieved 2026-02-05, License - CC BY-SA 2.5
 
-        
-        // Buffer'ı okuma için hazırla
-        buffer.flip();
-		
-        Cursor cursor = null;
-		try {
-			cursor = new Cursor(cursorBitmap.w, cursorBitmap.h, 2, cursorBitmap.h - 2, 1, buffer, null);
-		} catch (LWJGLException e) {
-			e.printStackTrace();
-		}
-		
+		// Transparent 16 x 16 pixel cursor image.
+		BufferedImage cursorImg = cursorBitmap.toImage();
+
+		// Create a new blank cursor.
+		Cursor cursor = Toolkit.getDefaultToolkit().createCustomCursor(
+		    cursorImg, new Point(0, 0), "cursor-" + ThreadLocalRandom.current().nextLong());
+
+		// Set the blank cursor to the JFrame.
 		return cursor;
 	}
 	
