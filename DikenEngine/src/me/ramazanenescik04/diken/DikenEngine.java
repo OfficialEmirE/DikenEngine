@@ -35,8 +35,8 @@ import me.ramazanenescik04.diken.tools.Utils;
 public class DikenEngine extends JPanel implements Runnable, IInputListener {
 	private static final long serialVersionUID = 1L;
 
-	public static final String VERSION = "2.0.0";
-	public static final int protocolVersion = 19;
+	public static final String VERSION = "2.1.0";
+	public static final int protocolVersion = 20;
 
 	private static DikenEngine instance;
 	
@@ -183,9 +183,6 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 
 			config.saveConfig();
 			wManager.closeAll();
-			
-			// TODO
-			//SoundResource.destroySounds();
 			
 			ConsoleLog.saveLogs();
 			System.gc();

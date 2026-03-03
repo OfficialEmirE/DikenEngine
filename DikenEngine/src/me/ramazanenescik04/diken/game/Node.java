@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
@@ -362,6 +363,71 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
 	public void setAnchored(boolean isStatic) {
 		this.anchored = isStatic;
+	}
+	
+	private SettingList nodeSettings;
+	
+	public SettingList getNodeSettings() {
+		if (nodeSettings != null) 
+			return nodeSettings;
+		else {
+			nodeSettings = SettingList.createSetting(java.util.UUID.randomUUID().toString(), "Node")
+					
+					.addSetting(new Setting<String>("Class", this.getClass().getSimpleName(), String.class, EnumSettingType.TEXT_FIELD))
+					
+					.addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
+						this.visible = newValue;
+					}))
+					
+					.addSetting(new Setting<Boolean>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
+						this.setDebugRenderer(newValue);
+					}))
+					
+					.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
+						this.setSolid(newValue);
+					}))
+					
+					.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
+						this.setAnchored(newValue);
+					}))
+					
+					.addSetting(new Setting<String>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+						this.setName(newValue);
+					}))
+					
+					.addSetting(new Setting<Integer>("X", this.getGlobalX(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+						this.x = newValue;
+					}))
+					
+					.addSetting(new Setting<Integer>("Y", this.getGlobalY(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+						this.x = newValue;
+					}));
+					
+					if (this.aabb != null) {
+						nodeSettings
+						.addSetting(new Setting<Integer>("Hitbox X", this.aabb.x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+							this.aabb.x = newValue;
+						}))
+						
+						.addSetting(new Setting<Integer>("Hitbox Y", this.aabb.y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+							this.aabb.y = newValue;
+						}))
+						
+						.addSetting(new Setting<Integer>("Hitbox Width", this.aabb.width, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+							this.aabb.width = newValue;
+						}))
+						
+						.addSetting(new Setting<Integer>("Hithox Height", this.aabb.height, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
+							this.aabb.height = newValue;
+						}));
+					}
+					
+					nodeSettings.addSetting(new Setting<Integer>("Color", this.color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(newValue -> {
+						this.color = newValue;
+					}));
+			
+			return nodeSettings;
+		}
 	}
 
 	// --- Lifecycle Hooks (3. Madde) ---

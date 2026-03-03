@@ -26,6 +26,8 @@ public class Setting<T> {
     // Sayısal değerler için (Slider/Scrollbar) opsiyonel sınırlar
     private T min;
     private T max;
+    
+    private boolean changeable = true; // Ayarın değiştirilebilir olup olmadığını kontrol eder (örneğin, bazı ayarlar sadece belirli koşullarda değiştirilebilir olabilir)
 
     // Basit Constructor
 	public Setting(String name, T defaultValue, Class<T> type, EnumSettingType settingType) {
@@ -66,6 +68,26 @@ public class Setting<T> {
     }
 
     // --- Getter ve Setter Metotları ---
+    
+    public boolean isChangeable() {
+		return changeable;
+	}
+    
+    public void setChangeable(boolean changeable) {
+    	this.changeable = changeable;
+    }
+    
+    public boolean isDefault() {
+		return Objects.equals(value, defaultValue);
+	}
+    
+    public T getDefaultValue() {
+		return defaultValue;
+	}
+    
+    public boolean isSlider() {
+		return type == EnumSettingType.SLIDER;
+	}
 
     public T getValue() {
         return value;

@@ -25,8 +25,11 @@ public class IOResource {
 			}
 			return Bitmap.toBitmap(img);
 		} else if (_enum == EnumResource.SOUND) {
-			//TODO 
-			//return SoundResource.loadSound(stream);
+			try {
+				return SoundResource.fromWav(stream, java.util.UUID.randomUUID().toString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		} else if (_enum == EnumResource.CURSOR) {
 			Bitmap cursorBitmap = (Bitmap) loadResource(stream, EnumResource.IMAGE);
 			CursorResource res = new CursorResource();
@@ -67,16 +70,6 @@ public class IOResource {
 			System.err.println("Error: Resource not found: " + path);
 		}
 		return stream;
-	}
-	
-	@Deprecated(since="1.0.0", forRemoval=true)
-	public static InputStream createFileStream(String path) {
-		try {
-			return new FileInputStream(path);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return null;
-		}
 	}
 	
 	public static InputStream createFileStream(File path) {
