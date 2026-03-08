@@ -6,8 +6,12 @@ import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
+import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
+import me.ramazanenescik04.diken.game.world.World;
 import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 // Java 25 ile gelen özellikleri kullanabiliriz ama temel yapı sağlam olmalı.
 public abstract class Node implements java.io.Serializable, Cloneable {
@@ -35,6 +39,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     protected boolean debug = false;
     protected boolean solid = true;
     protected boolean anchored = false;
+    protected boolean removed = false;
 
     // Constructor
     public Node() {
@@ -123,7 +128,13 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         // Override edilebilir logic
         
         // Çocukları güncelle
-        for (Node child : children) {
+    	var clonedList = new ArrayList<>(children);
+        for (Node child : clonedList) {
+        	if (child.isRemoved()) {
+        		children.remove(child);
+        		continue;
+        	}
+        	
             child.update(world, engine);
         }
     }
@@ -296,48 +307,65 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public void onCollision(Node other) {
     }
     
-    public void separate(Node other) {
+    public static void resolveCollision(Node a, Node b) {
+        MTV mtv = a.computeMTV(b);
+        if (mtv == null) return;
+
+        boolean aAnch = a.isAnchoed();
+        boolean bAnch = b.isAnchoed();
+
+        if (!aAnch && bAnch) {
+            // sadece A hareketli
+            a.x += mtv.x;
+            a.y += mtv.y;
+        } else if (aAnch && !bAnch) {
+            // sadece B hareketli (MTV A için hesaplandı -> B ters yönde gitmeli)
+            b.x -= mtv.x;
+            b.y -= mtv.y;
+        } else if (!aAnch && !bAnch) {
+            // ikisi de hareketli -> yarı yarıya paylaştır
+            a.x += mtv.x * 0.5f;
+            a.y += mtv.y * 0.5f;
+
+            b.x -= mtv.x * 0.5f;
+            b.y -= mtv.y * 0.5f;
+        } 
+        // ikisi de anchored ise hiçbir şey yapma
+    }
+    
+    private static class MTV {
+        float x, y;
+        MTV(float x, float y) { this.x = x; this.y = y; }
+    }
+
+    private MTV computeMTV(Node other) {
         Hitbox box1 = this.getGlobalAABB();
         Hitbox box2 = other.getGlobalAABB();
+        if (box1 == null || box2 == null) return null;
 
-        if (box1 == null || box2 == null) return;
-
-        // Merkez noktaları bul
-        float c1x = box1.x + box1.width / 2.0f;
+        float c1x = box1.x + box1.width  / 2.0f;
         float c1y = box1.y + box1.height / 2.0f;
-        float c2x = box2.x + box2.width / 2.0f;
+        float c2x = box2.x + box2.width  / 2.0f;
         float c2y = box2.y + box2.height / 2.0f;
 
-        // Mesafeler
         float dx = c1x - c2x;
         float dy = c1y - c2y;
 
-        // Çarpışma olmaması için gereken minimum mesafeler
-        float minDistanceX = (box1.width / 2.0f) + (box2.width / 2.0f);
+        float minDistanceX = (box1.width  / 2.0f) + (box2.width  / 2.0f);
         float minDistanceY = (box1.height / 2.0f) + (box2.height / 2.0f);
 
-        // Ne kadar iç içe girmişler?
         float overlapX = minDistanceX - Math.abs(dx);
         float overlapY = minDistanceY - Math.abs(dy);
 
-        // Çarpışma var mı kontrolü (Garanti olsun)
-        if (overlapX > 0 && overlapY > 0) {
-            // Hangi taraftan itmek daha kolaysa oradan it (En kısa yol)
-            if (overlapX < overlapY) {
-                // X ekseninde it
-                if (dx > 0) {
-                    this.x += overlapX; // Sağa it
-                } else {
-                    this.x -= overlapX; // Sola it
-                }
-            } else {
-                // Y ekseninde it
-                if (dy > 0) {
-                    this.y += overlapY; // Aşağı it
-                } else {
-                    this.y -= overlapY; // Yukarı it
-                }
-            }
+        if (overlapX <= 0 || overlapY <= 0) return null;
+
+        // En küçük eksenden it
+        if (overlapX < overlapY) {
+            float sx = (dx > 0) ? overlapX : -overlapX; // this'i iten yön
+            return new MTV(sx, 0);
+        } else {
+            float sy = (dy > 0) ? overlapY : -overlapY;
+            return new MTV(0, sy);
         }
     }
 
@@ -365,69 +393,50 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 		this.anchored = isStatic;
 	}
 	
-	private SettingList nodeSettings;
+	public void removeNode() {
+		this.removed = true;
+	}
 	
-	public SettingList getNodeSettings() {
-		if (nodeSettings != null) 
-			return nodeSettings;
-		else {
-			nodeSettings = SettingList.createSetting(java.util.UUID.randomUUID().toString(), "Node")
-					
-					.addSetting(new Setting<String>("Class", this.getClass().getSimpleName(), String.class, EnumSettingType.TEXT_FIELD))
-					
-					.addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
-						this.visible = newValue;
-					}))
-					
-					.addSetting(new Setting<Boolean>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
-						this.setDebugRenderer(newValue);
-					}))
-					
-					.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
-						this.setSolid(newValue);
-					}))
-					
-					.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(newValue -> {
-						this.setAnchored(newValue);
-					}))
-					
-					.addSetting(new Setting<String>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-						this.setName(newValue);
-					}))
-					
-					.addSetting(new Setting<Integer>("X", this.getGlobalX(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-						this.x = newValue;
-					}))
-					
-					.addSetting(new Setting<Integer>("Y", this.getGlobalY(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-						this.x = newValue;
-					}));
-					
-					if (this.aabb != null) {
-						nodeSettings
-						.addSetting(new Setting<Integer>("Hitbox X", this.aabb.x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-							this.aabb.x = newValue;
-						}))
-						
-						.addSetting(new Setting<Integer>("Hitbox Y", this.aabb.y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-							this.aabb.y = newValue;
-						}))
-						
-						.addSetting(new Setting<Integer>("Hitbox Width", this.aabb.width, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-							this.aabb.width = newValue;
-						}))
-						
-						.addSetting(new Setting<Integer>("Hithox Height", this.aabb.height, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(newValue -> {
-							this.aabb.height = newValue;
-						}));
-					}
-					
-					nodeSettings.addSetting(new Setting<Integer>("Color", this.color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(newValue -> {
-						this.color = newValue;
-					}));
-			
-			return nodeSettings;
+	public boolean isRemoved() {
+		return this.removed;
+	}
+	
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("default", "Node", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1));
+		var cat = SettingCategoryHelper.getOrCreateCategory(key, () -> this.generateDefaultSettings(key));
+		
+		var list = new ArrayList<SettingCategory>();
+		list.add(cat);
+		return list;
+	}
+	
+	private SettingCategory generateDefaultSettings(SettingCategory.SettingKey key) {
+		var s = SettingCategory.createSettingCategory(key)
+				.addSetting(new Setting<String>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setName))
+				.addSetting(new Setting<Integer>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.x = val))
+				.addSetting(new Setting<Integer>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.y = val))
+				.addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(val -> this.visible = val))
+				.addSetting(new Setting<Boolean>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setDebugRenderer))
+				.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setSolid))
+				.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setAnchored))
+				.addSetting(new Setting<Integer>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(val -> this.color = val));
+		
+		if (this.aabb != null) {
+			s.addSetting(new Setting<Integer>("Hitbox Width", aabb.width, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+				if (aabb != null) aabb.width = val;
+			}))
+			.addSetting(new Setting<Integer>("Hitbox Height", aabb.height, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+				if (aabb != null) aabb.height = val;
+			}))
+			.addSetting(new Setting<Integer>("Hitbox Offset X", aabb.x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+				if (aabb != null) aabb.x = val;
+			}))
+			.addSetting(new Setting<Integer>("Hitbox Offset Y", aabb.y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+				if (aabb != null) aabb.y = val;
+			}));
 		}
+		
+		return s;
 	}
 
 	// --- Lifecycle Hooks (3. Madde) ---

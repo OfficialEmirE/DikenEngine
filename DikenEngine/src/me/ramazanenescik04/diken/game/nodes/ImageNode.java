@@ -1,20 +1,25 @@
 package me.ramazanenescik04.diken.game.nodes;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.util.List;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
+import me.ramazanenescik04.diken.game.world.World;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.IResource;
+import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public abstract class ImageNode extends Node {
 	private static final long serialVersionUID = -5489915245652040387L;
 	
 	protected transient Bitmap texture = new Bitmap(16, 16);
-	private byte[] bitmapData = null;
+	private transient boolean textureLoaded = false;
+	private String resourceID = "empty";
 
 	public ImageNode() {
 		this("DONT-USE->ImageNode");
@@ -25,12 +30,17 @@ public abstract class ImageNode extends Node {
 		this.setSolid(false);
 	}
 	
-	public Bitmap getTexture() {
-		return texture;
+	public String getTexture() {
+		return resourceID;
 	}
 
-	public void setTexture(Bitmap texture) {
-		this.texture = texture;
+	public void setTexture(String texture) {
+		if (texture == null || texture.isBlank())
+			this.resourceID = "empty";
+		else
+			this.resourceID = texture;
+		
+		this.textureLoaded = false;
 	}
 	
 	@Override
@@ -39,27 +49,29 @@ public abstract class ImageNode extends Node {
 	}
 
 	@Override
-	protected void reloadNode() {
-		try {			
-			var in = new ByteArrayInputStream(bitmapData);
-			texture = (Bitmap) IResource.loadResource(new DataInputStream(in), Bitmap.class.getName());
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ReflectiveOperationException e) {
-			e.printStackTrace();
+	public void update(World world, DikenEngine engine) {
+		super.update(world, engine);
+		
+		if (!textureLoaded) {
+			this.texture = world.getResource(resourceID, EnumResource.IMAGE);
+			this.textureLoaded = true;
 		}
 	}
 
 	@Override
-	protected void dispose() {
-		try {
-			ByteArrayOutputStream stream = new ByteArrayOutputStream();
-			texture.saveResource(new DataOutputStream(stream));
-			
-			this.bitmapData = stream.toByteArray();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	protected void reloadNode() {
+		textureLoaded = false;
 	}
-
+	
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("imageNode", "ImageNıde", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 1));
+		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setTexture)));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
+	}
 }

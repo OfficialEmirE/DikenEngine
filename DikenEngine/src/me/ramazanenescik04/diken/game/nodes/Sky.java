@@ -1,14 +1,26 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.util.List;
+
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
+import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
+import me.ramazanenescik04.diken.game.world.World;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Sky extends Node {
 	private static final long serialVersionUID = 9068692202217556542L;
-	public transient Bitmap skyBitmap;
-	public transient int width = 1, height = 1;
+	private transient Bitmap skyBitmap;
+	private transient int width = 1, height = 1;
+	
+	public String resourceID = "empty";
+	private boolean resourceLoaded = false;
 
 	public Sky() {
 		super("Sky");
@@ -19,9 +31,18 @@ public class Sky extends Node {
 		this.color = color;
 	}
 	
-	public Sky(Bitmap skyBitmap) {
+	public Sky(String skyBitmap) {
 		super("Sky");
-		this.skyBitmap = skyBitmap;
+		this.resourceID = skyBitmap;
+	}
+	
+	public String getTexture() {
+		return resourceID;
+	}
+	
+	public void setTexture(String resourceID) {
+		this.resourceID = resourceID;
+		this.reloadNode();
 	}
 
 	@Override
@@ -55,5 +76,28 @@ public class Sky extends Node {
 		this.y = (int) world.camera.y() - 10;
 		
 		super.update(world, engine);
+		
+		if (!resourceLoaded ) {
+			skyBitmap = world.getResource(resourceID, EnumResource.IMAGE);
+			resourceLoaded = true;
+		}
+	}
+
+	@Override
+	protected void reloadNode() {
+		this.resourceLoaded = false;
+	}
+
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("sky", "Sky", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(3, 1));
+		
+		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setTexture)));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
 	}
 }

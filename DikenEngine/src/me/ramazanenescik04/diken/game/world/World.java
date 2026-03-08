@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.game;
+package me.ramazanenescik04.diken.game.world;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,6 +19,7 @@ import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.Vec2D;
+import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
@@ -43,6 +44,7 @@ public class World extends Panel implements Cloneable {
     	super(0, 0, width, height);
     	this.gameName = gameName;
     	this.resources = new ConcurrentHashMap<>();
+    	this.resources.put("empty", Bitmap.empty);
         // Root isimsiz ve render edilmeyen bir container'dır
     	if (rootNode == null) {
     		this.root = new Folder(gameName);
@@ -141,20 +143,8 @@ public class World extends Panel implements Cloneable {
                     b.onCollision(a);
 
                     // 2. Eğer ikisi de KATI (Solid) ise fiziksel itme uygula
-                    if (a.solid && b.solid) {
-                    	if (a.solid && b.solid) {
-                    	    if (!a.isAnchoed() && b.isAnchoed()) {
-                    	        a.separate(b); // A hareketli, B duvar -> A'yı it
-                    	    } 
-                    	    else if (a.isAnchoed() && !b.isAnchoed()) {
-                    	        b.separate(a); // A duvar, B hareketli -> B'yi it
-                    	    }
-                    	    else if (!a.isAnchoed() && !b.isAnchoed()) {
-                    	        // İkisi de hareketli (Örn: İki oyuncu)
-                    	        // Birbirlerini yarı yarıya itebilirler veya sadece biri itilir.
-                    	        a.separate(b);
-                    	    }
-                    	}
+                    if (a.isSolid() && b.isSolid()) {
+                    	Node.resolveCollision(a, b);
                     }
                 }
             }
@@ -245,7 +235,7 @@ public class World extends Panel implements Cloneable {
 		}
     }
     
-    @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	public <T extends IResource> T getResource(String key, EnumResource expectedType) {
         IResource res = resources.get(key);
 

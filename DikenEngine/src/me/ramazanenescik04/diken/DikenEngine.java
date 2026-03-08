@@ -366,6 +366,8 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 		win_icons.setArray(
 				IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/win_icons.png"), 16, 16));
 		ResourceLocator.addResource("win-icons", win_icons);
+		
+		ResourceLocator.addResource("editor_icons", new ArrayBitmap(IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/editor_icons.png"), 16, 16)));
 
 		ArrayBitmap win_cursors = new ArrayBitmap();
 		win_cursors

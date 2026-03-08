@@ -13,8 +13,12 @@ public class ArrayBitmap implements IResource {
 		this.bitmap = new Bitmap[][] {};
 	}
 	
-	public ArrayBitmap(Bitmap[]...bitmaps) {
+	public ArrayBitmap(Bitmap[][] bitmaps) {
 		this.bitmap = bitmaps;
+	}
+	
+	public ArrayBitmap(ArrayBitmap array) {
+		this.bitmap = array.bitmap.clone();
 	}
 
 	public void setArray(Bitmap[][] array) {
