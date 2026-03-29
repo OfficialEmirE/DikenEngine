@@ -5,6 +5,9 @@ import me.ramazanenescik04.diken.gui.compoment.Panel;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `Screen` type within the DikenEngine `gui.screen` package.
+ */
 public abstract class Screen {
 	private Panel contentPane = new Panel(0, 0, 1, 1);
 	public DikenEngine engine;

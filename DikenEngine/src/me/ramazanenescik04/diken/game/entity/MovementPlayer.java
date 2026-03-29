@@ -5,6 +5,9 @@ import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
 
+/**
+ * Represents the `MovementPlayer` type within the DikenEngine `game.entity` package.
+ */
 public class MovementPlayer {
 	private Humanoid player;
 	

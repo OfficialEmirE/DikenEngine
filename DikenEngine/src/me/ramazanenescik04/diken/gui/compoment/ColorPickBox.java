@@ -5,6 +5,9 @@ import java.util.function.Consumer;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 
+/**
+ * Represents the `ColorPickBox` type within the DikenEngine `gui.compoment` package.
+ */
 public class ColorPickBox extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	private int selectedColor;

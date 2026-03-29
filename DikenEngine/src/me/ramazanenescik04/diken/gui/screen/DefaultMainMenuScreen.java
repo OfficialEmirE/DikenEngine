@@ -16,6 +16,9 @@ import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 
+/**
+ * Represents the `DefaultMainMenuScreen` type within the DikenEngine `gui.screen` package.
+ */
 public class DefaultMainMenuScreen extends Screen {
 	
 	private Timer darknessTimer; // Zamanla ekran karanlıklaşacak

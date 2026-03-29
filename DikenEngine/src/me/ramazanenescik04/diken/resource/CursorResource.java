@@ -9,6 +9,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Represents the `CursorResource` type within the DikenEngine `resource` package.
+ */
 public class CursorResource implements IResource {
 	private static final long serialVersionUID = 1L;
 	public Bitmap cursorBitmap;

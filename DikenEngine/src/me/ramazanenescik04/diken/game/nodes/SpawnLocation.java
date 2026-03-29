@@ -7,6 +7,9 @@ import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `SpawnLocation` type within the DikenEngine `game.nodes` package.
+ */
 public class SpawnLocation extends Part {
 	private static final long serialVersionUID = -6112488161375121027L;
 	

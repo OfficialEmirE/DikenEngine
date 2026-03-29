@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken;
 
+/**
+ * Represents the `SystemInfo` type within the DikenEngine `core` package.
+ */
 public class SystemInfo {
 	
 	public enum OS {

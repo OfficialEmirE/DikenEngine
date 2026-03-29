@@ -7,6 +7,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Button` type within the DikenEngine `gui.compoment` package.
+ */
 public class Button extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	public String text = "";

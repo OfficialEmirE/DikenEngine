@@ -8,6 +8,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Texture` type within the DikenEngine `game.nodes` package.
+ */
 public class Texture extends ImageNode {
 	private static final long serialVersionUID = 1L;
 

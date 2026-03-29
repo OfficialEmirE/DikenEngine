@@ -9,6 +9,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `SettingCategory` type within the DikenEngine `game` package.
+ */
 public class SettingCategory {
 	private final List<Setting<?>> settings;
 	private final SettingKey key;

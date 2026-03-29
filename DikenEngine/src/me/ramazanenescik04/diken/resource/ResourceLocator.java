@@ -5,6 +5,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+/**
+ * Represents the `ResourceLocator` type within the DikenEngine `resource` package.
+ */
 public class ResourceLocator {
 	
 	private static Map<String, IResource> resMap = new ConcurrentHashMap<String, IResource>();

@@ -6,8 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 
+/**
+ * Represents the `InputHandler` type within the DikenEngine `input` package.
+ */
 public class InputHandler implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener {
 
     public static final int INPUT_NONE     = 0;
@@ -22,7 +26,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     private final javax.swing.JPanel thePanel;
     private final List<IInputListener> listeners = new ArrayList<>();
 
-    private Hitbox mouseHitbox = new Hitbox(0, 0, 1, 1);
+    private IHitbox mouseHitbox = new Hitbox(0, 0, 1, 1);
     private Point mousePosition = new Point(0, 0);
     private boolean isMouseOnScreen;
 
@@ -163,7 +167,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
 
     /* ================= GETTERS ================= */
 
-    public Hitbox getMouseHitbox() {
+    public IHitbox getMouseHitbox() {
         return mouseHitbox;
     }
 

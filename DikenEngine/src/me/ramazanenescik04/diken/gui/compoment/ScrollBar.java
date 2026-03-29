@@ -3,9 +3,12 @@ package me.ramazanenescik04.diken.gui.compoment;
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `ScrollBar` type within the DikenEngine `gui.compoment` package.
+ */
 public class ScrollBar extends GuiComponent {
 
 	private static final long serialVersionUID = 9174661067316376835L;

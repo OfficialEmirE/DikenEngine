@@ -2,6 +2,9 @@ package me.ramazanenescik04.diken.gui.compoment;
 
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `ImageButton` type within the DikenEngine `gui.compoment` package.
+ */
 public class ImageButton extends Button {
 	
 	/**

@@ -2,8 +2,6 @@ package me.ramazanenescik04.diken;
 
 import java.awt.Cursor;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -11,7 +9,6 @@ import java.util.Date;
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.gui.UniFont;
@@ -22,6 +19,7 @@ import me.ramazanenescik04.diken.gui.window.WindowManager;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.log.ConsoleLog;
+import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
@@ -32,23 +30,25 @@ import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.Utils;
 
-public class DikenEngine extends JPanel implements Runnable, IInputListener {
-	private static final long serialVersionUID = 1L;
-
-	public static final String VERSION = "2.1.0";
-	public static final int protocolVersion = 20;
+/**
+ * Represents the `DikenEngine` type within the DikenEngine `core` package.
+ */
+public class DikenEngine implements Runnable, IInputListener {
+	public static final String VERSION = "2.2.0";
+	public static final int protocolVersion = 21;
 
 	private static DikenEngine instance;
-	
+
+	private JFrame engineWindow;
+
 	private boolean running = false;
-	private BufferedImage screenImage;
-	private Bitmap screenBitmap;
-	
+	private final RendererPanel rendererPanel;
+
 	private int width;
 	private int height;
 	private int scale = 1;
-	public int currentFPS = -1; // Gösterilecek FPS
-	
+	public int currentFPS = -1;
+
 	public UniFont defaultFont;
 	public WindowManager wManager;
 	private Screen currentScreen;
@@ -56,30 +56,36 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 	public InputHandler input;
 	public CursorResource cursorResource;
 	public Config config = new Config();
-	
+
 	public DikenEngine(int width, int height, int scale) {
-		setPreferredSize(new java.awt.Dimension(width, height));
-		
 		this.config.setSetting("guiScale", scale);
 		this.config.loadConfig();
-		
+
 		this.width = width;
 		this.height = height;
 		this.scale = scale;
-		
+		this.rendererPanel = new RendererPanel(width, height);
+
+		this.engineWindow = new JFrame("DikenEngine");
+		this.engineWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.engineWindow.add(this.rendererPanel);
+		this.engineWindow.pack();
+		this.engineWindow.setLocationRelativeTo(null);
+
 		instance = this;
 	}
-	
+
 	public void start() {
 		running = true;
+		this.engineWindow.setVisible(true);
+		this.rendererPanel.requestFocusInWindow();
 		new Thread(this, "DikenEngine Thread").start();
 	}
-	
+
 	public void stop() {
 		running = false;
 	}
-	
-	/** Bu kod, Diken Engine'de bir ekranı ayarlar. */
+
 	public void setCurrentScreen(Screen screen) {
 		if (currentScreen != null) {
 			currentScreen.closeScreen();
@@ -90,10 +96,10 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 			screen.engine = this;
 			screen.openScreen();
 		}
-		
+
 		this.currentScreen = screen;
 	}
-	
+
 	public Screen getCurrentScreen() {
 		return this.currentScreen;
 	}
@@ -101,44 +107,43 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 	public void setCursor(CursorResource cursor) {
 		this.cursorResource = cursor;
 	}
-	
+
 	public int getScaledWidth() {
 		return width / scale;
 	}
-	
+
 	public int getScaledHeight() {
 		return height / scale;
 	}
-	
+
 	public int getScale() {
 		return scale;
 	}
-	
+
 	public static void log(String message) {
 		System.out.println("[DikenEngine] " + message);
 		ConsoleLog.sendLog(message);
 	}
-	
+
 	public static void errorLog(String message) {
 		System.err.println("[DikenEngine] " + message);
 		ConsoleLog.sendLog(ConsoleLog.LogType.ERROR, message);
 	}
-	
+
 	@Override
 	public void run() {
 		try {
 			log("Starting DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ")");
-			
+
 			defaultFont = UniFont.getFont("default_font");
 			wManager = new WindowManager();
-			
-			input = new InputHandler(this);
+
+			input = new InputHandler(rendererPanel);
 			input.addListener(this);
-			
-			screenBitmap = new Bitmap(width / scale, height / scale);
-			screenImage = new BufferedImage(width / scale, height / scale, BufferedImage.TYPE_INT_ARGB);
-			
-			long fixedUpdateTime = 1000000000L / 60; // Fixed update rate at 60Hz
+
+			rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
+
+			long fixedUpdateTime = 1000000000L / 60;
 			long lastUpdateTime = System.nanoTime();
 			long lastFPSTime = System.currentTimeMillis();
 			double accumulator = 0;
@@ -153,42 +158,38 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 					tick();
 					accumulator -= fixedUpdateTime;
 				}
-				
-				render(this.screenBitmap);
+
+				Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
+				render(frameBitmap);
 				frames++;
-				
+
 				if (System.currentTimeMillis() - lastFPSTime >= 1000) {
 					currentFPS = frames;
 					frames = 0;
 					lastFPSTime = System.currentTimeMillis();
 				}
-				
-				// Bitmap -> BufferedImage
-				int[] data = ((DataBufferInt) screenImage.getRaster().getDataBuffer()).getData();
-				screenBitmap.pixels.rewind();
-				screenBitmap.pixels.get(data);
-				
-				// Repaint the panel
-				repaint();
+
+				rendererPanel.present(scale);
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
 			crash(e);
 		} finally {
 			log("Closing DikenEngine...");
-			
+
 			if (currentScreen != null) {
 				currentScreen.closeScreen();
 			}
 
 			config.saveConfig();
 			wManager.closeAll();
-			
+			engineWindow.dispose();
+
 			ConsoleLog.saveLogs();
 			System.gc();
 		}
 	}
-	
+
 	@Override
 	public void keyHandled(int inputMode, int key, char character) {
 		if (inputMode == InputHandler.INPUT_PRESSED) {
@@ -196,13 +197,13 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 				try {
 					String fileName = "screenshot-"
 							+ new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
-					
+
 					File pathFile = new File(this.config.getOrDefaultSetting("screenshotPath", String.class, "./").getValue());
 					pathFile.mkdirs();
-					
+
 					File file = new File(pathFile, fileName);
-					ImageIO.write(screenBitmap.toImage(), "png", file);
-					
+					ImageIO.write(rendererPanel.getFrameSnapshot().toImage(), "png", file);
+
 					log("Screenshot saved as " + fileName);
 				} catch (IOException e) {
 					e.printStackTrace();
@@ -216,16 +217,16 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 
 			if (key == KeyEvent.VK_F9) {
 				if (wManager.isWindowActive(ConsoleWindow.class)) {
-					return; // Konsol penceresi zaten açıksa, yeni bir tane açma
+					return;
 				}
 				wManager.addWindow(new ConsoleWindow(2, 2, 200, 200));
 			}
 		}
-		
+
 		if (currentScreen != null) {
 			currentScreen.keyboardEvent(inputMode, key, character);
 		}
-		
+
 		wManager.keyboardEvent(inputMode, key, character);
 	}
 
@@ -234,17 +235,17 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 		if (currentScreen != null) {
 			currentScreen.mouseEvent(inputMode, x, y, clicked);
 		}
-		
+
 		wManager.mouseEvent(inputMode, x, y, clicked);
 	}
-	
+
 	private void render(Bitmap bitmap) {
 		if (currentScreen != null) {
 			currentScreen.render(bitmap);
 		}
-		
+
 		wManager.render(bitmap);
-		
+
 		if (this.config.getSetting("debug", Boolean.class).getValue()) {
 			bitmap.blendFill(0, 0, 120, 52, 0x2f000000);
 			bitmap.drawText("FPS: " + currentFPS, 2, 2, false);
@@ -256,11 +257,9 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 42, false);
 
 			Runtime runtime = Runtime.getRuntime();
-
-			// Byte cinsinden bilgileri al
-			long totalMemory = runtime.totalMemory(); // JVM tarafından tahsis edilen toplam hafıza
-			long freeMemory = runtime.freeMemory(); // Kullanılabilir boş hafıza
-			long usedMemory = totalMemory - freeMemory; // Kullanılmış hafıza
+			long totalMemory = runtime.totalMemory();
+			long freeMemory = runtime.freeMemory();
+			long usedMemory = totalMemory - freeMemory;
 			long maxMemory = runtime.maxMemory();
 
 			int percentageUse = Utils.toProccesBarValue(usedMemory, maxMemory, 94);
@@ -276,51 +275,43 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 
 	private void tick() {
 		input.update();
-		
+
 		checkResized();
-		
+
 		if (currentScreen != null) {
 			currentScreen.tick();
 		}
 		wManager.tick();
-		
-		if (this.cursorResource == null && this.getCursor() != Cursor.getDefaultCursor()) {
-			this.setCursor(Cursor.getDefaultCursor());
+
+		if (this.cursorResource == null && rendererPanel.getCursor() != Cursor.getDefaultCursor()) {
+			rendererPanel.setCursor(Cursor.getDefaultCursor());
 		} else if (this.cursorResource != null) {
 			Cursor cursor = this.cursorResource.getCursor();
 
-			if (cursor != this.getCursor()) {
-				this.setCursor(cursor);
+			if (cursor != rendererPanel.getCursor()) {
+				rendererPanel.setCursor(cursor);
 			}
 		}
 	}
-	
+
 	private void checkResized() {
 		boolean needsResize = false;
 
-	    if (super.getWidth() != this.width || super.getHeight() != this.height) {
-	        needsResize = true;
-	    } else if (this.getScale() != this.config.getSetting("guiScale", Integer.class).getValue()) {
-	    	this.scale = this.config.getSetting("guiScale", Integer.class).getValue();
-	    	needsResize = true;
-	    }
+		if (rendererPanel.getWidth() != this.width || rendererPanel.getHeight() != this.height) {
+			needsResize = true;
+		} else if (this.getScale() != this.config.getSetting("guiScale", Integer.class).getValue()) {
+			this.scale = this.config.getSetting("guiScale", Integer.class).getValue();
+			needsResize = true;
+		}
 
-	    if (needsResize) {
-	        this.resize();
-	    }
+		if (needsResize) {
+			this.resize();
+		}
 	}
-	
-	public void paintComponent(java.awt.Graphics g) {
-		super.paintComponent(g);
-		g.setColor(java.awt.Color.BLACK);
-		g.fillRect(0, 0, getWidth(), getHeight());
-		
-		g.drawImage(screenImage, 0, 0, getWidth(), getHeight(), null);
-	}
-	
+
 	private void resize() {
-		this.width = super.getWidth();
-		this.height = super.getHeight();
+		this.width = rendererPanel.getWidth();
+		this.height = rendererPanel.getHeight();
 
 		if (this.width <= 0) {
 			this.width = 1;
@@ -330,15 +321,13 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 			this.height = 1;
 		}
 
-		this.screenBitmap = new Bitmap(width / scale, height / scale);
-		this.screenImage = new BufferedImage(width / scale, height / scale, BufferedImage.TYPE_INT_ARGB);
-		
+		rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
+
 		if (this.currentScreen != null) {
 			currentScreen.resized();
 		}
 	}
-	
-	/** Bu kod yerel resimleri ve sesleri yükler. */
+
 	private static void loadLocalImages() {
 		IResource icon_x16 = IOResource.loadResource(DikenEngine.class.getResourceAsStream("/icon-x16.png"),
 				EnumResource.IMAGE);
@@ -347,7 +336,7 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 		ArrayBitmap button = new ArrayBitmap();
 		button.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/button.png"), 16, 16);
 		ResourceLocator.addResource("button-array", button);
-		
+
 		ArrayBitmap checkBox = new ArrayBitmap();
 		checkBox.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/check_box.png"), 16, 16);
 		ResourceLocator.addResource("checkbox-array", checkBox);
@@ -366,7 +355,7 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 		win_icons.setArray(
 				IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/win_icons.png"), 16, 16));
 		ResourceLocator.addResource("win-icons", win_icons);
-		
+
 		ResourceLocator.addResource("editor_icons", new ArrayBitmap(IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/editor_icons.png"), 16, 16)));
 
 		ArrayBitmap win_cursors = new ArrayBitmap();
@@ -383,30 +372,22 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 		lang.addLangValue("tr-TR", "dmainmenu.reportbug=Hata Bildir");
 		lang.addLangValue("en-US", "dmainmenu.reportbug=Report Bug");
 	}
-	
+
 	public static DikenEngine getEngine() {
 		return instance;
 	}
-	
+
 	public static void main(String[] args) {
 		DikenEngine engine = new DikenEngine(800, 600, 2);
-		
-		JFrame frame = new JFrame("DikenEngine");
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.add(engine);
-		frame.pack();
-		frame.setLocationRelativeTo(null);
-		frame.setVisible(true);
-		
 		engine.setCurrentScreen(new DefaultMainMenuScreen());
 		engine.start();
 	}
-	
+
 	static {
 		loadLocalImages();
 		UniFont.createFont("default_font");
 	}
-	
+
 	private void crash(Throwable e) {
 		ConsoleLog.sendLog(Utils.getStackTraceString(e));
 		ConsoleLog.saveLogs();
@@ -433,7 +414,7 @@ public class DikenEngine extends JPanel implements Runnable, IInputListener {
 		} else {
 			desc.append("No stack trace available.\n");
 		}
-		
+
 		JOptionPane.showMessageDialog(null, desc.toString().trim(), title, JOptionPane.ERROR_MESSAGE);
 	}
 }

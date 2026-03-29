@@ -9,6 +9,9 @@ import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 
+/**
+ * Represents the `ConsoleWindow` type within the DikenEngine `gui.window` package.
+ */
 public class ConsoleWindow extends Window {
 	private static final long serialVersionUID = 1L;
 	

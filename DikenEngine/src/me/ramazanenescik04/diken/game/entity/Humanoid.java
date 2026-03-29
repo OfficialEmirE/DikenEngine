@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.Vec2D;
 import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
@@ -19,6 +18,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Humanoid` type within the DikenEngine `game.entity` package.
+ */
 public class Humanoid extends Part {
 	private static final long serialVersionUID = 2113495473844070076L;
 	
@@ -102,7 +104,8 @@ public class Humanoid extends Part {
 	public void centerCamera(World world, DikenEngine engine, int width, int height) {
 		int centerX = -(engine.getScaledWidth() / 2 - width / 2);
 	    int centerY = -(engine.getScaledHeight() / 2 - height / 2);
-		world.camera = new Vec2D(this.x + centerX, this.y + centerY);
+		world.camera.x = this.x + centerX;
+		world.camera.y = this.y + centerY;
 	}
 	
 	public void centerCamera(World world, DikenEngine engine) {

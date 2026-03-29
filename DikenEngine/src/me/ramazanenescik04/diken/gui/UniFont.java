@@ -15,6 +15,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 
+/**
+ * Represents the `UniFont` type within the DikenEngine `gui` package.
+ */
 public class UniFont {
 	
 	private static List<UniFont> unifonts = new ArrayList<UniFont>();

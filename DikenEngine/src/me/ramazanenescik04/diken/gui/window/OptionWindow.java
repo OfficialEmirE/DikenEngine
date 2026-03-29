@@ -14,6 +14,9 @@ import me.ramazanenescik04.diken.gui.compoment.Text;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.resource.*;
 
+/**
+ * Represents the `OptionWindow` type within the DikenEngine `gui.window` package.
+ */
 public class OptionWindow extends Window {
 	private static final long serialVersionUID = 2373782406506701304L;
 	

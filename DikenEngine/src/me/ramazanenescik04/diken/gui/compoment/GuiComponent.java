@@ -1,10 +1,13 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
-public abstract class GuiComponent extends Hitbox implements java.io.Serializable {
+/**
+ * Represents the `GuiComponent` type within the DikenEngine `gui.compoment` package.
+ */
+public abstract class GuiComponent extends Hitbox {
 	private static final long serialVersionUID = 1L;
 	
 	protected GuiComponent parent = null; //default
@@ -21,7 +24,7 @@ public abstract class GuiComponent extends Hitbox implements java.io.Serializabl
 	public GuiComponent(int x, int y, int width, int height) {
 		super(x, y, width, height);
 	}
-
+	
 	public Bitmap render() {
 		return new Bitmap(width, height);
 	}

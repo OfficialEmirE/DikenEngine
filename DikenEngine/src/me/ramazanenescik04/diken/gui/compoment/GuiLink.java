@@ -4,6 +4,9 @@ import java.awt.Desktop;
 import java.io.IOException;
 import java.net.URI;
 
+/**
+ * Represents the `GuiLink` type within the DikenEngine `gui.compoment` package.
+ */
 public class GuiLink extends GuiComponent {
 	
  	public GuiLink(int x, int y, int width, int height) {

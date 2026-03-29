@@ -5,11 +5,14 @@ import java.util.List;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Part` type within the DikenEngine `game.nodes` package.
+ */
 public class Part extends Node {	
 	private static final long serialVersionUID = 4072578864221886901L;
 	

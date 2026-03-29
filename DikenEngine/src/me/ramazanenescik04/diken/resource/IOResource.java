@@ -11,6 +11,9 @@ import javax.imageio.ImageIO;
 
 import me.ramazanenescik04.diken.game.Animation;
 
+/**
+ * Represents the `IOResource` type within the DikenEngine `resource` package.
+ */
 public class IOResource {
 	
 	public static final Bitmap missingTexture = generateMissingTexture();

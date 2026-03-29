@@ -18,6 +18,9 @@ import javax.imageio.ImageIO;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.compoment.Text;
 
+/**
+ * Represents the `Bitmap` type within the DikenEngine `resource` package.
+ */
 public class Bitmap implements IResource, Cleanable {
 	private static final long serialVersionUID = 1L;
 	

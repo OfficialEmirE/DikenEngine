@@ -2,6 +2,9 @@ package me.ramazanenescik04.diken.tools;
 
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `PixelToColor` type within the DikenEngine `tools` package.
+ */
 public class PixelToColor {
 	
 	public static int toRedColor(int color) {

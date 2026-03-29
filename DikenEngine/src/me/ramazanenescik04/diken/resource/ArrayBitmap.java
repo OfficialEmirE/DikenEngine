@@ -4,6 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+/**
+ * Represents the `ArrayBitmap` type within the DikenEngine `resource` package.
+ */
 public class ArrayBitmap implements IResource {
 	private static final long serialVersionUID = 1L;
 	

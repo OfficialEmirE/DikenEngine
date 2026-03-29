@@ -12,6 +12,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IResource;
 
+/**
+ * Represents the `Animation` type within the DikenEngine `game` package.
+ */
 public class Animation implements IResource {
     private static final long serialVersionUID = 1L;
 	private final List<Bitmap> frames = new ArrayList<>();

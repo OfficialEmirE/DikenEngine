@@ -5,6 +5,9 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.function.UnaryOperator;
 
+/**
+ * Represents the `ObservableList` type within the DikenEngine `tools` package.
+ */
 public class ObservableList<E> extends ArrayList<E> {
     private static final long serialVersionUID = 8387720031395531503L;
     

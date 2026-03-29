@@ -9,6 +9,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Model` type within the DikenEngine `game.nodes` package.
+ */
 public class Model extends Node {
 	private static final long serialVersionUID = 1L;
 

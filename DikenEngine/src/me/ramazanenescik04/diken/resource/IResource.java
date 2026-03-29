@@ -2,6 +2,9 @@ package me.ramazanenescik04.diken.resource;
 
 import java.io.*;
 
+/**
+ * Defines the `IResource` type within the DikenEngine `resource` package.
+ */
 public interface IResource extends java.io.Serializable, Cloneable {
 	public EnumResource getResourceType();
 	

@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
+/**
+ * Represents the `PasswordField` type within the DikenEngine `gui.compoment` package.
+ */
 public class PasswordField extends TextField {
 	private static final long serialVersionUID = 1L;
 

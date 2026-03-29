@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 
+/**
+ * Represents the `Language` type within the DikenEngine `resource` package.
+ */
 public class Language {
 	
 	public static Language i;

@@ -4,10 +4,13 @@ import java.awt.Point;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.screen.IBackground;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `Panel` type within the DikenEngine `gui.compoment` package.
+ */
 public class Panel extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	private List<GuiComponent> compoments;

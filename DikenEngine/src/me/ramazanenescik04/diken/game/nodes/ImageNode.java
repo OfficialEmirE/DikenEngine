@@ -14,6 +14,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `ImageNode` type within the DikenEngine `game.nodes` package.
+ */
 public abstract class ImageNode extends Node {
 	private static final long serialVersionUID = -5489915245652040387L;
 	

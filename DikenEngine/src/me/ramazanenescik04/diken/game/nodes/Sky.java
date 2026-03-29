@@ -14,6 +14,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Sky` type within the DikenEngine `game.nodes` package.
+ */
 public class Sky extends Node {
 	private static final long serialVersionUID = 9068692202217556542L;
 	private transient Bitmap skyBitmap;
@@ -72,8 +75,8 @@ public class Sky extends Node {
 		this.width = engine.getScaledWidth() + 20;
 		this.height = engine.getScaledHeight() + 20;
 		
-		this.x = (int) world.camera.x() - 10;
-		this.y = (int) world.camera.y() - 10;
+		this.x = (int) world.camera.x - 10;
+		this.y = (int) world.camera.y - 10;
 		
 		super.update(world, engine);
 		

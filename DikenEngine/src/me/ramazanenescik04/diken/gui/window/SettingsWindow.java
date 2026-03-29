@@ -16,6 +16,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `SettingsWindow` type within the DikenEngine `gui.window` package.
+ */
 public class SettingsWindow extends Window {
 	private static final long serialVersionUID = 1L;
 	private List<GuiComponent> settingsItems = new ArrayList<>();

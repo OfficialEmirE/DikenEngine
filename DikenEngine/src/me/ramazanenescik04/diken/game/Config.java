@@ -11,6 +11,9 @@ import java.util.*;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 
+/**
+ * Represents the `Config` type within the DikenEngine `game` package.
+ */
 public class Config {
 	
 	private volatile Map<String, Setting<?>> config = new HashMap<>();

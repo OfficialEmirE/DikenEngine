@@ -8,6 +8,9 @@ import java.util.ArrayList;
 
 import javax.net.ssl.*;
 
+/**
+ * Represents the `CertificateManager` type within the DikenEngine `net` package.
+ */
 public class CertificateManager {
 	private static ArrayList<SSLContext> loadedSSLs = new ArrayList<>();
 	

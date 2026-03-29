@@ -7,6 +7,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 import me.ramazanenescik04.diken.tools.Utils;
 
+/**
+ * Represents the `WhereAmIScreen` type within the DikenEngine `gui.screen` package.
+ */
 public class WhereAmIScreen extends Screen {
 	
 	private Timer darknessTimer;

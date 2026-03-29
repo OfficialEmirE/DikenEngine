@@ -8,6 +8,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `LinkText` type within the DikenEngine `gui.compoment` package.
+ */
 public class LinkText extends GuiLink {
 	private static final long serialVersionUID = 1L;
 	public Text text;

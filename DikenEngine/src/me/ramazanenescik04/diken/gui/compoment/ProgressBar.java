@@ -3,6 +3,9 @@ package me.ramazanenescik04.diken.gui.compoment;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `ProgressBar` type within the DikenEngine `gui.compoment` package.
+ */
 public class ProgressBar extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 

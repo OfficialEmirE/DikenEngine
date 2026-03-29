@@ -10,6 +10,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `WindowManager` type within the DikenEngine `gui.window` package.
+ */
 public class WindowManager {
     // List interface'i kullanmak daha esnektir
     private List<Window> windows;

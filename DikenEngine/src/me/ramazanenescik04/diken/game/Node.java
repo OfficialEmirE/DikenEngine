@@ -8,12 +8,15 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.game.world.World;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 // Java 25 ile gelen özellikleri kullanabiliriz ama temel yapı sağlam olmalı.
+/**
+ * Represents the `Node` type within the DikenEngine `game` package.
+ */
 public abstract class Node implements java.io.Serializable, Cloneable {
 	private static final long serialVersionUID = -4123363831057244200L;
 	

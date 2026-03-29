@@ -9,6 +9,9 @@ import me.ramazanenescik04.diken.gui.compoment.RenderImage;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `ColorPickWindow` type within the DikenEngine `gui.window` package.
+ */
 public class ColorPickWindow extends Window {
 	private static final long serialVersionUID = -2044184046321486559L;
 	private int selectedColor;

@@ -3,6 +3,9 @@ package me.ramazanenescik04.diken.gui.screen;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `StaticBackground` type within the DikenEngine `gui.screen` package.
+ */
 public class StaticBackground implements IBackground {
 	
 	private Bitmap bitmap;

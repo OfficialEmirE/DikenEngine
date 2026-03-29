@@ -6,6 +6,9 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `Text` type within the DikenEngine `gui.compoment` package.
+ */
 public class Text extends GuiComponent {
 	/**
 	 * 

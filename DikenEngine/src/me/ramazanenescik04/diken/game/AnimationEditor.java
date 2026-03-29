@@ -13,6 +13,9 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 
+/**
+ * Represents the `AnimationEditor` type within the DikenEngine `game` package.
+ */
 public class AnimationEditor extends JFrame {
     private static final long serialVersionUID = 1L;
 	private final Animation animation;

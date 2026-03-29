@@ -9,6 +9,9 @@ import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.gui.compoment.*;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `Window` type within the DikenEngine `gui.window` package.
+ */
 public class Window extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	

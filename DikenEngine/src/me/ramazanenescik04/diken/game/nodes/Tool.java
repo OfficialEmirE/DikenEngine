@@ -10,13 +10,16 @@ import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
 import me.ramazanenescik04.diken.game.world.World;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+/**
+ * Represents the `Tool` type within the DikenEngine `game.nodes` package.
+ */
 public class Tool extends Node {
 	private static final long serialVersionUID = -3315727912522278757L;
 	

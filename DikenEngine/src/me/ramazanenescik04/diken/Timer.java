@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken;
 
+/**
+ * Represents the `Timer` type within the DikenEngine `core` package.
+ */
 public class Timer {
     private TimerRunnable runnable;
     public long currentTime, maxTime;

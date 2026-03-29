@@ -7,6 +7,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
+/**
+ * Represents the `SoundResource` type within the DikenEngine `resource` package.
+ */
 public class SoundResource implements IResource {
 
     private static final long serialVersionUID = 1L;

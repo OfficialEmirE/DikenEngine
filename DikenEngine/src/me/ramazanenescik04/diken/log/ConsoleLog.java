@@ -11,6 +11,9 @@ import java.util.List;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 import me.ramazanenescik04.diken.tools.ObservableList;
 
+/**
+ * Represents the `ConsoleLog` type within the DikenEngine `log` package.
+ */
 public class ConsoleLog {
 	private static final List<LogText> logs = new ObservableList<>();
 	private static File logsFile = new File("./logs/");

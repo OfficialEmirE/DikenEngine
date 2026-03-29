@@ -13,6 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+/**
+ * Represents the `Utils` type within the DikenEngine `tools` package.
+ */
 public class Utils {
 	public static String[] readFileArray(File file) {
 		if (!file.exists()) {

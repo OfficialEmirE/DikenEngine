@@ -1,8 +1,11 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 
+/**
+ * Represents the `ScrollPanel` type within the DikenEngine `gui.compoment` package.
+ */
 public class ScrollPanel extends Panel {
     private static final long serialVersionUID = 1L;
 

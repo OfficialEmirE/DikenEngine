@@ -2,6 +2,9 @@ package me.ramazanenescik04.diken.gui.compoment;
 
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `RenderImage` type within the DikenEngine `gui.compoment` package.
+ */
 public class RenderImage extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	protected Bitmap bitmap;

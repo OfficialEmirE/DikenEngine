@@ -3,6 +3,9 @@ package me.ramazanenescik04.diken.gui.screen;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
+/**
+ * Represents the `DownBackground` type within the DikenEngine `gui.screen` package.
+ */
 public class DownBackground implements IBackground {
 	
 	private int xp = 0;

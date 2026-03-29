@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.game.world;
 
+import java.awt.Point;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -18,16 +19,19 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.Vec2D;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IResource;
-import me.ramazanenescik04.diken.gui.Hitbox;
 import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 
+/**
+ * Represents the `World` type within the DikenEngine `game.world` package.
+ */
 public class World extends Panel implements Cloneable {
     private static final long serialVersionUID = 1L;
 
@@ -38,7 +42,7 @@ public class World extends Panel implements Cloneable {
     
     public transient Map<String, IResource> resources;
     
-    public transient Vec2D camera = new Vec2D(0, 0);
+    public transient Point camera = new Point(0, 0);
 
     public World(String gameName, Node rootNode, int width, int height) {
     	super(0, 0, width, height);
@@ -89,8 +93,8 @@ public class World extends Panel implements Cloneable {
         int oldX = root.x;
         int oldY = root.y;
         
-        root.x = -(int)camera.x();
-        root.y = -(int)camera.y();
+        root.x = -(int)camera.x;
+        root.y = -(int)camera.y;
 
         // Tüm sahneyi (Entityler, Objectler) çiz
         root.draw(worldBitmap);
@@ -133,7 +137,7 @@ public class World extends Panel implements Cloneable {
             for (int j = i + 1; j < collidables.size(); j++) {
                 Node b = collidables.get(j);
 
-                Hitbox boxA = a.getGlobalAABB();
+                IHitbox boxA = a.getGlobalAABB();
                 Hitbox boxB = b.getGlobalAABB();
 
                 if (boxA != null && boxB != null && boxA.intersects(boxB)) {
@@ -163,11 +167,11 @@ public class World extends Panel implements Cloneable {
 
     // --- Setter/Getter ---
     
-    public void setCamera(Vec2D camera) {
+    public void setCamera(Point camera) {
         this.camera = camera;
     }
 
-    public Vec2D getCamera() {
+    public Point getCamera() {
         return camera;
     }
     
