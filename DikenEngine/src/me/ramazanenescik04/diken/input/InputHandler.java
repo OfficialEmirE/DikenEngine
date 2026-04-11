@@ -19,6 +19,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     public static final int INPUT_REPEATED = 2;
     public static final int INPUT_RELEASED = 3;
     public static final int INPUT_WHEEL    = 4;
+	public static final int INPUT_CLICKED  = 5;
 
     private final boolean[] keys = new boolean[65536];
     private final boolean[] lastKeys = new boolean[65536];
@@ -115,7 +116,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     public void mouseClicked(MouseEvent e) {
     	 lastMouseButton = e.getButton() - 1; // Convert to 0-based index
 
-         /*notifyMouse(INPUT_CLICKED, e.getX(), e.getY(), lastMouseButton);*/
+         notifyMouse(INPUT_CLICKED , e.getX(), e.getY(), lastMouseButton);
     }
 
     @Override

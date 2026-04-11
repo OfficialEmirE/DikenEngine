@@ -11,9 +11,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -73,6 +76,23 @@ public class World extends Panel implements Cloneable {
 
     public Node getNodeByName(String name) {
         return root.findFirstChild(name);
+    }
+    
+    public Node getNodeByNetId(UUID netId) {
+        return root.findFirstChildByNetId(netId);
+    }
+    
+    public List<Node> getAllNodes() {
+        List<Node> nodes = new ArrayList<>();
+        collectNodes(root, nodes);
+        return nodes;
+    }
+    
+    private void collectNodes(Node node, List<Node> nodes) {
+        nodes.add(node);
+        for (Node child : node.getChildren()) {
+            collectNodes(child, nodes);
+        }
     }
 
     // --- Render ---
@@ -177,66 +197,91 @@ public class World extends Panel implements Cloneable {
     
     public static void saveWorld(World theWorld, File outputFile) throws IOException {
     	try (ObjectOutputStream outStream = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)))) {
-    		outStream.writeUTF("DikenEngine-WorldFile");
-    		
-			outStream.writeUTF(theWorld.gameName);
-			outStream.writeLong(System.currentTimeMillis());
-			
-			//Sesleri, Animasyonları ve Resimleri Kaydet.
-			outStream.writeInt(theWorld.resources.size());
-			for (Map.Entry<String, IResource> entry : theWorld.resources.entrySet()) {
-	            outStream.writeUTF(entry.getKey());
-	            IResource resource = entry.getValue();
-	            outStream.writeUTF(resource.getClass().getName());
-	            
-	            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-	            resource.saveResource(new DataOutputStream(stream));
-	            outStream.writeInt(stream.size());
-	            outStream.write(stream.toByteArray());
-	        }
-			
-			theWorld.root.sendDisposeAllNodes(theWorld.root);
-			outStream.writeObject(theWorld.root);
+    		writeWorld(theWorld, outStream);
 		}
+    }
+    
+    public static byte[] saveWorldToBytes(World theWorld) throws IOException {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        try (ObjectOutputStream outStream = new ObjectOutputStream(new GZIPOutputStream(stream))) {
+            writeWorld(theWorld, outStream);
+        }
+        return stream.toByteArray();
     }
     
     public static World loadWorld(File outputFile) throws IOException, ReflectiveOperationException {
     	try (ObjectInputStream outStream = new ObjectInputStream(new GZIPInputStream(new FileInputStream(outputFile)))) {
-    		String signature = outStream.readUTF();
-    		if (!signature.equals("DikenEngine-WorldFile")) {
-    			throw new IOException("DikenENngine World Dosyası Değil!");
-    		}
-    	
-    		String gameName = outStream.readUTF();
-    		long lastUpdateTime = outStream.readLong();
-    		int resourceLenght = outStream.readInt();
-    		
-    		Map<String, IResource> resources = new ConcurrentHashMap<>();
-    		
-    		for (int i = 0; i < resourceLenght; i++) {
-    			String key = outStream.readUTF();
-    			String className = outStream.readUTF();
-    			int lenght = outStream.readInt();
-    			byte[] data = new byte[lenght];
-    			outStream.readFully(data);
-    			
-    			var in = new ByteArrayInputStream(data);
-    			var resource = IResource.loadResource(new DataInputStream(in), className);
-    			
-    			resources.put(key, resource);
-    		}
-    		
-    		Node rootNode = (Node) outStream.readObject();
-    		rootNode.sendReloadAllNodes(rootNode);
-			
-			World world = new World(gameName, rootNode, 1, 1);
-	    	world.lastUpdateTime = lastUpdateTime;
-	    	
-	    	resources.values().forEach(IResource::reload);
-	    	
-	    	world.resources = resources;
-			return world;
+    		return readWorld(outStream);
 		}
+    }
+    
+    public static World loadWorldFromBytes(byte[] data) throws IOException, ReflectiveOperationException {
+        try (ObjectInputStream outStream = new ObjectInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
+            return readWorld(outStream);
+        }
+    }
+    
+    private static void writeWorld(World theWorld, ObjectOutputStream outStream) throws IOException {
+        outStream.writeUTF("DikenEngine-WorldFile");
+        
+        outStream.writeUTF(theWorld.gameName);
+        outStream.writeLong(System.currentTimeMillis());
+        
+        outStream.writeInt(theWorld.resources.size());
+        for (Map.Entry<String, IResource> entry : theWorld.resources.entrySet()) {
+            outStream.writeUTF(entry.getKey());
+            IResource resource = entry.getValue();
+            outStream.writeUTF(resource.getClass().getName());
+            
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            resource.saveResource(new DataOutputStream(stream));
+            outStream.writeInt(stream.size());
+            outStream.write(stream.toByteArray());
+        }
+        
+        theWorld.root.sendDisposeAllNodes(theWorld.root);
+        outStream.writeObject(theWorld.root);
+    }
+    
+    private static World readWorld(ObjectInputStream outStream) throws IOException, ReflectiveOperationException {
+        String signature = outStream.readUTF();
+        if (!signature.equals("DikenEngine-WorldFile")) {
+            throw new IOException("DikenENngine World Dosyası Değil!");
+        }
+    
+        String gameName = outStream.readUTF();
+        long lastUpdateTime = outStream.readLong();
+        int resourceLenght = outStream.readInt();
+        
+        Map<String, IResource> resources = new ConcurrentHashMap<>();
+        
+        for (int i = 0; i < resourceLenght; i++) {
+            String key = outStream.readUTF();
+            String className = outStream.readUTF();
+            int lenght = outStream.readInt();
+            byte[] data = new byte[lenght];
+            outStream.readFully(data);
+            
+            var in = new ByteArrayInputStream(data);
+            var resource = IResource.loadResource(new DataInputStream(in), className);
+            
+            resources.put(key, resource);
+        }
+        
+        try {
+            Node rootNode = (Node) outStream.readObject();
+            rootNode.sendReloadAllNodes(rootNode);
+            
+            World world = new World(gameName, rootNode, 1, 1);
+            world.lastUpdateTime = lastUpdateTime;
+            
+            resources.values().forEach(IResource::reload);
+            
+            world.resources = resources;
+            return world;
+        } catch (ClassNotFoundException e) {
+            throw new ReflectiveOperationException(e);
+        }
     }
     
 	@SuppressWarnings("unchecked")
@@ -283,7 +328,12 @@ public class World extends Panel implements Cloneable {
     }
     
     public World copy() {
-    	Node copyRoot = this.root.copy();
+    	Node copyRoot;
+    	if (root == null)
+    		copyRoot = new Folder(new String(this.gameName));
+    	else
+    		copyRoot = this.root.copy();
+    		
     	copyRoot.sendReloadAllNodes(copyRoot);
     	World copyWorld = new World(new String(this.gameName), copyRoot, this.getWidth(), this.getHeight());
 		copyWorld.resources = new ConcurrentHashMap<String, IResource>(this.resources);

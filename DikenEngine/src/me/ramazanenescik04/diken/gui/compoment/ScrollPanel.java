@@ -2,15 +2,13 @@ package me.ramazanenescik04.diken.gui.compoment;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
+import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 
 /**
  * Represents the `ScrollPanel` type within the DikenEngine `gui.compoment` package.
  */
-public class ScrollPanel extends Panel {
+public class ScrollPanel extends Panel implements IGuiListener {
     private static final long serialVersionUID = 1L;
-
-    // Önceki boyutları saklayıp değişim olup olmadığını kontrol edeceğiz
-    private Hitbox prevBounds; 
 
     // Görünen alanın boyutları (Scroll barlar hariç alan)
     private Hitbox viewportSize;
@@ -34,6 +32,7 @@ public class ScrollPanel extends Panel {
         // 2. ScrollComponent (İçerik) oluştur
         this.scrollComponent = new Panel(0, 0, width - BAR_SIZE, height - BAR_SIZE);
         this.scrollComponent.parent = this;
+        this.scrollComponent.addGuiListener(this);
 
         // 3. ScrollBar'ları oluştur
         // Yatay Bar (En altta)
@@ -67,11 +66,10 @@ public class ScrollPanel extends Panel {
         this.scrollLock = new Button("", width - BAR_SIZE, height - BAR_SIZE, BAR_SIZE, BAR_SIZE);
         this.scrollLock.parent = this;
 
-        // 4. İlk boyutları kaydet
-        this.prevBounds = new Hitbox(x, y, width, height);
-
         // 5. Barları ilk kez güncelle
         updateBars();
+        
+        this.addGuiListener(this);    
     }
 
     @Override
@@ -91,6 +89,7 @@ public class ScrollPanel extends Panel {
      */
     public ScrollPanel setScrollComponent(GuiComponent gc) {
         // Eski bileşeni listeden bul ve yenisiyle değiştir
+    	this.scrollComponent.removeGuiListener(this);
         int index = this.getCompoments().indexOf(this.scrollComponent);
         if (index != -1) {
             this.getCompoments().set(index, gc);
@@ -126,19 +125,6 @@ public class ScrollPanel extends Panel {
             updateBars();
         }
 
-        // 3. Pencere boyutu değişim kontrolü (Barların yerini korumak için)
-        if (this.width != this.prevBounds.width || this.height != this.prevBounds.height) {
-            this.prevBounds.width = this.width;
-            this.prevBounds.height = this.height;
-            
-            this.viewportSize.setSize(width - BAR_SIZE, height - BAR_SIZE);
-            this.horizontalScrollBar.setBounds(0, height - BAR_SIZE, width - BAR_SIZE, BAR_SIZE);
-            this.verticalScrollBar.setBounds(width - BAR_SIZE, 0, BAR_SIZE, height - BAR_SIZE);
-            this.scrollLock.setBounds(width - BAR_SIZE, height - BAR_SIZE, BAR_SIZE, BAR_SIZE);
-            
-            updateBars();
-        }
-        
         int wheel = engine.input.getWheelValue();
         if (this.active) {
         	onMouseWheel(wheel);
@@ -173,4 +159,22 @@ public class ScrollPanel extends Panel {
         
         // Değer değiştikçe listener tetikleneceği için içerik otomatik kayacaktır
     }
+
+	@Override
+	public void changedBounds(IHitbox newBounds) {
+	}
+
+	@Override
+	public void changedSize(IHitbox newBounds, int width, int height) {
+		this.viewportSize.setSize(width - BAR_SIZE, height - BAR_SIZE);
+        this.horizontalScrollBar.setBounds(0, height - BAR_SIZE, width - BAR_SIZE, BAR_SIZE);
+        this.verticalScrollBar.setBounds(width - BAR_SIZE, 0, BAR_SIZE, height - BAR_SIZE);
+        this.scrollLock.setBounds(width - BAR_SIZE, height - BAR_SIZE, BAR_SIZE, BAR_SIZE);
+        
+        updateBars();
+	}
+
+	@Override
+	public void changedLocation(IHitbox newBounds, int x, int y) {
+	}
 }

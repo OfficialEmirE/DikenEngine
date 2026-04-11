@@ -10,6 +10,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.screen.DefaultMainMenuScreen;
@@ -247,14 +248,15 @@ public class DikenEngine implements Runnable, IInputListener {
 		wManager.render(bitmap);
 
 		if (this.config.getSetting("debug", Boolean.class).getValue()) {
-			bitmap.blendFill(0, 0, 120, 52, 0x2f000000);
-			bitmap.drawText("FPS: " + currentFPS, 2, 2, false);
-			bitmap.drawText("Screen: " + (currentScreen != null ? currentScreen.getClass().getSimpleName() : "null"), 2,
-					12, false);
-			bitmap.drawText("Width: " + getScaledWidth() + " Height: " + getScaledHeight(), 2, 22, false);
-			bitmap.drawText("Scale: " + this.getScale(), 2, 32, false);
+			bitmap.blendFill(0, 0, 120, 62, 0x2f000000);
+			bitmap.drawText("DikenEngine " + VERSION, 2, 2, false);
+			bitmap.drawText("FPS: " + currentFPS, 2, 12, false);
+			bitmap.drawText("Screen: " + (currentScreen != null ? currentScreen.getClass().getSimpleName() : "null (No Screen)"), 2,
+					22, false);
+			bitmap.drawText("Width: " + getScaledWidth() + " Height: " + getScaledHeight(), 2, 32, false);
+			bitmap.drawText("Scale: " + this.getScale(), 2, 42, false);
 			java.awt.Point point = input.getMousePosition();
-			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 42, false);
+			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 52, false);
 
 			Runtime runtime = Runtime.getRuntime();
 			long totalMemory = runtime.totalMemory();
@@ -270,6 +272,10 @@ public class DikenEngine implements Runnable, IInputListener {
 					!(percentageUse > 85) ? 0xff00ff00 : 0xffff0000);
 			bitmap.drawText("%" + usedMemory * 100L / maxMemory, getScaledWidth() - 26, 13, false);
 			bitmap.drawText("Max Memory: " + (maxMemory / 1024 / 1024) + " MB", getScaledWidth() - 118, 22, false);
+		} else {
+			/*bitmap.drawText("DikenEngine " + VERSION, 2, 2, false);
+			bitmap.drawText("Bu sürüm deneysel sürümdür! Hatalar olabilir!", 2, 12, false);
+			bitmap.blendFill(0, 0, 300, 22, 0x2f000000);*/
 		}
 	}
 
@@ -371,6 +377,28 @@ public class DikenEngine implements Runnable, IInputListener {
 		Language lang = Language.i;
 		lang.addLangValue("tr-TR", "dmainmenu.reportbug=Hata Bildir");
 		lang.addLangValue("en-US", "dmainmenu.reportbug=Report Bug");
+		
+		Bitmap def_body = (Bitmap)IOResource.loadResource(DikenEngine.class.getResourceAsStream("/default_c3/body.png"), EnumResource.IMAGE);
+		Bitmap def_hand = (Bitmap)IOResource.loadResource(DikenEngine.class.getResourceAsStream("/default_c3/hand.png"), EnumResource.IMAGE);
+		Bitmap def_face = (Bitmap)IOResource.loadResource(DikenEngine.class.getResourceAsStream("/default_c3/face.png"), EnumResource.IMAGE);
+		
+		ArrayBitmap def_avatar = new ArrayBitmap(new Bitmap[][] { { def_body, def_hand, def_face } });
+		ResourceLocator.addResource(new ResourceLocator.ResourceKey("capsule", "default_avatar"), (IResource)def_avatar);
+		
+		Animation leftWalkAnim = (Animation)IOResource.loadResource(DikenEngine.class.getResourceAsStream("/default_c3/animation/walkanim-left.bin"), 
+		    EnumResource.ANIMATION);
+		Animation rightWalkAnim = (Animation)IOResource.loadResource(DikenEngine.class.getResourceAsStream("/default_c3/animation/walkanim-right.bin"), 
+		    EnumResource.ANIMATION);
+		
+		Animation idleAnim = (Animation)IOResource.loadResource(DikenEngine.class.getResourceAsStream("/default_c3/animation/idleanim.bin"), 
+			EnumResource.ANIMATION);
+		
+		ResourceLocator.addResource(new ResourceLocator.ResourceKey("capsule", "leftWalkAnim"), (IResource)leftWalkAnim);
+		ResourceLocator.addResource(new ResourceLocator.ResourceKey("capsule", "rightWalkAnim"), (IResource)rightWalkAnim);
+		ResourceLocator.addResource(new ResourceLocator.ResourceKey("capsule", "idleAnim"), (IResource)idleAnim);
+		
+		ArrayBitmap menu_buttons = new ArrayBitmap(IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/menubuttons.png"), 16, 16));
+		ResourceLocator.addResource(new ResourceLocator.ResourceKey("capsule", "menu_buttons"), (IResource)menu_buttons);
 	}
 
 	public static DikenEngine getEngine() {

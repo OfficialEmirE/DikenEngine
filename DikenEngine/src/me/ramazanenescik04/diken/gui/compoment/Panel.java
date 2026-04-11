@@ -105,6 +105,8 @@ public class Panel extends GuiComponent {
 	}
 
 	public void tick(DikenEngine engine) {
+		checkListener();
+		
 		if (this.background != null) {
 			this.background.tick();
 		}
@@ -112,6 +114,9 @@ public class Panel extends GuiComponent {
 		for (int i = 0; i < this.compoments.size(); i++) {
 			GuiComponent compoment = this.compoments.get(i);
 			if (engine != null && compoment != null) {
+				if (!(compoment instanceof Panel))
+					compoment.checkListener();
+				
 				compoment.tick(engine);
 			}
 		}

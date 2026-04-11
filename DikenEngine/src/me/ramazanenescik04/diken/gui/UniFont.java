@@ -3,10 +3,11 @@ package me.ramazanenescik04.diken.gui;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.json.*;
 
@@ -20,13 +21,13 @@ import me.ramazanenescik04.diken.resource.IOResource;
  */
 public class UniFont {
 	
-	private static List<UniFont> unifonts = new ArrayList<UniFont>();
+	private static List<UniFont> unifonts = new ArrayList<>();
 	
 	public String charTypes = "";
 	
 	public String font_name;
 	
-	public Map<String, Bitmap> charBitmaps = new HashMap<String, Bitmap>();
+	public Map<Character, Bitmap> charBitmaps = new HashMap<>();
 	
 	public String name;
 	
@@ -61,7 +62,7 @@ public class UniFont {
 			Bitmap charBitmap = new Bitmap(obj1.getInt("width"), obj1.getInt("height"));
 		    
 		    if (obj1.getInt("x") < 0 || obj1.getInt("y") < 0) {
-		    	font.charBitmaps.put(chara, charBitmap);
+		    	font.charBitmaps.put(chara.charAt(0), charBitmap);
     			continue;
     		}
 		    
@@ -71,7 +72,7 @@ public class UniFont {
 		    		int color = bitmap.pixels.get((x + obj1.getInt("x")) + (y + obj1.getInt("y")) * bitmap.w);
 		    		charBitmap.setPixel(x, y, color);
 		    		
-		    		font.charBitmaps.put(chara, charBitmap);
+		    		font.charBitmaps.put(chara.charAt(0), charBitmap);
 			    }
 		    }
 		    
@@ -83,47 +84,54 @@ public class UniFont {
 		unifonts.add(font);
 	}
 	
-	public static void createFont(Font font) {
-		UniFont de_font = new UniFont();
-				
-		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D g2d = img.createGraphics();
-		g2d.setFont(font);
-		FontMetrics fontMetrics = g2d.getFontMetrics();
-			        
-		Map<String, Bitmap> charBitmaps = new HashMap<String, Bitmap>();
+	public static UniFont createFont(Font font) {
+		var unifont = new UniFont();
+		var scratchImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
 
-		for (int i=0; i < font.getNumGlyphs(); i++) {
-			if (font.canDisplay(i)) {
-				int w = fontMetrics.charWidth(i);
-			    int h = fontMetrics.getHeight();
-			    if(w <= 0 || h <= 0) {
-			    	continue;
-			    }
-			    de_font.charTypes += "" + (char)i;
-			    BufferedImage font_img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-			    Graphics2D font_g2d = font_img.createGraphics();
-			    font_g2d.setFont(font);
-			    font_g2d.setColor(Color.WHITE);
-			    font_g2d.drawString("" + (char)i, 0, fontMetrics.getAscent());
-			    font_g2d.dispose();
-			    charBitmaps.put("" + (char)i, Bitmap.toBitmap(font_img));
+		var g2d = scratchImage.createGraphics();
+		g2d.setFont(font);
+		var fontMetrics = g2d.getFontMetrics();
+
+		// Modern stream API ile glyph'leri işle
+		var charBitmaps = IntStream.range(0, font.getNumGlyphs()).filter(font::canDisplay).mapToObj(codePoint -> {
+			int width = fontMetrics.charWidth(codePoint) + 1;
+			int height = fontMetrics.getHeight();
+
+			if (width <= 0 || height <= 0) {
+				return null;
 			}
-		}
-			    
-		Locale locale = Locale.getDefault();
-			    
-		de_font.name = font.getFontName() + "." + font.getSize();
-		de_font.font_name = font.getFontName() + "_" + locale.getLanguage()  + "-" + locale.getCountry();
-		de_font.charBitmaps = charBitmaps;
-		
-		de_font.name = de_font.name.replaceAll(" ", "_");
-			        
+
+			char character = (char) codePoint;
+			unifont.charTypes += character;
+			var bitmap = renderCharacter(character, font, fontMetrics, width, height);
+
+			return Map.entry(character, bitmap);
+		}).filter(Objects::nonNull).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+		unifont.charBitmaps = charBitmaps;
+
+		// Modern string formatting
+		var locale = Locale.getDefault();
+		unifont.name = "%s.%d".formatted(font.getFontName(), font.getSize()).replace(" ", "_");
+		unifont.font_name = "%s_%s-%s".formatted(font.getFontName(), locale.getLanguage(), locale.getCountry());
+
 		g2d.dispose();
-			    
-		unifonts.add(de_font);
-			    
-		DikenEngine.log("Loaded Font: " + de_font.name);
+
+		unifonts.add(unifont);
+		DikenEngine.log("Loaded Font: " + unifont.name);
+
+		return unifont;
+	}
+
+	private static Bitmap renderCharacter(char character, Font font, FontMetrics fontMetrics, int width, int height) {
+		var fontImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		var g2d = fontImage.createGraphics();
+		
+		g2d.setFont(font);
+		g2d.setColor(Color.WHITE);
+		g2d.drawString(String.valueOf(character), 0, fontMetrics.getAscent());
+
+		return Bitmap.toBitmap(fontImage);
 	}
 	
 	public static boolean removeFont(String s) {
@@ -160,7 +168,7 @@ public class UniFont {
 				list.add(getMissingChar());
 			} else {
 				char ch = text.charAt(i);
-				Bitmap charBitmap = font.charBitmaps.getOrDefault(ch + "", getMissingChar());
+				Bitmap charBitmap = font.charBitmaps.getOrDefault(ch, getMissingChar());
 				list.add(charBitmap);
 			}
 		}
@@ -172,7 +180,7 @@ public class UniFont {
 			return getMissingChar();
 		}
 		
-		return font.charBitmaps.getOrDefault(chara + "", getMissingChar());
+		return font.charBitmaps.getOrDefault(chara, getMissingChar());
 	}
 	
 	public static UniFont getFont(int id) {

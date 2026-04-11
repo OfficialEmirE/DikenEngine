@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.gui.compoment;
 
+import java.util.*;
+
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -11,6 +13,8 @@ public abstract class GuiComponent extends Hitbox {
 	private static final long serialVersionUID = 1L;
 	
 	protected GuiComponent parent = null; //default
+	protected List<IGuiListener> listeners = new ArrayList<>();
+	private Hitbox prevBounds;
 	protected boolean visible = true;
 	
 	public int getGlobalX() {
@@ -23,6 +27,8 @@ public abstract class GuiComponent extends Hitbox {
 
 	public GuiComponent(int x, int y, int width, int height) {
 		super(x, y, width, height);
+		
+		prevBounds = (Hitbox) this.getBounds();
 	}
 	
 	public Bitmap render() {
@@ -48,9 +54,29 @@ public abstract class GuiComponent extends Hitbox {
 	public boolean isVisible() {
 		return visible;
 	}
+	
+	public void addGuiListener(IGuiListener listener) {
+		listeners.add(listener);
+	}
+	
+	public void removeGuiListener(IGuiListener listener) {
+		if (listeners.contains(listener))
+			listeners.remove(listener);
+	}
 
 	@Override
 	public boolean equals(Object obj) {
 		return this == obj;
+	}
+	
+	public void checkListener() {
+		if (!(prevBounds.equals(this))) {
+			prevBounds = (Hitbox) this.getBounds();
+			listeners.forEach(l -> {
+				l.changedBounds(prevBounds);
+				l.changedSize(prevBounds, prevBounds.width, prevBounds.height);
+				l.changedLocation(prevBounds, prevBounds.x, prevBounds.y);
+			});	
+		}
 	}
 }

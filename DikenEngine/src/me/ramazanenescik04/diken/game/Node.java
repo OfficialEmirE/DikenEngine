@@ -2,6 +2,7 @@ package me.ramazanenescik04.diken.game;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -23,6 +24,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	// Hiyerarşi
     protected Node parent;
     protected List<Node> children = new ArrayList<>();
+    protected UUID netId = UUID.randomUUID();
     
     // Temel Özellikler
     public String name;
@@ -77,6 +79,19 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         }
     }
     
+    public void replaceChild(Node oldChild, Node newChild) {
+        int index = children.indexOf(oldChild);
+        if (index < 0) {
+            return;
+        }
+        
+        oldChild.onRemoved();
+        oldChild.parent = null;
+        newChild.parent = this;
+        children.set(index, newChild);
+        newChild.onAdded();
+    }
+    
     public Node getParent() {
     	return parent;
     }
@@ -113,7 +128,8 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         }
 
         // 3. Çocukları çiz (Recursive)
-        for (Node child : children) {
+        for (int i = 0; i < children.size(); i++) {
+        	Node child = children.get(i);
             child.draw(btp);
         }
     }
@@ -263,6 +279,25 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	    
 	    return null;
 	}
+	
+	public Node findFirstChildByNetId(UUID netId) {
+	    if (netId == null) {
+	        return null;
+	    }
+	    
+	    if (netId.equals(this.netId)) {
+	        return this;
+	    }
+	    
+	    for (Node child : getChildren()) {
+	        Node found = child.findFirstChildByNetId(netId);
+	        if (found != null) {
+	            return found;
+	        }
+	    }
+	    
+	    return null;
+	}
 
 	/**
 	 * Belirli bir Class tipindeki ilk düğümü döndürür.
@@ -301,6 +336,14 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	public String getName() {
 		return new String(name);
+	}
+	
+	public UUID getNetId() {
+		return this.netId;
+	}
+	
+	public void setNetId(UUID netId) {
+		this.netId = netId != null ? netId : UUID.randomUUID();
 	}
 	
 	public void setName(String name) {

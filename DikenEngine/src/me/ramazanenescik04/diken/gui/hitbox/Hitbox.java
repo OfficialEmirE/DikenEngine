@@ -42,7 +42,7 @@ public class Hitbox implements java.io.Serializable, IHitbox {
 		if (obj == null) {
 			return false;
 		} else if (obj instanceof Hitbox h) {
-			return (h.x == h.x && h.y == h.y && h.height == h.height);
+			return (h.x == x && h.y == y &&  h.width == width && h.height == height);
 		} else if (obj instanceof java.awt.Point p) {
 			return this.contains(p.x, p.y);
 		}
@@ -146,13 +146,9 @@ public class Hitbox implements java.io.Serializable, IHitbox {
 		this.height = height;
 	}
 
-	public IHitbox copy() {
-		return new Hitbox(this.x, this.y, this.width, this.height);
-	}
-
 	@Override
 	public IHitbox getBounds() {
-		return this.copy();
+		return new Hitbox(this.x, this.y, this.width, this.height);
 	}
 
 	public String toString() {

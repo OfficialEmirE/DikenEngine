@@ -2,6 +2,7 @@ package me.ramazanenescik04.diken.resource;
 
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Point;
 import java.awt.image.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -922,4 +923,15 @@ public class Bitmap implements IResource, Cleanable {
 	    }
 	}
 
+	public Point findColorPos(int color) {
+		this.rewind();
+		
+		for (int y = 0; y < h; y++) {
+			for (int x = 0; x < w; x++) {
+				if (getPixel(x, y) == color)
+					return new Point(x, y);
+			}
+		}
+		return new Point(0, 0);
+	}
 }

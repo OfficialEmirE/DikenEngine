@@ -378,7 +378,7 @@ public class WindowManager {
             boolean isTouch = activeWindow.isTouching(mousePos);
             
             // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
-            if (action == InputHandler.INPUT_PRESSED || action == InputHandler.INPUT_REPEATED) {
+            if (action == InputHandler.INPUT_CLICKED) {
                 activeWindow.mouseClicked(mousePos.x, mousePos.y, button, isTouch);
             }
             

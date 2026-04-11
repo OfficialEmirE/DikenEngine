@@ -127,7 +127,7 @@ public class Window extends GuiComponent {
 			titleX = px + 2;
 			titleY = py + 13 / 2;
 		}
-		
+		 
 		//Text.render(title, bitmap, px + 10 / 2, py + 13 / 2);
 		Text.render(title, bitmap, titleX, titleY);
 		

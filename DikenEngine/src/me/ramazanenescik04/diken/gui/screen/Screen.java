@@ -69,7 +69,7 @@ public abstract class Screen {
 		if (this.engine != null) {
 			this.mouseGetInfo(x, y, (engine.wManager.screenActionMode(new java.awt.Point(x, y))), engine.input.isMouseOnScreen());
 		
-			if (inputMode == InputHandler.INPUT_PRESSED || inputMode == InputHandler.INPUT_REPEATED) {
+			if (inputMode == InputHandler.INPUT_CLICKED) {
 				this.mouseClick(x, y, clicked, engine.input.isMouseOnScreen(), (engine.wManager.screenActionMode(new java.awt.Point(x, y))));
 			}
 		}

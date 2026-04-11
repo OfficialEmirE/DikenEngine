@@ -31,7 +31,7 @@ public class SpawnLocation extends Part {
 	
 	@Override
 	public List<SettingCategory> getNodeSettings() {
-		var key = new SettingCategory.SettingKey("part", "Part", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(5, 1));
+		var key = new SettingCategory.SettingKey("spawnLocation", "SpawnLocation", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(5, 1));
 		
 		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
 				.createSettingCategory(key));

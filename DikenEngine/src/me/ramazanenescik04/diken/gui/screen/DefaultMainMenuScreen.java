@@ -54,12 +54,12 @@ public class DefaultMainMenuScreen extends Screen {
 	}
 	
 	public void resized() {
-		this.getContentPane().get(3).setLocation(10, engine.getScaledHeight() - (1 * 20));
-		this.getContentPane().get(4).setLocation(10, engine.getScaledHeight() - (2 * 20));
-		this.getContentPane().get(5).setLocation(110, engine.getScaledHeight() - (2 * 20));
+		this.getContentPane().get(4).setLocation(10, engine.getScaledHeight() - (1 * 20));
+		this.getContentPane().get(5).setLocation(10, engine.getScaledHeight() - (2 * 20));
+		this.getContentPane().get(6).setLocation(110, engine.getScaledHeight() - (2 * 20));
 	}
 	
-	private static class DMMPanel extends Panel {
+	private class DMMPanel extends Panel {
 		private static final long serialVersionUID = 1L;
 
 		public DMMPanel(int width, int height) {
@@ -78,15 +78,15 @@ public class DefaultMainMenuScreen extends Screen {
 			Language lang = Language.i;
 			
 			clear();
-			Button performaceButton = new Button(lang.languageValue("Demo Ekranını Aç"), 10, 100, 200, 20).setRunnable(() -> {
-				//???
-			});
-			performaceButton.active = false;
-			add(performaceButton);
-			add(new Button(lang.languageValue("dmainmenu.setting"), 10, 100 + (1 * 20), 200, 20).setRunnable(() -> {
+			add(new Button(lang.languageValue("Demo Ekranını Aç"), 10, 100, 200, 20).setRunnable(() -> {
+				engine.setCurrentScreen(new GameScreen(DefaultMainMenuScreen.this));
+			}));
+			add(new Button("Multiplayer Test", 10, 120, 200, 20).setRunnable(() -> {
+			}));
+			add(new Button(lang.languageValue("dmainmenu.setting"), 10, 140, 200, 20).setRunnable(() -> {
 				engine.wManager.addWindow(new SettingsWindow()); 
 			}));
-			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 100 + (2 * 20), 200, 20).setRunnable(() -> {
+			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 160, 200, 20).setRunnable(() -> {
 				engine.stop();
 			}));
 			add(new LinkButton("Github", 10, engine.getScaledHeight() - (1 * 20), 200, 20).setURI(URI.create("https://github.com/Ramazanenesisik010/DikenEngine")));
