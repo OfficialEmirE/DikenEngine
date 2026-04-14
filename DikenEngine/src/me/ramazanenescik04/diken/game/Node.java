@@ -71,6 +71,57 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         children.add(child);
         child.onAdded(); // 3. Lifecycle Event
     }
+    
+    public void insertChild(int index, Node child) {
+    	if (child == null || child == this || this.isDescendantOf(child)) {
+    		return;
+    	}
+    	
+    	index = Math.max(0, Math.min(index, children.size()));
+    	
+    	if (child.parent == this) {
+    		int currentIndex = children.indexOf(child);
+    		if (currentIndex < 0) {
+    			return;
+    		}
+    		if (currentIndex < index) {
+    			index--;
+    		}
+    		children.remove(currentIndex);
+    		children.add(Math.max(0, Math.min(index, children.size())), child);
+    		return;
+    	}
+    	
+    	if (child.parent != null) {
+    		child.parent.children.remove(child);
+    		child.onRemoved();
+    		child.parent = null;
+    	}
+    	
+    	child.parent = this;
+    	children.add(index, child);
+    	child.onAdded();
+    }
+    
+    public int getChildIndex(Node child) {
+    	return children.indexOf(child);
+    }
+    
+    public boolean isDescendantOf(Node other) {
+    	if (other == null) {
+    		return false;
+    	}
+    	
+    	Node current = this.parent;
+    	while (current != null) {
+    		if (current == other) {
+    			return true;
+    		}
+    		current = current.parent;
+    	}
+    	
+    	return false;
+    }
 
     public void removeChild(Node child) {
         if (children.remove(child)) {
@@ -161,6 +212,27 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     // AABB'yi ayarlamak için
     public void setAABB(int width, int height) {
         this.aabb = new Hitbox(0, 0, width, height); // Local coordinates
+    }
+    
+    public boolean hasAABB() {
+    	return this.aabb != null;
+    }
+    
+    public int getAABBWidth() {
+    	return this.aabb != null ? this.aabb.width : 0;
+    }
+    
+    public int getAABBHeight() {
+    	return this.aabb != null ? this.aabb.height : 0;
+    }
+    
+    public void setAABBSize(int width, int height) {
+    	if (this.aabb == null) {
+    		return;
+    	}
+    	
+    	this.aabb.width = Math.max(1, width);
+    	this.aabb.height = Math.max(1, height);
     }
     
     public Hitbox getGlobalAABB() {
@@ -353,65 +425,78 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public void onCollision(Node other) {
     }
     
+    // TODO: BURASI BOZUK!
     public static void resolveCollision(Node a, Node b) {
-        MTV mtv = a.computeMTV(b);
-        if (mtv == null) return;
+        Hitbox boxA = a.getGlobalAABB();
+        Hitbox boxB = b.getGlobalAABB();
+        if (boxA == null || boxB == null) return;
 
-        boolean aAnch = a.isAnchoed();
-        boolean bAnch = b.isAnchoed();
+        // Çakışma miktarını hesapla
+        float overlapX = Math.min(boxA.x + boxA.width, boxB.x + boxB.width) - Math.max(boxA.x, boxB.x);
+        float overlapY = Math.min(boxA.y + boxA.height, boxB.y + boxB.height) - Math.max(boxA.y, boxB.y);
 
-        if (!aAnch && bAnch) {
-            // sadece A hareketli
-            a.x += mtv.x;
-            a.y += mtv.y;
-        } else if (aAnch && !bAnch) {
-            // sadece B hareketli (MTV A için hesaplandı -> B ters yönde gitmeli)
-            b.x -= mtv.x;
-            b.y -= mtv.y;
-        } else if (!aAnch && !bAnch) {
-            // ikisi de hareketli -> yarı yarıya paylaştır
-            a.x += mtv.x * 0.5f;
-            a.y += mtv.y * 0.5f;
+        if (overlapX <= 0 || overlapY <= 0) return; // Çarpışma yok
 
-            b.x -= mtv.x * 0.5f;
-            b.y -= mtv.y * 0.5f;
-        } 
-        // ikisi de anchored ise hiçbir şey yapma
-    }
-    
-    private static class MTV {
-        float x, y;
-        MTV(float x, float y) { this.x = x; this.y = y; }
-    }
+        boolean aAnchored = a.isAnchored();
+        boolean bAnchored = b.isAnchored();
 
-    private MTV computeMTV(Node other) {
-        Hitbox box1 = this.getGlobalAABB();
-        Hitbox box2 = other.getGlobalAABB();
-        if (box1 == null || box2 == null) return null;
+        if (aAnchored && bAnchored) return; // İkisi de sabit, hiçbir şey yapma
 
-        float c1x = box1.x + box1.width  / 2.0f;
-        float c1y = box1.y + box1.height / 2.0f;
-        float c2x = box2.x + box2.width  / 2.0f;
-        float c2y = box2.y + box2.height / 2.0f;
-
-        float dx = c1x - c2x;
-        float dy = c1y - c2y;
-
-        float minDistanceX = (box1.width  / 2.0f) + (box2.width  / 2.0f);
-        float minDistanceY = (box1.height / 2.0f) + (box2.height / 2.0f);
-
-        float overlapX = minDistanceX - Math.abs(dx);
-        float overlapY = minDistanceY - Math.abs(dy);
-
-        if (overlapX <= 0 || overlapY <= 0) return null;
-
-        // En küçük eksenden it
+        // En küçük çakışma eksenini seç ve ayır
         if (overlapX < overlapY) {
-            float sx = (dx > 0) ? overlapX : -overlapX; // this'i iten yön
-            return new MTV(sx, 0);
+            // X ekseninde ayır
+            if (!aAnchored && !bAnchored) {
+                // İkisi de hareketli, yarı yarıya ayır
+                float half = overlapX / 2.0f;
+                if (boxA.x < boxB.x) {
+                    a.x -= half;
+                    b.x += half;
+                } else {
+                    a.x += half;
+                    b.x -= half;
+                }
+            } else if (!aAnchored) {
+                // Sadece A hareketli, B sabit
+                if (boxA.x < boxB.x) {
+                    a.x -= overlapX;
+                } else {
+                    a.x += overlapX;
+                }
+            } else if (!bAnchored) {
+                // Sadece B hareketli, A sabit
+                if (boxB.x < boxA.x) {
+                    b.x -= overlapX;
+                } else {
+                    b.x += overlapX;
+                }
+            }
         } else {
-            float sy = (dy > 0) ? overlapY : -overlapY;
-            return new MTV(0, sy);
+            // Y ekseninde ayır
+            if (!aAnchored && !bAnchored) {
+                // İkisi de hareketli, yarı yarıya ayır
+                float half = overlapY / 2.0f;
+                if (boxA.y < boxB.y) {
+                    a.y -= half;
+                    b.y += half;
+                } else {
+                    a.y += half;
+                    b.y -= half;
+                }
+            } else if (!aAnchored) {
+                // Sadece A hareketli, B sabit
+                if (boxA.y < boxB.y) {
+                    a.y -= overlapY;
+                } else {
+                    a.y += overlapY;
+                }
+            } else if (!bAnchored) {
+                // Sadece B hareketli, A sabit
+                if (boxB.y < boxA.y) {
+                    b.y -= overlapY;
+                } else {
+                    b.y += overlapY;
+                }
+            }
         }
     }
 
@@ -431,7 +516,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 		this.solid = isSolid;
 	}
 
-	public boolean isAnchoed() {
+	public boolean isAnchored() {
 		return this.anchored;
 	}
 
@@ -448,7 +533,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	}
 	
 	public List<SettingCategory> getNodeSettings() {
-		var key = new SettingCategory.SettingKey("default", "Node", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1));
+		var key = new SettingCategory.SettingKey("default", "Node", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(8, 1));
 		var cat = SettingCategoryHelper.getOrCreateCategory(key, () -> this.generateDefaultSettings(key));
 		
 		var list = new ArrayList<SettingCategory>();

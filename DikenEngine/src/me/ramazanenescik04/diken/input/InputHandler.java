@@ -5,6 +5,8 @@ import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.Timer;
+
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
@@ -19,7 +21,6 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     public static final int INPUT_REPEATED = 2;
     public static final int INPUT_RELEASED = 3;
     public static final int INPUT_WHEEL    = 4;
-	public static final int INPUT_CLICKED  = 5;
 
     private final boolean[] keys = new boolean[65536];
     private final boolean[] lastKeys = new boolean[65536];
@@ -34,6 +35,8 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     private boolean mousePressed;
     private int lastMouseButton = -1;
     private int wheelValue;
+    
+    private Timer wheelTimer;
 
     public InputHandler(javax.swing.JPanel panel) {
         this.thePanel = panel;
@@ -45,6 +48,13 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
         panel.addMouseMotionListener(this);
         panel.addMouseWheelListener(this);
         panel.addKeyListener(this);
+        
+        //WheelTimer 2000
+        wheelTimer = new Timer(200, _ -> {
+        	notifyMouse(INPUT_WHEEL, -1, -1, 0);
+            this.wheelValue = 0;
+        });
+        wheelTimer.setRepeats(false);
     }
 
     /* ================= LISTENER ================= */
@@ -116,7 +126,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     public void mouseClicked(MouseEvent e) {
     	 lastMouseButton = e.getButton() - 1; // Convert to 0-based index
 
-         notifyMouse(INPUT_CLICKED , e.getX(), e.getY(), lastMouseButton);
+         //notifyMouse(INPUT_CLICKED , e.getX(), e.getY(), lastMouseButton);
     }
 
     @Override
@@ -130,11 +140,17 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
         updateMouse(e);
         notifyMouse(INPUT_REPEATED, e.getX(), e.getY(), lastMouseButton);
     }
-
+    
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        notifyMouse(INPUT_WHEEL, e.getX(), e.getY(), -e.getWheelRotation());
-        this.wheelValue = -e.getWheelRotation();
+    	if (wheelTimer.isRunning()) { 
+    		wheelTimer.restart();
+    	} else {
+    		wheelTimer.start();
+    	}
+    	
+        notifyMouse(INPUT_WHEEL, e.getX(), e.getY(), e.getWheelRotation());
+        this.wheelValue = e.getWheelRotation();
     }
 
     private void updateMouse(MouseEvent e) {

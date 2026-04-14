@@ -33,7 +33,7 @@ public class TextField extends GuiComponent {
 		this.text = text;
 	}
 	
-	public TextField setTextChanced(Consumer<String> consumer) {
+	public TextField setTextChanged(Consumer<String> consumer) {
 		this.textChanced = consumer;
 		return this;
 	}
@@ -85,6 +85,10 @@ public class TextField extends GuiComponent {
 				if (text.length() > 0) {
 					text = text.substring(0, text.length() - 1);
 				}
+				
+				if (textChanced != null) {
+					textChanced.accept(text);
+				}
 			} else if (var2 == KeyEvent.VK_ENTER) {
 				isFocused = false;
 			} else if (var2 == KeyEvent.VK_ESCAPE) {
@@ -94,7 +98,7 @@ public class TextField extends GuiComponent {
 				if (textChanced != null) {
 					textChanced.accept(text);
 				}
-			} else if (isNumberField && Character.isDigit(var1)) {
+			} else if (isNumberField && (Character.isDigit(var1) || var1 == '.' || var1 == '-')) {
 				text += var1;
 				if (textChanced != null) {
 					textChanced.accept(text);

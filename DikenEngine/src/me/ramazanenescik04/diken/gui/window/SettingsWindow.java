@@ -92,7 +92,7 @@ public class SettingsWindow extends Window {
         			component = new Text(setting.getName(), 2, i * itemHeight, 0xffffffff).setOffsetLocation(0, 6);
         			addSettingComponent(component);
         			i++;
-        			TextField field = new TextField(2, i * itemHeight, 176, itemHeight).setTextChanced((s) -> {
+        			TextField field = new TextField(2, i * itemHeight, 176, itemHeight).setTextChanged((s) -> {
         				forceUpdate(setting, s);
         			});
         			field.setText(setting.getValue().toString());
@@ -121,7 +121,7 @@ public class SettingsWindow extends Window {
 								engine.wManager.activeWindow = SettingsWindow.this;
 							}
         				});
-        				engine.wManager.addWindow(window);
+        				engine.wManager.addWindow(window, true);
         				SettingsWindow.this.getContentPane().active = false;
         				this.setCloseable(false);
         			});

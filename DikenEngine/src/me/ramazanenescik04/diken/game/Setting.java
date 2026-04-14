@@ -276,7 +276,8 @@ public class Setting<T> {
         	 Float.class, Double.class),     			   // String değerler için
         SLIDER(Float.class, Double.class, Integer.class),  // Float/Double/Int değerler için (ScrollBar yerine Slider daha yaygın terimdir)
         COLOR_PICKER(Integer.class),   					   // Renk seçimi için
-        KEY_BIND(Character.class, Integer.class);          // Tuş atamaları için
+        KEY_BIND(Character.class, Integer.class),          // Tuş atamaları için
+    	RESOURCE_SELECT(String.class);
     	
     	public Class<?>[] allowedClasses;
     	

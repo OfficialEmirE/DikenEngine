@@ -2,6 +2,8 @@ package me.ramazanenescik04.diken;
 
 import java.awt.Cursor;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -41,6 +43,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	private static DikenEngine instance;
 
 	private JFrame engineWindow;
+	private boolean fullscreen;
 
 	private boolean running = false;
 	private final RendererPanel rendererPanel;
@@ -57,18 +60,25 @@ public class DikenEngine implements Runnable, IInputListener {
 	public InputHandler input;
 	public CursorResource cursorResource;
 	public Config config = new Config();
+	
+	private int tmpW;
+	private int tmpH;
 
 	public DikenEngine(int width, int height, int scale) {
 		this.config.setSetting("guiScale", scale);
 		this.config.loadConfig();
 
-		this.width = width;
-		this.height = height;
+		this.width = tmpW = width;
+		this.height = tmpH = height;
 		this.scale = scale;
 		this.rendererPanel = new RendererPanel(width, height);
 
 		this.engineWindow = new JFrame("DikenEngine");
-		this.engineWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.engineWindow.addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				stop();
+			}
+		});
 		this.engineWindow.add(this.rendererPanel);
 		this.engineWindow.pack();
 		this.engineWindow.setLocationRelativeTo(null);
@@ -119,6 +129,15 @@ public class DikenEngine implements Runnable, IInputListener {
 
 	public int getScale() {
 		return scale;
+	}
+	
+	public void setFullscreen(boolean bool) {
+		this.fullscreen = !bool;
+		this.toggleFullscreen();
+	}
+	
+	public boolean getFullscreen() {
+		return this.fullscreen;
 	}
 
 	public static void log(String message) {
@@ -194,7 +213,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	@Override
 	public void keyHandled(int inputMode, int key, char character) {
 		if (inputMode == InputHandler.INPUT_PRESSED) {
-			if (key == KeyEvent.VK_F2) {
+			if (key == KeyEvent.VK_F12) {
 				try {
 					String fileName = "screenshot-"
 							+ new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
@@ -222,6 +241,10 @@ public class DikenEngine implements Runnable, IInputListener {
 				}
 				wManager.addWindow(new ConsoleWindow(2, 2, 200, 200));
 			}
+			
+			if (key == KeyEvent.VK_F11) {
+				toggleFullscreen();
+			}
 		}
 
 		if (currentScreen != null) {
@@ -229,6 +252,40 @@ public class DikenEngine implements Runnable, IInputListener {
 		}
 
 		wManager.keyboardEvent(inputMode, key, character);
+	}
+
+	private void toggleFullscreen() {
+		this.fullscreen = !this.fullscreen;
+		
+		if (this.fullscreen) {
+			this.tmpW = width;
+			this.tmpH = height;
+			engineWindow.dispose();
+
+			engineWindow.setExtendedState(JFrame.MAXIMIZED_BOTH);
+			if (!engineWindow.isUndecorated()) {
+				engineWindow.setUndecorated(true);
+			}
+			engineWindow.setVisible(true);
+			rendererPanel.requestFocus();
+			engineWindow.toFront();
+			// engineWindow.requestFocus();
+		} else {
+			rendererPanel.setSize(tmpW, tmpH);
+			engineWindow.pack();
+			engineWindow.setLocationRelativeTo(null);
+
+			engineWindow.dispose();
+
+			engineWindow.setExtendedState(JFrame.NORMAL);
+			if (engineWindow.isUndecorated()) {
+				engineWindow.setUndecorated(false);
+			}
+			engineWindow.setVisible(true);
+			rendererPanel.requestFocus();
+			engineWindow.toFront();
+			// engineWindow.requestFocus();
+		}
 	}
 
 	@Override

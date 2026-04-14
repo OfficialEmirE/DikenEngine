@@ -42,10 +42,20 @@ public class WindowManager {
     public WindowManager() {
         windows = new ArrayList<>();
     }
+    
+    public void addWindow(Window window) {
+    	addWindow(window, false);
+    }
 
-    public void addWindow(Window window) {        
+    public void addWindow(Window window, boolean center) {        
         windows.add(window); // Listeye ekle
         activeWindow = window; // Yeni açılan pencereyi aktif yap
+        
+        if (center) {
+        	DikenEngine engine = DikenEngine.getEngine();
+        	window.x = (engine.getScaledWidth() / 2) - (window.getWidth() / 2);
+        	window.y = (engine.getScaledHeight() / 2) - (window.getHeight() / 2);
+        }
         
         window.open();
         window.moved();
@@ -378,7 +388,7 @@ public class WindowManager {
             boolean isTouch = activeWindow.isTouching(mousePos);
             
             // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
-            if (action == InputHandler.INPUT_CLICKED) {
+            if (action == InputHandler.INPUT_PRESSED || action == InputHandler.INPUT_REPEATED) {
                 activeWindow.mouseClicked(mousePos.x, mousePos.y, button, isTouch);
             }
             

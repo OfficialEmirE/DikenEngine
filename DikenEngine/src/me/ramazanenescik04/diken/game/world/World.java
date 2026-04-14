@@ -11,8 +11,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +21,6 @@ import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IResource;
@@ -46,6 +43,7 @@ public class World extends Panel implements Cloneable {
     public transient Map<String, IResource> resources;
     
     public transient Point camera = new Point(0, 0);
+    private float zoom = 1.0f;
 
     public World(String gameName, Node rootNode, int width, int height) {
     	super(0, 0, width, height);
@@ -54,7 +52,7 @@ public class World extends Panel implements Cloneable {
     	this.resources.put("empty", Bitmap.empty);
         // Root isimsiz ve render edilmeyen bir container'dır
     	if (rootNode == null) {
-    		this.root = new Folder(gameName);
+    		this.root = new Workspace(gameName);
     	} else {
     		this.root = rootNode;
     	}
@@ -99,31 +97,35 @@ public class World extends Panel implements Cloneable {
 
     @Override
     public Bitmap render() {
-        Bitmap worldBitmap = new Bitmap(width, height);
+        float activeZoom = Math.max(0.1f, this.zoom);
+        int sceneWidth = Math.max(1, Math.round(width / activeZoom));
+        int sceneHeight = Math.max(1, Math.round(height / activeZoom));
+        Bitmap sceneBitmap = new Bitmap(sceneWidth, sceneHeight);
 
-        // Arkaplan rengi ve çizgileri
         if (this.drawX) {
-            worldBitmap.box(0, 0, width - 1, height - 1, 0xffffffff);
-            worldBitmap.drawLine(0, 0, this.width, this.height, 0xffffffff, 1);
-            worldBitmap.drawLine(this.width, 0, 0, this.height, 0xffffffff, 1);
+            sceneBitmap.box(0, 0, sceneWidth - 1, sceneHeight - 1, 0xffffffff);
+            sceneBitmap.drawLine(0, 0, sceneWidth, sceneHeight, 0xffffffff, 1);
+            sceneBitmap.drawLine(sceneWidth, 0, 0, sceneHeight, 0xffffffff, 1);
         }
 
-        // --- KAMERA MANTIĞI ---
-        // Root'u kameranın tersine çekerek her şeyi kaydırıyoruz
         int oldX = root.x;
         int oldY = root.y;
         
         root.x = -(int)camera.x;
         root.y = -(int)camera.y;
 
-        // Tüm sahneyi (Entityler, Objectler) çiz
-        root.draw(worldBitmap);
+        root.draw(sceneBitmap);
 
-        // Root'u eski yerine koy (ki fizik hesaplamaları bozulmasın)
         root.x = oldX;
         root.y = oldY;
+        
+        Bitmap worldBitmap;
+        if (sceneWidth == width && sceneHeight == height) {
+            worldBitmap = sceneBitmap;
+        } else {
+            worldBitmap = sceneBitmap.resize(width, height);
+        }
 
-        // GUI Bileşenlerini çiz (Kameradan etkilenmezler, sabit kalırlar)
         List<GuiComponent> compoments = this.getCompoments();
         for (GuiComponent compoment : compoments) {
             worldBitmap.draw(compoment.render(), compoment.x, compoment.y);
@@ -135,13 +137,13 @@ public class World extends Panel implements Cloneable {
     // --- Update & Collision ---
 
     public void tick(DikenEngine engine) {
+    	super.tick(engine);
+    	
+    	// 2. Çarpışmaları kontrol et
+        checkCollisions(engine);
+    	
         // 1. Tüm objelerin mantığını çalıştır (Recursive)
         root.update(this, engine);
-
-        // 2. Çarpışmaları kontrol et
-        checkCollisions(engine);
-
-        super.tick(engine);
     }
 
     private void checkCollisions(DikenEngine engine) {
@@ -193,6 +195,14 @@ public class World extends Panel implements Cloneable {
 
     public Point getCamera() {
         return camera;
+    }
+    
+    public float getZoom() {
+    	return zoom;
+    }
+    
+    public void setZoom(float zoom) {
+    	this.zoom = Math.max(0.1f, zoom);
     }
     
     public static void saveWorld(World theWorld, File outputFile) throws IOException {
@@ -330,7 +340,7 @@ public class World extends Panel implements Cloneable {
     public World copy() {
     	Node copyRoot;
     	if (root == null)
-    		copyRoot = new Folder(new String(this.gameName));
+    		copyRoot = new Workspace(new String(this.gameName));
     	else
     		copyRoot = this.root.copy();
     		
@@ -339,6 +349,7 @@ public class World extends Panel implements Cloneable {
 		copyWorld.resources = new ConcurrentHashMap<String, IResource>(this.resources);
 		copyWorld.resources.values().forEach(IResource::reload);
 		copyWorld.lastUpdateTime = System.currentTimeMillis();
+		copyWorld.zoom = this.zoom;
 		return copyWorld;
     }
 }

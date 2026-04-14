@@ -83,7 +83,9 @@ public class SoundResource implements IResource {
     // ---------------------------
     public synchronized void play() throws LineUnavailableException, IOException, UnsupportedAudioFileException {
         if (!loaded || clip == null) reload();
-
+        
+        if (clip == null) return;
+ 
         if (clip.isRunning()) {
             clip.stop();
         }

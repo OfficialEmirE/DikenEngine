@@ -23,7 +23,7 @@ public class Button extends GuiComponent {
     private Consumer<Button> runnable;
     private Bitmap icon;
     
-    private boolean isTouching = false;
+    protected boolean isTouching = false;
     private boolean isIconLeft = true;
 	
 	public Button(String text, int x, int y, int width, int height) {
@@ -59,9 +59,8 @@ public class Button extends GuiComponent {
 		return this.isIconLeft;
 	}
 	
-	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width, height);
-		Bitmap buttonBitmap = bitmap.clone();
+	protected Bitmap createButtonTexture() {
+		Bitmap buttonBitmap = new Bitmap(width, height);
 		buttonBitmap.fill(0, 0, width, height, 0xffd3d3d3);
 		
 		ArrayBitmap button = (ArrayBitmap) ResourceLocator.getResource("button-array");
@@ -80,8 +79,12 @@ public class Button extends GuiComponent {
 		buttonBitmap.draw(button.bitmap[0][2], width - 4, 0 + (height - 16));
 		buttonBitmap.draw(button.bitmap[2][0], 0, 0);
 		buttonBitmap.draw(button.bitmap[1][2], width - 4, 0);
-		
-		bitmap.blendDraw(buttonBitmap, 0, 0, bColor);
+		return buttonBitmap;
+	}
+	
+	public Bitmap render() {
+		Bitmap bitmap = new Bitmap(width, height);
+		bitmap.blendDraw(createButtonTexture(), 0, 0, bColor);
 		
 		// Yazı genişliğini kontrol et
         int textWidth = Text.stringBitmapWidth(text, DikenEngine.getEngine().defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);
@@ -177,5 +180,9 @@ public class Button extends GuiComponent {
 	public Button setRunnable(Consumer<Button> runnable) {
 		this.runnable = runnable;
 		return this;
+	}
+	
+	public boolean isTouchingMouse() {
+		return this.isTouching;
 	}
 }

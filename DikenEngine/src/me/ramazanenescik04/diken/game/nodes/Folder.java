@@ -18,8 +18,7 @@ public class Folder extends Node {
 	// Folder klasör gibidir. x ve y si daima 0 dır!
 	
 	public Folder() {
-		this.x = 0;
-		this.y = 0;
+		this("Folder");
 	}
 
 	public Folder(String name) {

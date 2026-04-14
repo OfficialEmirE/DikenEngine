@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.entity.MovementPlayer;
 import me.ramazanenescik04.diken.game.entity.SoloPlayer;
 import me.ramazanenescik04.diken.game.nodes.Tool;
 import me.ramazanenescik04.diken.game.world.World;
@@ -26,6 +27,7 @@ public class GameScreen extends Screen {
 	
 	public World theWorld;
 	private SoloPlayer thePlayer = new SoloPlayer(0, 0);
+	private MovementPlayer movementPlayer = new MovementPlayer(thePlayer);;
 	
 	private Screen parent;
 	
@@ -51,6 +53,8 @@ public class GameScreen extends Screen {
 		chatMessageList = new ArrayList<>();
 		chatBar = new TextField(2, engine.getScaledHeight() - 22, engine.getScaledWidth() - 2, 20);
 		pausePanel = new Panel(0, 0, engine.getScaledWidth(), engine.getScaledHeight());
+		
+		// TODO: EN BAŞTAN YAPILACAK!
 		invertoryShortcutPanel = new Panel(engine.getScaledWidth() / 2 - 2 / 2, (engine.getScaledHeight() - 26) - 36, 2, 34) {
 		    // Tool ve Buton eşleşmesini tutmak için (gerekirse sonradan erişmek için)
 		    private Map<Tool, ImageButton> buttons = new HashMap<>();
@@ -142,8 +146,10 @@ public class GameScreen extends Screen {
 			return;
 		}
 		
+		theWorld.setZoom(1.0f);
 		theWorld.setBounds(0, 0, engine.getScaledWidth(), engine.getScaledHeight());
 		theWorld.addNode(thePlayer);
+		
 		thePlayer.setFollowCamera(true);
 		
 		this.getContentPane().add(this.theWorld);
@@ -304,7 +310,8 @@ public class GameScreen extends Screen {
 			this.thePlayer.damage(100);
 		}
 		
-		if (eventKey == KeyEvent.VK_P && this.thePlayer.canMove) {
+		if (eventKey == KeyEvent.VK_P) {
+			System.out.println("-=-=- YAKINDA BU KARDIRILACAK! -=-=-");
 			theWorld.root.printTree(true);
 		}
 	}
@@ -312,6 +319,24 @@ public class GameScreen extends Screen {
 	public void tick() {	
 		if (!initIsFinished) {
 			return;
+		}
+		
+		if (this.thePlayer.canMove) {
+			movementPlayer.tick(engine);
+			
+			thePlayer.isMoving = movementPlayer.isMoving;
+			thePlayer.setViewType(movementPlayer.viewType);
+		}
+		
+		if (this.thePlayer.followCamera) {
+			int playerWidth = 57;
+			int playerHeight = 64;
+			
+			int centerX = (playerWidth / 2) - (engine.getScaledWidth() / 2);
+			int centerY = (playerHeight / 2) - (engine.getScaledHeight() / 2);
+			
+			theWorld.camera.x = centerX + thePlayer.x;
+			theWorld.camera.y = centerY + thePlayer.y;
 		}
 		
 		if (this.theWorld == null) {
@@ -328,11 +353,7 @@ public class GameScreen extends Screen {
 		}
 		
 		super.tick();
-		
-		if (thePlayer.followCamera) {
-			thePlayer.centerCamera(this.theWorld, engine, 57, 64);
-		}
-		
+
 		if (this.healthBar != null) {
 			healthBar.value = thePlayer.health;
 			healthBar.maxValue = 100;

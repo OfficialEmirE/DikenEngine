@@ -1,8 +1,6 @@
 package me.ramazanenescik04.diken.game;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -85,11 +83,12 @@ public class SettingCategory {
 	}
 	
 	public static class SettingCategoryHelper {
-		private static final Map<SettingCategory.SettingKey, SettingCategory> settingsCache = new HashMap<>();
+		//private static final Map<SettingCategory.SettingKey, SettingCategory> settingsCache = new HashMap<>();
 
 		public static SettingCategory getOrCreateCategory(SettingCategory.SettingKey key,
 		                                             Supplier<SettingCategory> factory) {
-		    return settingsCache.computeIfAbsent(key, _ -> factory.get());
+		    //return settingsCache.computeIfAbsent(key, _ -> factory.get());
+			return factory.get();
 		}
 	}
 }

@@ -34,6 +34,11 @@ public class Humanoid extends Part {
 	transient int killTime = 0;
 	private transient Tool selectedTool;
 	
+	public Humanoid() {
+		super(0, 0, 16, 16);
+		this.init();
+	}
+	
 	public Humanoid(int x, int y, int width, int height) {
 		super(x, y, width, height);
 		this.init();
@@ -69,6 +74,8 @@ public class Humanoid extends Part {
 				this.health = (this.maxHealth);
 				List<SpawnLocation> spawnLocations = world.root.findByClass(SpawnLocation.class);
 				
+				System.out.println(java.util.Arrays.toString(spawnLocations.toArray()));
+				
 				if (spawnLocations.isEmpty()) {
 					this.x = 0; // Yeniden doğma pozisyonu
 					this.y = 0;
@@ -99,17 +106,6 @@ public class Humanoid extends Part {
 			oldTool.visible = false;
 		}
 		return this.selectedTool = tool;
-	}
-	
-	public void centerCamera(World world, DikenEngine engine, int width, int height) {
-		int centerX = -(engine.getScaledWidth() / 2 - width / 2);
-	    int centerY = -(engine.getScaledHeight() / 2 - height / 2);
-		world.camera.x = this.x + centerX;
-		world.camera.y = this.y + centerY;
-	}
-	
-	public void centerCamera(World world, DikenEngine engine) {
-		this.centerCamera(world, engine, this.aabb.width, this.aabb.height);
 	}
 	
 	public Animation getIdleAnimation() {

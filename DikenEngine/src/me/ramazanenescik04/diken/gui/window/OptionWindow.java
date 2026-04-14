@@ -51,7 +51,7 @@ public class OptionWindow extends Window {
 		this.optionType = optionType;
 		this.setContentPane(new OptionPanel(icon, message, this));
 		this.onCloseFutureRunnable = new java.util.concurrent.FutureTask<Integer>(() -> {
-			this.close();
+			this.closed = true;
 			return clickedOption;
 		});
 	}
@@ -210,6 +210,14 @@ public class OptionWindow extends Window {
 	public void resized() {
 		super.resized();
 		setSizeAuto();
+	}
+
+	@Override
+	public void close() {
+		super.close();
+		
+		clickedOption = -1;
+		onCloseFutureRunnable.run();
 	}
 
 	/**

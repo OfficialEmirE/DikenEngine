@@ -24,7 +24,16 @@ public class Texture extends ImageNode {
 	
 	@Override
 	public Bitmap render() {
+		if (this.parent == null) {
+			return null;
+		}
+		
 		Bitmap parentBitmap = this.parent.render();
+		
+		if (parentBitmap == null || this.texture == null) {
+			return null;
+		}
+		
 		Bitmap thisBitmap = new Bitmap(parentBitmap.w, parentBitmap.h);
 		for (var y = 0; y < (parentBitmap.h / texture.h) + 1; y++) {
 			for (var x = 0; x < (parentBitmap.w / texture.w) + 1; x++) {

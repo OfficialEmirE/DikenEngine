@@ -15,6 +15,7 @@ public class SoloPlayer extends Player {
 	private static final long serialVersionUID = -8240969167111897631L;
 	
 	private transient Animation leftWalkAnim, rightWalkAnim, idleAnim;
+	public transient boolean isMoving = false;
 	
 	public SoloPlayer(int x, int y) {
 		super(x, y);
@@ -27,7 +28,7 @@ public class SoloPlayer extends Player {
 	
 	@Override
 	protected void playHandAnimation(Bitmap bitmap) {
-		Animation currentAnim = (movementPlayer.isMoving) ? this.getWalkAnimation() : this.getIdleAnimation();
+		Animation currentAnim = (isMoving) ? this.getWalkAnimation() : this.getIdleAnimation();
 	    if (currentAnim != null) {
 	      Bitmap handFrame = currentAnim.getCurrentFrame();
 	      bitmap.draw(handFrame, 0, 0);
@@ -37,7 +38,7 @@ public class SoloPlayer extends Player {
 	@Override
 	public void update(World world, DikenEngine engine) {
 		if (this.getSelectedTool() == null) {
-			if (movementPlayer.isMoving) {
+			if (isMoving) {
 				playWalkAnimation();
 				this.idleAnim.setCurrentFrame(0);
 			} else {
@@ -48,7 +49,6 @@ public class SoloPlayer extends Player {
 			resetWalkAnimation();
 			this.idleAnim.setCurrentFrame(0);
 		}
-		movementPlayer.tick(engine);
 		super.update(world, engine);
 	}
 
@@ -59,11 +59,11 @@ public class SoloPlayer extends Player {
 
 	@Override
 	public Animation getWalkAnimation() {
-		return (movementPlayer.viewType == 0) ? this.leftWalkAnim : this.rightWalkAnim;
+		return (viewType == 0) ? this.leftWalkAnim : this.rightWalkAnim;
 	}
 	
 	public void playWalkAnimation() {
-	    if (this.movementPlayer.viewType == 0) {
+	    if (this.viewType == 0) {
 	      this.leftWalkAnim.update(System.currentTimeMillis());
 	    } else {
 	      this.rightWalkAnim.update(System.currentTimeMillis());
@@ -79,6 +79,7 @@ public class SoloPlayer extends Player {
 	protected void reloadNode() {
 		super.reloadNode();
 		
+		this.isMoving = false;
 		this.leftWalkAnim = (Animation)ResourceLocator.getResource(new ResourceLocator.ResourceKey("capsule", "leftWalkAnim"));
 	    this.rightWalkAnim = (Animation)ResourceLocator.getResource(new ResourceLocator.ResourceKey("capsule", "rightWalkAnim"));
 	    this.idleAnim = (Animation)ResourceLocator.getResource(new ResourceLocator.ResourceKey("capsule", "idleAnim"));

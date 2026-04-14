@@ -1,45 +1,35 @@
-package me.ramazanenescik04.diken.game.nodes;
+package me.ramazanenescik04.diken.game.world;
 
 import java.util.List;
 
+import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
-/**
- * Represents the `Decal` type within the DikenEngine `game.nodes` package.
- */
-public class Decal extends ImageNode {
+public class Workspace extends Node {
 	private static final long serialVersionUID = 1L;
 
-	public Decal() {
-		super("Decal");
+	public Workspace() {
+		this("Workspace");
 	}
-	
-	public Decal(String name) {
+
+	public Workspace(String name) {
 		super(name);
+		this.x = 0;
+		this.y = 0;
 	}
 
 	@Override
 	public Bitmap render() {
-		if (this.parent == null) {
-			return null;
-		}
-		
-		Bitmap parentBitmap = this.parent.render();
-		
-		if (parentBitmap == null || this.texture == null) {
-			return null;
-		}
-		
-		return texture.resize(parentBitmap.w, parentBitmap.h);
+		return null;
 	}
 	
 	@Override
 	public List<SettingCategory> getNodeSettings() {
-		var key = new SettingCategory.SettingKey("decal", "Decal", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 1));
+		var key = new SettingCategory.SettingKey("workspace", "Workspace", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(9, 1));
 		
 		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
 				.createSettingCategory(key));

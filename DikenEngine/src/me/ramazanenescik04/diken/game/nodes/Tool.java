@@ -83,8 +83,6 @@ public class Tool extends Node {
 			if (resource != null && resource instanceof Bitmap bitmap) {
 				this.icon = bitmap.clone();
 				this.resourceLoaded = true;
-			} else {
-				throw new IllegalStateException("Failed to load resource: " + resourceID);
 			}
 		}
 	}
@@ -104,7 +102,7 @@ public class Tool extends Node {
 		var key = new SettingCategory.SettingKey("tool", "Tool", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(4, 1));
 		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Icon ID", resourceID, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setIcon)));
+				.addSetting(new Setting<String>("Icon ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setIcon)));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

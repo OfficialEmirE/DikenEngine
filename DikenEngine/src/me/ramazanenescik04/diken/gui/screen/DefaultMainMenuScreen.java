@@ -2,8 +2,7 @@ package me.ramazanenescik04.diken.gui.screen;
 
 import java.net.URI;
 
-import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.Timer;
+import me.ramazanenescik04.diken.*;
 import me.ramazanenescik04.diken.gui.compoment.Button;
 import me.ramazanenescik04.diken.gui.compoment.LinkButton;
 import me.ramazanenescik04.diken.gui.compoment.Panel;
@@ -14,6 +13,7 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.Language;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.studio.StudioScreen;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 
 /**
@@ -81,7 +81,8 @@ public class DefaultMainMenuScreen extends Screen {
 			add(new Button(lang.languageValue("Demo Ekranını Aç"), 10, 100, 200, 20).setRunnable(() -> {
 				engine.setCurrentScreen(new GameScreen(DefaultMainMenuScreen.this));
 			}));
-			add(new Button("Multiplayer Test", 10, 120, 200, 20).setRunnable(() -> {
+			add(new Button("Studio", 10, 120, 200, 20).setRunnable(() -> {
+				engine.setCurrentScreen(new StudioScreen(DefaultMainMenuScreen.this));
 			}));
 			add(new Button(lang.languageValue("dmainmenu.setting"), 10, 140, 200, 20).setRunnable(() -> {
 				engine.wManager.addWindow(new SettingsWindow()); 

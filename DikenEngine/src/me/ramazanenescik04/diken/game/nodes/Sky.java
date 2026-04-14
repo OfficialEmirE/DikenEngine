@@ -72,8 +72,11 @@ public class Sky extends Node {
 
 	@Override
 	public void update(World world, DikenEngine engine) {
-		this.width = engine.getScaledWidth() + 20;
-		this.height = engine.getScaledHeight() + 20;
+		float activeZoom = Math.max(0.1f, world.getZoom());
+        int sceneWidth = Math.max(1, Math.round(engine.getScaledWidth() / activeZoom));
+        int sceneHeight = Math.max(1, Math.round(engine.getScaledHeight() / activeZoom));
+		this.width = sceneWidth + 20;
+		this.height = sceneHeight + 20;
 		
 		this.x = (int) world.camera.x - 10;
 		this.y = (int) world.camera.y - 10;
@@ -97,7 +100,7 @@ public class Sky extends Node {
 		
 		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setTexture)));
+				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture)));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
