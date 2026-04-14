@@ -309,11 +309,6 @@ public class GameScreen extends Screen {
 		if (eventKey == KeyEvent.VK_R && this.thePlayer.canMove) {
 			this.thePlayer.damage(100);
 		}
-		
-		if (eventKey == KeyEvent.VK_P) {
-			System.out.println("-=-=- YAKINDA BU KARDIRILACAK! -=-=-");
-			theWorld.root.printTree(true);
-		}
 	}
 	
 	public void tick() {	
