@@ -1125,9 +1125,11 @@ public class StudioScreen extends Screen {
 		// Add Default Elements
 		studioWorld.addResource("missingTexture", IOResource.missingTexture);
 		studioWorld.addResource("templateSign", IOResource.loadResource(StudioScreen.class.getResourceAsStream("/templateWorld/templateSign.png"), EnumResource.IMAGE));
+		studioWorld.addResource("sky", IOResource.loadResource(StudioScreen.class.getResourceAsStream("/sky.png"), EnumResource.IMAGE));
 		studioWorld.addResource("grassTexture", icon.getBitmap(0, 0));
 
-		Sky sky = new Sky(0xff00cccc);
+		Sky sky = new Sky(0xfffffff);
+		sky.setTexture("sky");
 		studioWorld.addNode(sky);
 
 		return studioWorld;
