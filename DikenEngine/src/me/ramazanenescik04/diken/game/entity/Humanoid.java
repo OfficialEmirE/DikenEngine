@@ -72,18 +72,7 @@ public class Humanoid extends Part {
 			
 			if (killTime > 120) { // 2 saniye sonra yeniden doğma
 				this.health = (this.maxHealth);
-				List<SpawnLocation> spawnLocations = world.root.findByClass(SpawnLocation.class);
-				
-				System.out.println(java.util.Arrays.toString(spawnLocations.toArray()));
-				
-				if (spawnLocations.isEmpty()) {
-					this.x = 0; // Yeniden doğma pozisyonu
-					this.y = 0;
-				} else {
-					SpawnLocation spawnLocation = spawnLocations.get(ThreadLocalRandom.current().nextInt(spawnLocations.size()));
-					this.x = (spawnLocation.getGlobalAABB().width / 2 - render().w / 2) + spawnLocation.getGlobalX();
-					this.y = (spawnLocation.getGlobalAABB().height / 2 - render().h / 2) + spawnLocation.getGlobalY();
-				}
+				teleportSpawnLocation(world);
 				this.canMove = true;
 				killTime = 0;
 			}
@@ -91,6 +80,19 @@ public class Humanoid extends Part {
 			killTime = 0;
 		}
 		super.update(world, engine);
+	}
+	
+	public void teleportSpawnLocation(World world) {
+		List<SpawnLocation> spawnLocations = world.root.findByClass(SpawnLocation.class);
+		
+		if (spawnLocations.isEmpty()) {
+			this.x = 0; // Yeniden doğma pozisyonu
+			this.y = 0;
+		} else {
+			SpawnLocation spawnLocation = spawnLocations.get(ThreadLocalRandom.current().nextInt(spawnLocations.size()));
+			this.x = (spawnLocation.getGlobalAABB().width / 2 - render().w / 2) + spawnLocation.getGlobalX();
+			this.y = (spawnLocation.getGlobalAABB().height / 2 - render().h / 2) + spawnLocation.getGlobalY();
+		}
 	}
 	
 	public Tool getSelectedTool() {

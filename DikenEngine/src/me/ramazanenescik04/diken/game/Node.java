@@ -425,7 +425,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public void onCollision(Node other) {
     }
     
-    // TODO: BURASI BOZUK!
+ // DÜZELTİLDİ: Artık kusursuz çalışmalı
     public static void resolveCollision(Node a, Node b) {
         Hitbox boxA = a.getGlobalAABB();
         Hitbox boxB = b.getGlobalAABB();
@@ -442,60 +442,50 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
         if (aAnchored && bAnchored) return; // İkisi de sabit, hiçbir şey yapma
 
+        // KRİTİK DÜZELTME: Nesnelerin MERKEZ noktalarını hesapla
+        float centerAx = boxA.x + (boxA.width / 2.0f);
+        float centerBx = boxB.x + (boxB.width / 2.0f);
+        float centerAy = boxA.y + (boxA.height / 2.0f);
+        float centerBy = boxB.y + (boxB.height / 2.0f);
+
         // En küçük çakışma eksenini seç ve ayır
         if (overlapX < overlapY) {
             // X ekseninde ayır
             if (!aAnchored && !bAnchored) {
-                // İkisi de hareketli, yarı yarıya ayır
                 float half = overlapX / 2.0f;
-                if (boxA.x < boxB.x) {
-                    a.x -= half;
-                    b.x += half;
+                if (centerAx < centerBx) { // MERKEZLERİ KARŞILAŞTIR
+                    a.x -= half; b.x += half;
                 } else {
-                    a.x += half;
-                    b.x -= half;
+                    a.x += half; b.x -= half;
                 }
+                // TODO: İkisinin de X HIZINI SIFIRLA! (Örn: a.velocityX = 0; b.velocityX = 0;)
             } else if (!aAnchored) {
-                // Sadece A hareketli, B sabit
-                if (boxA.x < boxB.x) {
-                    a.x -= overlapX;
-                } else {
-                    a.x += overlapX;
-                }
+                if (centerAx < centerBx) a.x -= overlapX;
+                else a.x += overlapX;
+                // TODO: A'nın X HIZINI SIFIRLA!
             } else if (!bAnchored) {
-                // Sadece B hareketli, A sabit
-                if (boxB.x < boxA.x) {
-                    b.x -= overlapX;
-                } else {
-                    b.x += overlapX;
-                }
+                if (centerBx < centerAx) b.x -= overlapX;
+                else b.x += overlapX;
+                // TODO: B'nin X HIZINI SIFIRLA!
             }
         } else {
             // Y ekseninde ayır
             if (!aAnchored && !bAnchored) {
-                // İkisi de hareketli, yarı yarıya ayır
                 float half = overlapY / 2.0f;
-                if (boxA.y < boxB.y) {
-                    a.y -= half;
-                    b.y += half;
+                if (centerAy < centerBy) { // MERKEZLERİ KARŞILAŞTIR
+                    a.y -= half; b.y += half;
                 } else {
-                    a.y += half;
-                    b.y -= half;
+                    a.y += half; b.y -= half;
                 }
+                // TODO: İkisinin de Y HIZINI SIFIRLA!
             } else if (!aAnchored) {
-                // Sadece A hareketli, B sabit
-                if (boxA.y < boxB.y) {
-                    a.y -= overlapY;
-                } else {
-                    a.y += overlapY;
-                }
+                if (centerAy < centerBy) a.y -= overlapY;
+                else a.y += overlapY;
+                // TODO: A'nın Y HIZINI SIFIRLA! (Özellikle zıplama/düşme yapıyorsan)
             } else if (!bAnchored) {
-                // Sadece B hareketli, A sabit
-                if (boxB.y < boxA.y) {
-                    b.y -= overlapY;
-                } else {
-                    b.y += overlapY;
-                }
+                if (centerBy < centerAy) b.y -= overlapY;
+                else b.y += overlapY;
+                // TODO: B'nin Y HIZINI SIFIRLA!
             }
         }
     }

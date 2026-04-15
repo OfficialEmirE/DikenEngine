@@ -150,6 +150,7 @@ public class GameScreen extends Screen {
 		theWorld.setBounds(0, 0, engine.getScaledWidth(), engine.getScaledHeight());
 		theWorld.addNode(thePlayer);
 		
+		thePlayer.teleportSpawnLocation(theWorld);
 		thePlayer.setFollowCamera(true);
 		
 		this.getContentPane().add(this.theWorld);

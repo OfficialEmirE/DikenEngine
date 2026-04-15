@@ -1,6 +1,12 @@
 package me.ramazanenescik04.diken.studio;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
 import java.awt.event.KeyEvent;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Node;
@@ -27,6 +33,7 @@ import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.studio.AddInstanceWindow.AddInstanceFuture;
+import me.ramazanenescik04.diken.tools.ByteTransferable;
 
 public class StudioScreen extends Screen {
 	private static final int PADDING = 8;
@@ -170,6 +177,85 @@ public class StudioScreen extends Screen {
 		if (eventKey == KeyEvent.VK_ESCAPE && parent != null) {
 			engine.setCurrentScreen(parent);
 		}
+		
+		boolean pressingCtrl = engine.input.isKeyDown(KeyEvent.VK_CONTROL);
+		if (eventKey == KeyEvent.VK_D && pressingCtrl && selectedNode != world.root) {
+			Node parentNode = selectedNode != null ? selectedNode.getParent() : world.root;
+			
+			Node copySelected = selectedNode.copy();
+			
+			parentNode.addChild(copySelected);
+			setSelectedNode(copySelected);
+			
+			rebuildExplorer();
+		}
+		
+		if (eventKey == KeyEvent.VK_C && pressingCtrl && selectedNode != world.root) {
+			copyNode(false);
+		}
+		
+		if (eventKey == KeyEvent.VK_X && pressingCtrl && selectedNode != world.root) {
+			copyNode(true);
+		}
+		
+		if (eventKey == KeyEvent.VK_V && pressingCtrl) {
+			Node parentNode = selectedNode != null ? selectedNode : world.root;
+			Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+		    try {
+		        if (cb.isDataFlavorAvailable(ByteTransferable.BYTE_ARRAY_FLAVOR)) {
+		            byte[] nodeBytes = (byte[]) cb.getData(ByteTransferable.BYTE_ARRAY_FLAVOR);
+		            
+		            Node copyNode = byteToNode(nodeBytes);
+		            parentNode.addChild(copyNode);
+		            setSelectedNode(copyNode);
+		            
+		            rebuildExplorer();
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		}
+	}
+	
+	private static byte[] copyToByte(Node object) {
+        try {
+            // 1. Obje verisini bayt dizisine yazma (Serialize)
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(bos);
+            oos.writeObject(object);
+            oos.flush();
+            
+            return bos.toByteArray();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+	
+	private static Node byteToNode(byte[] object) {
+        try {
+            // 1. Obje verisini bayt dizisine yazma (Serialize)
+            ByteArrayInputStream bos = new ByteArrayInputStream(object);
+            ObjectInputStream oos = new ObjectInputStream(bos);
+            
+            return (Node) oos.readObject();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+	
+	private void copyNode(boolean cut) {
+		Node copyNode = selectedNode.copy();
+		
+		if (cut) {
+			deleteNode(selectedNode);
+			rebuildExplorer();
+		}
+		
+		ByteTransferable byteT = new ByteTransferable(copyToByte(copyNode));
+		Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clipboard.setContents(byteT, null);
 	}
 
 	@Override
@@ -569,7 +655,7 @@ public class StudioScreen extends Screen {
 	
 	private void handleKeyboardCameraPan() {
 		java.awt.Point point = engine.input.getMousePosition();
-		if (engine == null || world == null || (!isInsideWorldViewport(point.x, point.y) || !engine.wManager.screenActionMode(point))) {
+		if (engine == null || world == null || (!isInsideWorldViewport(point.x, point.y) || !engine.wManager.screenActionMode(point)) || engine.input.isKeyDown(KeyEvent.VK_CONTROL)) {
 			return;
 		}
 		
