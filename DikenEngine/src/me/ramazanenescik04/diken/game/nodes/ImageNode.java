@@ -78,3 +78,4 @@ public abstract class ImageNode extends Node {
 		return list;
 	}
 }
+

@@ -1,10 +1,11 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 
 /**
  * Represents the `GuiComponent` type within the DikenEngine `gui.compoment` package.
@@ -32,7 +33,7 @@ public abstract class GuiComponent extends Hitbox {
 	}
 	
 	public Bitmap render() {
-		return new Bitmap(width, height);
+		return FrameBitmapPool.newBitmap(width, height);
 	}
 	
 	public void tick(DikenEngine engine) {

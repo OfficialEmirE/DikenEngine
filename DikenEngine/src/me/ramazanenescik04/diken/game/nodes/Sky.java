@@ -12,6 +12,7 @@ import me.ramazanenescik04.diken.game.world.World;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -58,7 +59,7 @@ public class Sky extends Node {
 			this.height = 1;
 		}
 		
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.clear(color);
 		if (this.skyBitmap != null) {
 			for (int y = 0; y < (bitmap.h / skyBitmap.h) + 1; y++) {
@@ -72,14 +73,7 @@ public class Sky extends Node {
 
 	@Override
 	public void update(World world, DikenEngine engine) {
-		float activeZoom = Math.max(0.1f, world.getZoom());
-        int sceneWidth = Math.max(1, Math.round(engine.getScaledWidth() / activeZoom));
-        int sceneHeight = Math.max(1, Math.round(engine.getScaledHeight() / activeZoom));
-		this.width = sceneWidth + 20;
-		this.height = sceneHeight + 20;
-		
-		this.x = (int) world.camera.x - 10;
-		this.y = (int) world.camera.y - 10;
+		syncToCamera(world, engine);
 		
 		super.update(world, engine);
 		
@@ -87,6 +81,29 @@ public class Sky extends Node {
 			skyBitmap = world.getResource(resourceID, EnumResource.IMAGE);
 			resourceLoaded = true;
 		}
+	}
+
+	public void syncToCamera(World world, DikenEngine engine) {
+		float activeZoom = Math.max(0.1f, world.getZoom());
+        int sceneWidth = Math.max(1, Math.round(engine.getScaledWidth() / activeZoom));
+        int sceneHeight = Math.max(1, Math.round(engine.getScaledHeight() / activeZoom));
+		this.width = sceneWidth + 20;
+		this.height = sceneHeight + 20;
+	}
+
+	@Override
+	protected int getRenderX() {
+		return -10;
+	}
+	
+	@Override
+	protected int getRenderY() {
+		return -10;
+	}
+	
+	@Override
+	protected boolean isCameraIndependent() {
+		return true;
 	}
 
 	@Override

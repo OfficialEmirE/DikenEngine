@@ -5,23 +5,23 @@ import java.util.List;
 import me.ramazanenescik04.diken.game.InstanceList;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
-import me.ramazanenescik04.diken.gui.compoment.ScrollPanel;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.Panel;
+import me.ramazanenescik04.diken.gui.component.ScrollPanel;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.gui.window.Window;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
-public class AddInstanceWindow extends Window {
+public class StudioAddInstanceWindow extends Window {
 	private static final long serialVersionUID = 1L;
 	
 	private ScrollPanel instancesScrollPanel;
 	private Panel instances;
 	private AddInstanceFuture future;
 
-	public AddInstanceWindow(int x, int y, AddInstanceFuture future) {
+	public StudioAddInstanceWindow(int x, int y, AddInstanceFuture future) {
 		super(x, y, 200, 200);
 		setTitle("Add Instance");
 		ArrayBitmap icons = (ArrayBitmap) ResourceLocator.getResource("editor_icons");
@@ -43,7 +43,7 @@ public class AddInstanceWindow extends Window {
 		
 		List<Node> node_list = InstanceList.getNodeList();
 		
-		int index = 0;
+		int index = 1;
 		for (Node node : node_list) {
 			SettingCategory sc = node.getNodeSettings().getLast();
 			instances.add(new Button(sc.getKey().getCategory(), 0, index, instances.getWidth(), 18).setButtonIcon(sc.getKey().getImage()).setRunnable(() -> {
@@ -52,9 +52,9 @@ public class AddInstanceWindow extends Window {
 					this.closed = true;
 				}
 			}));
-			index += 19;
+			index += 20;
 		}
-		instances.setHeight(index);
+		instances.setHeight(Math.max(1, index));
 		
 		instancesScrollPanel.updateBars();
 		instancesScrollPanel.setScrollComponent(instances);

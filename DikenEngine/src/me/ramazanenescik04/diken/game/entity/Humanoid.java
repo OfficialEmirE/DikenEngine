@@ -16,6 +16,7 @@ import me.ramazanenescik04.diken.game.nodes.Tool;
 import me.ramazanenescik04.diken.game.world.World;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -57,9 +58,8 @@ public class Humanoid extends Part {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(this.aabb.width, this.aabb.height);
-		bitmap.clear(0xffff00ff);
-		bitmap.drawText("Player", 2, 2, false);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(this.aabb.width, this.aabb.height);
+		bitmap.clear(color);
 		return bitmap;
 	}
 

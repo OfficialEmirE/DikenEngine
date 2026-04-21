@@ -8,13 +8,14 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.world.World;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.gui.screen.GameScreen;
 import me.ramazanenescik04.diken.gui.window.OptionWindow;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class StudioToolbarPanel extends Panel {
@@ -51,6 +52,9 @@ public class StudioToolbarPanel extends Panel {
 		Button saveButton = new StudioToolbarButton(icons.getBitmap(8, 0), 51, 4, 20, 20, "Save Game").setRunnable(() -> {
 			var file = openFilePicker(false);
 			
+			if (file == null)
+				return;
+			
 			try {
 				var savePath = file.getAbsolutePath();
 				
@@ -70,6 +74,9 @@ public class StudioToolbarPanel extends Panel {
 		
 		Button focusRootButton = new StudioToolbarButton(icons.getBitmap(9, 0), 72, 4, 20, 20, "Load Game").setRunnable(() -> {
 			var file = openFilePicker(true);
+
+			if (file == null)
+				return;
 			
 			try {
 				var oldWorld = screen.world;
@@ -116,6 +123,10 @@ public class StudioToolbarPanel extends Panel {
 		
 		ArrayBitmap winIcons = (ArrayBitmap) ResourceLocator.getResource("win-icons");
 		Button resourcesButton = new StudioToolbarButton(winIcons.getBitmap(8, 0), 204, 4, 20, 20, "Edit Resources").setRunnable(() -> {
+			if (engine.wManager.isWindowVaild(StudioResourceWindow.class)) {
+				return;
+			}
+			
 			engine.wManager.addWindow(new StudioResourceWindow(screen.world), true);
 		});
 		add(resourcesButton);
@@ -127,7 +138,7 @@ public class StudioToolbarPanel extends Panel {
 	@Override
 	public Bitmap render() {
 		Bitmap drawToolInfo = null;
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.fill(0, 0, width, height, 0xff2b313a);
 		bitmap.box(0, 0, width - 1, height - 1, 0xff5e6a7d);
 		bitmap.fill(0, height - 2, width, height, 0xff1d222a);
@@ -166,3 +177,4 @@ public class StudioToolbarPanel extends Panel {
 		return null;
 	}
 }
+

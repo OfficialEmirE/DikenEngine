@@ -6,9 +6,10 @@ import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.Text;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.Text;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 
 public class StudioExplorerNodeButton extends Button {
 	private static final long serialVersionUID = 1L;
@@ -81,7 +82,7 @@ public class StudioExplorerNodeButton extends Button {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		Node selectedNode = selectedNodeSupplier.get();
 		Node draggedNode = draggedNodeSupplier.get();
 		Node dropTargetNode = dropTargetSupplier.get();
@@ -119,3 +120,4 @@ public class StudioExplorerNodeButton extends Button {
 		void handle(Node node, int screenX, int screenY);
 	}
 }
+

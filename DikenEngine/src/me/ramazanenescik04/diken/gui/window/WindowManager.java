@@ -318,6 +318,14 @@ public class WindowManager {
     public boolean isWindowVaild(Window window) {
         return windows.contains(window);
     }
+    
+    public boolean isWindowVaild(Class<? extends Window> window) {
+        for (int i = 0; i < this.windows.size(); i++) {
+        	if (this.windows.get(i).getClass().isAssignableFrom(window))
+        		return true;
+        }
+        return false;
+    }
 
     public void closeAll() {
         // removeIf kullanmadan önce pencerelerin kapatma metodunu çağırıyoruz
@@ -388,7 +396,7 @@ public class WindowManager {
             boolean isTouch = activeWindow.isTouching(mousePos);
             
             // Mouse.getEventButtonState() sadece event loop içinde anlamlıdır
-            if (action == InputHandler.INPUT_PRESSED || action == InputHandler.INPUT_REPEATED) {
+            if (action == InputHandler.INPUT_PRESSED) {
                 activeWindow.mouseClicked(mousePos.x, mousePos.y, button, isTouch);
             }
             

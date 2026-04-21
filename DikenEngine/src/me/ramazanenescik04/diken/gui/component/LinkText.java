@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import java.net.URI;
 
@@ -6,6 +6,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -31,7 +32,7 @@ public class LinkText extends GuiLink {
 	}
 
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width + 9, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width + 9, height);
 		bitmap.draw(text.render(), 0, 0);
 		ArrayBitmap button = (ArrayBitmap) ResourceLocator.getResource("button-array");
 		bitmap.draw(button.bitmap[3][0], width + 2, height / 2 - 4);
@@ -47,3 +48,4 @@ public class LinkText extends GuiLink {
 	
 	
 }
+

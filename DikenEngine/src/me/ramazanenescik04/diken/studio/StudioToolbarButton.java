@@ -1,9 +1,10 @@
 package me.ramazanenescik04.diken.studio;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.Text;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.Text;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 
 public class StudioToolbarButton extends Button {
 	private static final long serialVersionUID = 1L;
@@ -19,7 +20,7 @@ public class StudioToolbarButton extends Button {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.blendDraw(createButtonTexture(), 0, 0, bColor);
 		
 		Bitmap icon = getButtonIcon();
@@ -38,8 +39,9 @@ public class StudioToolbarButton extends Button {
 		}
 		
 		var font = DikenEngine.getEngine().defaultFont;
-		Bitmap bitmap = new Bitmap(Text.stringBitmapWidth(toolInfo, font), Text.stringBitmapAverageHeight(toolInfo, font));
+		Bitmap bitmap = FrameBitmapPool.newBitmap(Text.stringBitmapWidth(toolInfo, font), Text.stringBitmapAverageHeight(toolInfo, font));
 		bitmap.drawText(toolInfo, 0, 0, false);
 		return bitmap;
 	}
 }
+

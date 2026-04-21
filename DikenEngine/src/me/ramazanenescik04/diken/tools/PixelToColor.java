@@ -145,22 +145,36 @@ public class PixelToColor {
 		return bitmap;
 	}
 	
-	@Deprecated(since = "1.2.0", forRemoval = true)
-	public static int blendColor(int oldColor, int blendColor) {
-		int bgR = (blendColor >> 16) & 0xff;
-        int bgG = (blendColor >> 8) & 0xff;
-        int bgB = blendColor & 0xff;
-        
-        int a = (oldColor >> 24) & 0xff;
-	    int srcR = (oldColor >> 16) & 0xff;
-	    int srcG = (oldColor >> 8) & 0xff;
-	    int srcB = oldColor & 0xff;
-		
-		int newR = (srcR * a + bgR * (255 - a)) / 255;
-        int newG = (srcG * a + bgG * (255 - a)) / 255;
-        int newB = (srcB * a + bgB * (255 - a)) / 255;
-        
-        return  0xff000000 | (newR << 16) | (newG << 8) | newB;
-	 }
+	public static int blend(int color1, int color2, int alpha) {
+	    int a = alpha;
+	    int invA = 255 - a;
+
+	    int r = (( (color1 >> 16) & 0xff) * invA + (( (color2 >> 16) & 0xff) * a)) / 255;
+	    int g = (( (color1 >> 8) & 0xff) * invA + (( (color2 >> 8) & 0xff) * a)) / 255;
+	    int b = (( color1 & 0xff) * invA + (( color2 & 0xff) * a)) / 255;
+
+	    return (255 << 24) | (r << 16) | (g << 8) | b;
+	}
+
+	public static int BitColorTo(int color) {
+		switch(color) {
+			case 0: return 0xff000000;
+			case 1: return 0xff000080;
+			case 2: return 0xff808000;
+			case 3: return 0xff808080;
+			case 4: return 0xff800000;
+			case 5: return 0xffaa00aa;
+			case 6: return 0xffff8000;
+			case 7: return 0xffff8080;
+			case 8: return 0xff008000;
+			case 9: return 0xff00aaaa;
+			case 10: return 0xff00ff00;
+			case 11: return 0xff80ff80;
+			case 12: return 0xff8080ff;
+			case 13: return 0xffffff80;
+			case 15: return 0xffffffff;
+			default: return 0xff000000;
+		}
+	}
 
 }

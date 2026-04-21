@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import java.awt.Desktop;
 import java.io.IOException;

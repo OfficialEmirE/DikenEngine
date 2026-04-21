@@ -1,10 +1,11 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -60,7 +61,7 @@ public class Button extends GuiComponent {
 	}
 	
 	protected Bitmap createButtonTexture() {
-		Bitmap buttonBitmap = new Bitmap(width, height);
+		Bitmap buttonBitmap = FrameBitmapPool.newBitmap(width, height);
 		buttonBitmap.fill(0, 0, width, height, 0xffd3d3d3);
 		
 		ArrayBitmap button = (ArrayBitmap) ResourceLocator.getResource("button-array");
@@ -83,7 +84,7 @@ public class Button extends GuiComponent {
 	}
 	
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.blendDraw(createButtonTexture(), 0, 0, bColor);
 		
 		// Yazı genişliğini kontrol et

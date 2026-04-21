@@ -6,7 +6,7 @@ import java.awt.event.KeyEvent;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.gui.compoment.*;
+import me.ramazanenescik04.diken.gui.component.*;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 /**

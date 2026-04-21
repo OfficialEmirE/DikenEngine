@@ -11,12 +11,14 @@ import me.ramazanenescik04.diken.game.entity.MovementPlayer;
 import me.ramazanenescik04.diken.game.entity.SoloPlayer;
 import me.ramazanenescik04.diken.game.nodes.Tool;
 import me.ramazanenescik04.diken.game.world.World;
-import me.ramazanenescik04.diken.gui.compoment.*;
+import me.ramazanenescik04.diken.gui.component.*;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.window.OptionWindow;
 import me.ramazanenescik04.diken.gui.window.SettingsWindow;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.tools.PixelToColor;
 
 public class GameScreen extends Screen {
 	
@@ -31,7 +33,7 @@ public class GameScreen extends Screen {
 	
 	private Screen parent;
 	
-	private List<String> chatMessageList;
+	private List<ChatMessage> chatMessageList;
 	private boolean initIsFinished = false;
 	
 	public GameScreen(Screen parent) {
@@ -201,6 +203,11 @@ public class GameScreen extends Screen {
 			this.engine.setCurrentScreen(parent);
 			System.gc();
 		}).setButtonColor(0xff005cff).setTextColor(0xffffffff);
+		
+		Text pausedMessage = new Text("Game Paused!", 0, 0, 0xffffffff);
+		pausedMessage.setLocation(pausePanel.getWidth() / 2 - pausedMessage.getWidth() / 2, (pausePanel.getHeight() / 2 - pausedMessage.getHeight() / 2) - 50);
+		
+		pausePanel.add(pausedMessage);
 		pausePanel.add(resumeButton);
 		pausePanel.add(settingsButton);
 		pausePanel.add(exitButton);
@@ -217,9 +224,12 @@ public class GameScreen extends Screen {
 		
 		invertoryShortcutPanel.setLocation(engine.getScaledWidth() / 2 - invertoryShortcutPanel.getWidth() / 2, (engine.getScaledHeight() - 26) - 36);
 		
-		pausePanel.get(0).setLocation(pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2) - 25);
-		pausePanel.get(1).setLocation(pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2));
-		pausePanel.get(2).setLocation(pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2) + 25);
+		Text pausedMessage = (Text) pausePanel.get(0);
+		pausedMessage.setLocation(pausePanel.getWidth() / 2 - pausedMessage.getWidth() / 2, (pausePanel.getHeight() / 2 - pausedMessage.getHeight() / 2) - 50);
+		
+		pausePanel.get(1).setLocation(pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2) - 25);
+		pausePanel.get(2).setLocation(pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2));
+		pausePanel.get(3).setLocation(pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2) + 25);
 	}
 	
 	@Override
@@ -239,8 +249,11 @@ public class GameScreen extends Screen {
 		}
 		
 		for (int i = 0; i < this.chatMessageList.size(); i++) {
-			String text = this.chatMessageList.get(i);
-			bitmap.drawText(text, 2, this.engine.getScaledHeight() - (i * 9) - 35, false);
+			ChatMessage text = this.chatMessageList.get(i);
+			int realColor = PixelToColor.BitColorTo(text.color);
+			int y = this.engine.getScaledHeight() - (i * 9) - 35;
+			bitmap.drawText(text.username, 2, y, realColor, false);
+			bitmap.drawText(": " + text.message, 2 + Text.stringBitmapWidth(text.username, engine.defaultFont), y, false);
 		}
 	}
 	
@@ -296,7 +309,7 @@ public class GameScreen extends Screen {
 		} else if (chatBarEnabled && !pauseMenuEnabled) {
 			if (eventKey == KeyEvent.VK_ESCAPE || eventKey == KeyEvent.VK_ENTER) {
 				if (eventKey == KeyEvent.VK_ENTER && !chatBar.text.trim().isEmpty()) {
-					sendMessage("TestUser" + ": " + chatBar.text.trim());
+					sendMessage("Test-User", chatBar.text.trim());
 				}
 				
 				this.closeChatMenu();
@@ -324,17 +337,6 @@ public class GameScreen extends Screen {
 			thePlayer.setViewType(movementPlayer.viewType);
 		}
 		
-		if (this.thePlayer.followCamera) {
-			int playerWidth = 57;
-			int playerHeight = 64;
-			
-			int centerX = (playerWidth / 2) - (engine.getScaledWidth() / 2);
-			int centerY = (playerHeight / 2) - (engine.getScaledHeight() / 2);
-			
-			theWorld.camera.x = centerX + thePlayer.x;
-			theWorld.camera.y = centerY + thePlayer.y;
-		}
-		
 		if (this.theWorld == null) {
 			super.tick();
 			return;
@@ -349,6 +351,20 @@ public class GameScreen extends Screen {
 		}
 		
 		super.tick();
+		
+		if (this.thePlayer.followCamera) {
+			Hitbox playerBox = thePlayer.getGlobalAABB();
+			if (playerBox != null) {
+				theWorld.camera.x = playerBox.x + (playerBox.width / 2) - (engine.getScaledWidth() / 2);
+				theWorld.camera.y = playerBox.y + (playerBox.height / 2) - (engine.getScaledHeight() / 2);
+			} else {
+				Bitmap playerRender = thePlayer.render(); // new Bitmap oluşturur!
+				int playerWidth = playerRender.w;
+				int playerHeight = playerRender.h;
+				theWorld.camera.x = thePlayer.getGlobalX() + (playerWidth / 2) - (engine.getScaledWidth() / 2);
+				theWorld.camera.y = thePlayer.getGlobalY() + (playerHeight / 2) - (engine.getScaledHeight() / 2);
+			}
+		}
 
 		if (this.healthBar != null) {
 			healthBar.value = thePlayer.health;
@@ -356,11 +372,22 @@ public class GameScreen extends Screen {
 		}
 	}
 
-	public void sendMessage(String message) {
-		this.chatMessageList.add(0, message);
+	public void sendMessage(String username, String message) {
+		this.chatMessageList.add(0, new ChatMessage(username, message));
 
 		while(this.chatMessageList.size() > 50) {
 			this.chatMessageList.remove(this.chatMessageList.size() - 1);
+		}
+	}
+	
+	private class ChatMessage {
+		public final int color;
+	    public final String username, message;
+		
+		public ChatMessage(String username, String message) {
+			this.color = username.length() % 16;
+			this.username = username;
+			this.message = message;
 		}
 	}
 }

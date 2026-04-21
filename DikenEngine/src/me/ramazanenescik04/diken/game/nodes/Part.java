@@ -15,6 +15,10 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public class Part extends Node {	
 	private static final long serialVersionUID = 4072578864221886901L;
+	private transient Bitmap cachedBitmap;
+	private transient int cachedWidth = -1;
+	private transient int cachedHeight = -1;
+	private transient int cachedColor = 0;
 	
 	public Part() {
 		super();
@@ -36,9 +40,25 @@ public class Part extends Node {
 	}
 	
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(this.aabb.width, this.aabb.height);
-		bitmap.clear(color);
-		return bitmap;
+		int width = Math.max(1, this.aabb.width);
+		int height = Math.max(1, this.aabb.height);
+		
+		if (cachedBitmap == null || cachedWidth != width || cachedHeight != height || cachedColor != color) {
+			cachedBitmap = new Bitmap(width, height);
+			cachedBitmap.clear(color);
+			cachedWidth = width;
+			cachedHeight = height;
+			cachedColor = color;
+		}
+		
+		return cachedBitmap;
+	}
+
+	@Override
+	protected void reloadNode() {
+		cachedBitmap = null;
+		cachedWidth = -1;
+		cachedHeight = -1;
 	}
 	
 	@Override
@@ -53,3 +73,4 @@ public class Part extends Node {
 		return list;
 	}
 }
+

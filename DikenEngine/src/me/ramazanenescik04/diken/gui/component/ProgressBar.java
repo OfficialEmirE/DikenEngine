@@ -1,7 +1,8 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 
 /**
  * Represents the `ProgressBar` type within the DikenEngine `gui.compoment` package.
@@ -29,7 +30,7 @@ public class ProgressBar extends GuiComponent {
         	progressWidth = 1;
         }
         
-        Bitmap progressBar = new Bitmap(progressWidth, height - 2);
+        Bitmap progressBar = FrameBitmapPool.newBitmap(progressWidth, height - 2);
         if (!(progressWidth == 1)) {
         	progressBar.drawGradient(color, color2);
         }

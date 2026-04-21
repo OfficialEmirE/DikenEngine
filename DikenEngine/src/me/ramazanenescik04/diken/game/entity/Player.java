@@ -8,6 +8,7 @@ import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Player extends Humanoid {
@@ -34,7 +35,7 @@ public class Player extends Humanoid {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(57, 64);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(57, 64);
 		bitmap.draw(this.body, 12, 0);
 		playHandAnimation(bitmap);
 		bitmap.draw(viewType == 0 ? this.defaultFace.opposite(false) : this.defaultFace, 12, 6);

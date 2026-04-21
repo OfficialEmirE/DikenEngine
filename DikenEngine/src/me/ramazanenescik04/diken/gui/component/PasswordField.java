@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 /**
  * Represents the `PasswordField` type within the DikenEngine `gui.compoment` package.

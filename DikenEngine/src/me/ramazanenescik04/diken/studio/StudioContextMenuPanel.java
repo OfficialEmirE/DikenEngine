@@ -3,11 +3,12 @@ package me.ramazanenescik04.diken.studio;
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class StudioContextMenuPanel extends Panel {
@@ -38,7 +39,7 @@ public class StudioContextMenuPanel extends Panel {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.fill(0, 0, width, height, 0xff303844);
 		bitmap.box(0, 0, width - 1, height - 1, 0xff93a2b7);
 		for (GuiComponent component : getCompoments()) {
@@ -49,3 +50,4 @@ public class StudioContextMenuPanel extends Panel {
 		return bitmap;
 	}
 }
+

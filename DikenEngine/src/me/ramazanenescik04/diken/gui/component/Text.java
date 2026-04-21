@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import java.util.stream.Stream;
 
@@ -21,11 +21,11 @@ public class Text extends GuiComponent {
 	public int offsetX, offsetY;
 
 	public Text(String text, int x, int y) {
-		this(text, x, y, 0xFFFFFFFF, 0, 0, DikenEngine.getEngine().defaultFont);
+		this(text, x, y, 0xffffffff, 0, 0, DikenEngine.getEngine().defaultFont);
 	}
 	
 	public Text(String text, int x, int y, UniFont font) {
-		this(text, x, y, 0, 0, 0xFFFFFFFF, font);
+		this(text, x, y, 0, 0, 0xffffffff, font);
 	}
 	
 	public Text(String text, int x, int y, int offsetX, int offsetY, int color, UniFont font) {
@@ -62,6 +62,11 @@ public class Text extends GuiComponent {
 		this.offsetX = x;
 		this.offsetY = y;
 		return this;
+	}
+	
+	public Text setColor(int color) {
+		this.color = color;
+		return null;
 	}
 
 	public static void render(String text, Bitmap bitmap, int x, int y, int color, UniFont font) {

@@ -15,13 +15,14 @@ import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.nodes.Sky;
 import me.ramazanenescik04.diken.game.world.World;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.CheckBox;
-import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
-import me.ramazanenescik04.diken.gui.compoment.ScrollPanel;
-import me.ramazanenescik04.diken.gui.compoment.Text;
-import me.ramazanenescik04.diken.gui.compoment.TextField;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.CheckBox;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.gui.component.ImageButton;
+import me.ramazanenescik04.diken.gui.component.Panel;
+import me.ramazanenescik04.diken.gui.component.ScrollPanel;
+import me.ramazanenescik04.diken.gui.component.Text;
+import me.ramazanenescik04.diken.gui.component.TextField;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.screen.Screen;
 import me.ramazanenescik04.diken.input.InputHandler;
@@ -32,7 +33,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
-import me.ramazanenescik04.diken.studio.AddInstanceWindow.AddInstanceFuture;
+import me.ramazanenescik04.diken.studio.StudioAddInstanceWindow.AddInstanceFuture;
 import me.ramazanenescik04.diken.tools.ByteTransferable;
 
 public class StudioScreen extends Screen {
@@ -303,7 +304,7 @@ public class StudioScreen extends Screen {
 			endRightMousePan();
 		}
 		
-		if (inputMode == InputHandler.INPUT_PRESSED || inputMode == InputHandler.INPUT_REPEATED) {
+		if (inputMode == InputHandler.INPUT_PRESSED) {
 			if (rightMousePanning) {
 				return;
 			}
@@ -526,7 +527,11 @@ public class StudioScreen extends Screen {
 	void addInstanceToNode(Node node) {
 		Node parentNode = node != null ? node : world.root;
 		
-		var addInstanceWindow = new AddInstanceWindow(0, 0, new AddInstanceFuture() {
+		if (engine.wManager.isWindowVaild(StudioAddInstanceWindow.class)) {
+			return;
+		}
+		
+		var addInstanceWindow = new StudioAddInstanceWindow(0, 0, new AddInstanceFuture() {
 			@Override
 			public void cancelled() {
 			}
@@ -1114,9 +1119,15 @@ public class StudioScreen extends Screen {
 		}
 		
 		if (setting.getType() == EnumSettingType.COLOR_PICKER) {
-			Button colorSelectButton = new Button("", x, y, 20, 20).setButtonColor(
-					(int) setting.getValue()
-			).setRunnable(e -> {
+			int panelWidth = Math.max(40, width);
+			Panel container = new Panel(x, y, panelWidth, 20);
+			Text text = new Text("0x" + Integer.toHexString((int) setting.getValue()), 23, 4, 0xffb7c1cf);
+			ImageButton colorSelectButton = (ImageButton) new ImageButton(Bitmap.createClearedBitmap(12, 12, (int) setting.getValue()), 0, 0, 20, 20)
+					.setRunnable(e -> {
+				if (engine.wManager.isWindowVaild(ColorPickWindow.class)) {
+					return;
+				}
+				
 				ColorPickWindow window = new ColorPickWindow(0, 0).setSelectedColor((int) setting.getValue()).setColorPickFuture(new ColorPickFuture() {
 					@Override
 					public void cancelled() {
@@ -1125,7 +1136,8 @@ public class StudioScreen extends Screen {
 					@Override
 					public void succesed(int color) {
 						applySettingValue(setting, String.valueOf(color));
-						e.setButtonColor(color);
+						((ImageButton)e).setIcon(Bitmap.createClearedBitmap(12, 12, (int) setting.getValue()));
+						text.text = "0x" + Integer.toHexString((int) setting.getValue());
 					}
 
 					@Override
@@ -1133,9 +1145,12 @@ public class StudioScreen extends Screen {
 					}
 				});
 				engine.wManager.addWindow(window, true);
+				engine.wManager.activeWindow = window;
 			});
 			
-			return colorSelectButton;
+			container.add(colorSelectButton);
+			container.add(text);
+			return container;
 		}
 		
 		if (setting.getType() == EnumSettingType.RESOURCE_SELECT) {
@@ -1152,6 +1167,10 @@ public class StudioScreen extends Screen {
 			});
 			
 			Button pickButton = new Button("...", panelWidth - 20, 0, 20, 18).setRunnable(() -> {
+				if (engine.wManager.isWindowVaild(StudioResourceSelectWindow.class)) {
+					return;
+				}
+				
 				engine.wManager.addWindow(new StudioResourceSelectWindow(world, key -> {
 					field.setText(key);
 				}), true);
@@ -1214,7 +1233,7 @@ public class StudioScreen extends Screen {
 		studioWorld.addResource("sky", IOResource.loadResource(StudioScreen.class.getResourceAsStream("/sky.png"), EnumResource.IMAGE));
 		studioWorld.addResource("grassTexture", icon.getBitmap(0, 0));
 
-		Sky sky = new Sky(0xfffffff);
+		Sky sky = new Sky(0xffffffff);
 		sky.setTexture("sky");
 		studioWorld.addNode(sky);
 

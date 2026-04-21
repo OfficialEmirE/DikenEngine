@@ -27,6 +27,7 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.CursorResource;
 import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.Language;
@@ -101,14 +102,17 @@ public class DikenEngine implements Runnable, IInputListener {
 		if (currentScreen != null) {
 			currentScreen.closeScreen();
 		}
+		
 		log("Opening screen: " + (screen != null ? screen.getClass().getSimpleName() : "null"));
-		System.gc();
+		
 		if (screen != null) {
 			screen.engine = this;
 			screen.openScreen();
 		}
 
 		this.currentScreen = screen;
+		
+		System.gc();
 	}
 
 	public Screen getCurrentScreen() {
@@ -180,6 +184,7 @@ public class DikenEngine implements Runnable, IInputListener {
 				}
 
 				Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
+				FrameBitmapPool.beginFrame();
 				render(frameBitmap);
 				frames++;
 
@@ -236,7 +241,7 @@ public class DikenEngine implements Runnable, IInputListener {
 			}
 
 			if (key == KeyEvent.VK_F9) {
-				if (wManager.isWindowActive(ConsoleWindow.class)) {
+				if (wManager.isWindowVaild(ConsoleWindow.class)) {
 					return;
 				}
 				wManager.addWindow(new ConsoleWindow(2, 2, 200, 200));
@@ -334,6 +339,8 @@ public class DikenEngine implements Runnable, IInputListener {
 			bitmap.drawText("Bu sürüm deneysel sürümdür! Hatalar olabilir!", 2, 12, false);
 			bitmap.blendFill(0, 0, 300, 22, 0x2f000000);*/
 		}
+		
+		//System.gc();
 	}
 
 	private void tick() {

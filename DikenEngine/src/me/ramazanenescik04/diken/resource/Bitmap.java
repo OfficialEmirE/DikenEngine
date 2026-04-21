@@ -17,7 +17,7 @@ import java.util.*;
 import javax.imageio.ImageIO;
 
 import me.ramazanenescik04.diken.gui.UniFont;
-import me.ramazanenescik04.diken.gui.compoment.Text;
+import me.ramazanenescik04.diken.gui.component.Text;
 
 /**
  * Represents the `Bitmap` type within the DikenEngine `resource` package.
@@ -932,6 +932,6 @@ public class Bitmap implements IResource, Cleanable {
 					return new Point(x, y);
 			}
 		}
-		return new Point(0, 0);
+		return null;
 	}
 }

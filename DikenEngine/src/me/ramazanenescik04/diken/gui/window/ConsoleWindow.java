@@ -2,7 +2,7 @@ package me.ramazanenescik04.diken.gui.window;
 
 import java.awt.event.KeyEvent;
 
-import me.ramazanenescik04.diken.gui.compoment.*;
+import me.ramazanenescik04.diken.gui.component.*;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;

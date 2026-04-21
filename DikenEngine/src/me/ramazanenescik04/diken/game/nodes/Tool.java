@@ -70,7 +70,9 @@ public class Tool extends Node {
 			copyTool.icon = this.icon.clone();
 			copyTool.isEquipped = true;
 			player.findFirstChild("Tools").addChild(copyTool);
-			this.parent.removeChild(this);
+			
+			if (this.parent != null)
+				this.parent.removeChild(this);
 		}
 	}
 
@@ -109,3 +111,4 @@ public class Tool extends Node {
 		return list;
 	}
 }
+

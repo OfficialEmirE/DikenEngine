@@ -3,10 +3,10 @@ package me.ramazanenescik04.diken.gui.screen;
 import java.net.URI;
 
 import me.ramazanenescik04.diken.*;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.LinkButton;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
-import me.ramazanenescik04.diken.gui.compoment.Text;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.LinkButton;
+import me.ramazanenescik04.diken.gui.component.Panel;
+import me.ramazanenescik04.diken.gui.component.Text;
 import me.ramazanenescik04.diken.gui.window.AboutWindow;
 import me.ramazanenescik04.diken.gui.window.SettingsWindow;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;

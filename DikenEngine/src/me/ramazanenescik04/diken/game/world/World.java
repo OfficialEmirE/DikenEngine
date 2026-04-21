@@ -23,9 +23,10 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.IResource;
-import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 
@@ -34,6 +35,7 @@ import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
  */
 public class World extends Panel implements Cloneable {
     private static final long serialVersionUID = 1L;
+    private static final int MAX_COLLISION_PASSES = 6;
 
     // Her şeyin bağlı olduğu ana düğüm (Sahne)
     public final Node root;
@@ -100,7 +102,8 @@ public class World extends Panel implements Cloneable {
         float activeZoom = Math.max(0.1f, this.zoom);
         int sceneWidth = Math.max(1, Math.round(width / activeZoom));
         int sceneHeight = Math.max(1, Math.round(height / activeZoom));
-        Bitmap sceneBitmap = new Bitmap(sceneWidth, sceneHeight);
+        Bitmap sceneBitmap = FrameBitmapPool.newBitmap(sceneWidth, sceneHeight);
+        Hitbox viewport = new Hitbox(0, 0, sceneWidth, sceneHeight);
 
         if (this.drawX) {
             sceneBitmap.box(0, 0, sceneWidth - 1, sceneHeight - 1, 0xffffffff);
@@ -114,7 +117,7 @@ public class World extends Panel implements Cloneable {
         root.x = -(int)camera.x;
         root.y = -(int)camera.y;
 
-        root.draw(sceneBitmap);
+        root.draw(sceneBitmap, viewport);
 
         root.x = oldX;
         root.y = oldY;
@@ -138,42 +141,46 @@ public class World extends Panel implements Cloneable {
 
     public void tick(DikenEngine engine) {
     	super.tick(engine);
-    	
-    	// 2. Çarpışmaları kontrol et
-        checkCollisions(engine);
-    	
-        // 1. Tüm objelerin mantığını çalıştır (Recursive)
+
+        // Hareket/kuvvet uygulandıktan sonra çarpışma çözmek, frame sonunda
+        // nesnenin duvarın içinde kalmasını engeller.
         root.update(this, engine);
+
+    	checkCollisions(engine);
     }
 
     private void checkCollisions(DikenEngine engine) {
         List<Node> collidables = new ArrayList<>();
         collectCollidableNodes(root, collidables);
+        
+        for (int pass = 0; pass < MAX_COLLISION_PASSES; pass++) {
+        	boolean hadIntersection = false;
+        	
+	        for (int i = 0; i < collidables.size(); i++) {
+	            Node a = collidables.get(i);
+	            
+	            for (int j = i + 1; j < collidables.size(); j++) {
+	                Node b = collidables.get(j);
 
-        for (int i = 0; i < collidables.size(); i++) {
-            Node a = collidables.get(i);
-            
-            // j = i + 1 değil, 0'dan başlatıp kendisiyle kontrolü engelliyoruz.
-            // Neden? Çünkü dinamik nesnelerin her turda taranması gerekebilir.
-            // Ama performans için i+1 daha iyidir, sadece itme mantığını iyi kurmalıyız.
-            for (int j = i + 1; j < collidables.size(); j++) {
-                Node b = collidables.get(j);
+	                IHitbox boxA = a.getGlobalAABB();
+	                Hitbox boxB = b.getGlobalAABB();
 
-                IHitbox boxA = a.getGlobalAABB();
-                Hitbox boxB = b.getGlobalAABB();
+	                if (boxA != null && boxB != null && boxA.intersects(boxB)) {
+	                	hadIntersection = true;
+	                    
+	                    a.onCollision(b);
+	                    b.onCollision(a);
 
-                if (boxA != null && boxB != null && boxA.intersects(boxB)) {
-                    
-                    // 1. Önce mantıksal çarpışma olaylarını tetikle
-                    a.onCollision(b);
-                    b.onCollision(a);
-
-                    // 2. Eğer ikisi de KATI (Solid) ise fiziksel itme uygula
-                    if (a.isSolid() && b.isSolid()) {
-                    	Node.resolveCollision(a, b);
-                    }
-                }
-            }
+	                    if (a.isSolid() && b.isSolid()) {
+	                    	Node.resolveCollision(a, b);
+	                    }
+	                }
+	            }
+	        }
+	        
+	        if (!hadIntersection) {
+	        	break;
+	        }
         }
     }
 

@@ -8,7 +8,7 @@ public final class InstanceList {
 	private static final List<Node> NODE_LIST;
 	
 	public static List<Node> getNodeList() {
-		return Collections.unmodifiableList(NODE_LIST);
+		return new ArrayList<>(NODE_LIST);
 	}
 	
 	public static int registeredNodeCount() {

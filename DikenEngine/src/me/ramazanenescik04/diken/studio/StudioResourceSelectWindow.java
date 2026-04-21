@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.world.World;
-import me.ramazanenescik04.diken.gui.compoment.Button;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
-import me.ramazanenescik04.diken.gui.compoment.ScrollPanel;
-import me.ramazanenescik04.diken.gui.compoment.Text;
+import me.ramazanenescik04.diken.gui.component.Button;
+import me.ramazanenescik04.diken.gui.component.Panel;
+import me.ramazanenescik04.diken.gui.component.ScrollPanel;
+import me.ramazanenescik04.diken.gui.component.Text;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.gui.window.Window;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;

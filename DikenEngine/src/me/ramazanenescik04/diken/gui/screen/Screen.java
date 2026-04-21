@@ -1,7 +1,7 @@
 package me.ramazanenescik04.diken.gui.screen;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
@@ -69,7 +69,7 @@ public abstract class Screen {
 		if (this.engine != null) {
 			this.mouseGetInfo(x, y, (engine.wManager.screenActionMode(new java.awt.Point(x, y))), engine.input.isMouseOnScreen());
 		
-			if (inputMode == InputHandler.INPUT_PRESSED || inputMode == InputHandler.INPUT_REPEATED) {
+			if (inputMode == InputHandler.INPUT_PRESSED) {
 				this.mouseClick(x, y, clicked, engine.input.isMouseOnScreen(), (engine.wManager.screenActionMode(new java.awt.Point(x, y))));
 			}
 		}

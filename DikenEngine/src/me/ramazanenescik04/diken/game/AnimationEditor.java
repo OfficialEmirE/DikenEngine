@@ -27,7 +27,7 @@ public class AnimationEditor extends JFrame {
     private boolean playing = false;
 
     public AnimationEditor(Animation animation) {
-        super("Diken Animation Editor");
+        super("PoAnimation");
         this.animation = animation;
 
         // --- Liste ---
@@ -92,7 +92,7 @@ public class AnimationEditor extends JFrame {
         menuBar.add(mnYardm);
         
         JMenuItem mnıtmHakknda = new JMenuItem("Hakkında");
-        mnıtmHakknda.addActionListener(_ -> JOptionPane.showMessageDialog(this, "Diken Animation Editor \nYapan: Ramazanenescik04\n\nSürüm: " + DikenEngine.VERSION));
+        mnıtmHakknda.addActionListener(_ -> JOptionPane.showMessageDialog(this, "PoAnimation \nYapan: Ramazanenescik04\n\nSürüm: " + DikenEngine.VERSION));
         mnYardm.add(mnıtmHakknda);
         setVisible(true);
     }

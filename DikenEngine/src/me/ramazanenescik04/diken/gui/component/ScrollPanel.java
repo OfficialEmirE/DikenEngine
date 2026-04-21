@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;

@@ -1,15 +1,16 @@
 package me.ramazanenescik04.diken.studio;
 
-import me.ramazanenescik04.diken.gui.compoment.GuiComponent;
-import me.ramazanenescik04.diken.gui.compoment.Panel;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 
 public class StudioRootPanel extends Panel {
 	private static final long serialVersionUID = 1L;
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(width, height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.clear(0xff1b1f26);
 
 		// Keep index-based loop to avoid concurrent modification during UI updates.
@@ -22,3 +23,4 @@ public class StudioRootPanel extends Panel {
 		return bitmap;
 	}
 }
+

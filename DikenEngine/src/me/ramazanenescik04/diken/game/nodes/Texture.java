@@ -6,6 +6,7 @@ import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -34,7 +35,7 @@ public class Texture extends ImageNode {
 			return null;
 		}
 		
-		Bitmap thisBitmap = new Bitmap(parentBitmap.w, parentBitmap.h);
+		Bitmap thisBitmap = FrameBitmapPool.newBitmap(parentBitmap.w, parentBitmap.h);
 		for (var y = 0; y < (parentBitmap.h / texture.h) + 1; y++) {
 			for (var x = 0; x < (parentBitmap.w / texture.w) + 1; x++) {
 				thisBitmap.blendDraw(texture, x * texture.w, y * texture.h, this.color);
@@ -56,3 +57,4 @@ public class Texture extends ImageNode {
 	}
 
 }
+

@@ -1,10 +1,11 @@
-package me.ramazanenescik04.diken.gui.compoment;
+package me.ramazanenescik04.diken.gui.component;
 
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -40,7 +41,7 @@ public class CheckBox extends GuiComponent {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = new Bitmap(20 + text.width + 2, 20);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(20 + text.width + 2, 20);
 		
 		ArrayBitmap array = (ArrayBitmap) ResourceLocator.getResource("checkbox-array");
 		bitmap.draw(checked ? array.getBitmap(0, 0) : array.getBitmap(1, 0), 2, 2);

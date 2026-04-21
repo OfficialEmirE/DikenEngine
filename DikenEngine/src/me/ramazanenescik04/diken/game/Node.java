@@ -156,50 +156,74 @@ public abstract class Node implements java.io.Serializable, Cloneable {
      * 3. Çocukları için aynı işlemi yapar.
      */
     public final void draw(Bitmap btp) {
+        draw(btp, null);
+    }
+
+    public final void draw(Bitmap btp, Hitbox viewport) {
         if (!visible) return;
 
-        // 1. Bu objenin görüntüsünü iste
-        Bitmap myTexture = render();
+        if (shouldRenderSelf(viewport)) {
+            Bitmap myTexture = render();
 
-        // 2. Eğer görüntüsü varsa (görünmez bir container değilse) çiz
-        if (myTexture != null) {
-            // Not: Bitmap sınıfında 'drawBitmap' veya benzeri bir metodun olduğunu varsayıyorum.
-            // Global koordinatlara çizim yapıyoruz.
-            btp.draw(myTexture, (int)getGlobalX(), (int)getGlobalY());
-            
-            if (debug && aabb != null) {
-				Hitbox globalBox = getGlobalAABB();
-				btp.box(globalBox.x, globalBox.y, globalBox.x + globalBox.width, globalBox.y + globalBox.height, 0xffff0000); // Kırmızı kutu
-				
-				int renderX = (int)getGlobalX();
-				int renderY = (int)getGlobalY();
-				
-				btp.box(renderX, renderY, renderX + myTexture.w, renderY + myTexture.h, 0xff00ff00); // Yeşil kutu
-			}
+            if (myTexture != null) {
+                int renderX = getRenderX();
+                int renderY = getRenderY();
+                btp.draw(myTexture, renderX, renderY);
+                
+                if (debug && aabb != null) {
+					Hitbox globalBox = getGlobalAABB();
+					btp.box(globalBox.x, globalBox.y, globalBox.x + globalBox.width, globalBox.y + globalBox.height, 0xffff0000);
+					btp.box(renderX, renderY, renderX + myTexture.w, renderY + myTexture.h, 0xff00ff00);
+				}
+            }
         }
 
-        // 3. Çocukları çiz (Recursive)
         for (int i = 0; i < children.size(); i++) {
         	Node child = children.get(i);
-            child.draw(btp);
+            child.draw(btp, viewport);
         }
     }
 
     /**
      * Alt sınıflar artık çizim kodu yazmayacak, 
      * sadece kendilerini temsil eden Bitmap'i döndürecek.
-     * * @return Çizilecek resim (veya null, eğer sadece container ise)
+     * @return Çizilecek resim (veya null, eğer sadece container ise)
      */
     public abstract Bitmap render();
+
+    protected boolean shouldRenderSelf(Hitbox viewport) {
+    	if (isCameraIndependent() || viewport == null) {
+    		return true;
+    	}
+    	
+    	Hitbox globalBox = getGlobalAABB();
+    	if (globalBox == null) {
+    		return true;
+    	}
+    	
+    	return globalBox.intersects(viewport);
+    }
+    
+    protected int getRenderX() {
+    	return getGlobalX();
+    }
+    
+    protected int getRenderY() {
+    	return getGlobalY();
+    }
+    
+    protected boolean isCameraIndependent() {
+    	return false;
+    }
 
     // --- Collision & Logic ---
 
     public void update(World world, DikenEngine engine) {
         // Override edilebilir logic
         
-        // Çocukları güncelle
-    	var clonedList = new ArrayList<>(children);
-        for (Node child : clonedList) {
+    	// Çocukları güncelle
+        for (int i = 0; i < this.children.size(); i++) {
+        	Node child = this.children.get(i);
         	if (child.isRemoved()) {
         		children.remove(child);
         		continue;
@@ -425,67 +449,61 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public void onCollision(Node other) {
     }
     
- // DÜZELTİLDİ: Artık kusursuz çalışmalı
     public static void resolveCollision(Node a, Node b) {
         Hitbox boxA = a.getGlobalAABB();
         Hitbox boxB = b.getGlobalAABB();
         if (boxA == null || boxB == null) return;
 
-        // Çakışma miktarını hesapla
-        float overlapX = Math.min(boxA.x + boxA.width, boxB.x + boxB.width) - Math.max(boxA.x, boxB.x);
-        float overlapY = Math.min(boxA.y + boxA.height, boxB.y + boxB.height) - Math.max(boxA.y, boxB.y);
+        int overlapX = Math.min(boxA.x + boxA.width, boxB.x + boxB.width) - Math.max(boxA.x, boxB.x);
+        int overlapY = Math.min(boxA.y + boxA.height, boxB.y + boxB.height) - Math.max(boxA.y, boxB.y);
 
-        if (overlapX <= 0 || overlapY <= 0) return; // Çarpışma yok
+        if (overlapX <= 0 || overlapY <= 0) return;
 
         boolean aAnchored = a.isAnchored();
         boolean bAnchored = b.isAnchored();
 
-        if (aAnchored && bAnchored) return; // İkisi de sabit, hiçbir şey yapma
+        if (aAnchored && bAnchored) return;
 
-        // KRİTİK DÜZELTME: Nesnelerin MERKEZ noktalarını hesapla
         float centerAx = boxA.x + (boxA.width / 2.0f);
         float centerBx = boxB.x + (boxB.width / 2.0f);
         float centerAy = boxA.y + (boxA.height / 2.0f);
         float centerBy = boxB.y + (boxB.height / 2.0f);
 
-        // En küçük çakışma eksenini seç ve ayır
         if (overlapX < overlapY) {
-            // X ekseninde ayır
             if (!aAnchored && !bAnchored) {
-                float half = overlapX / 2.0f;
-                if (centerAx < centerBx) { // MERKEZLERİ KARŞILAŞTIR
-                    a.x -= half; b.x += half;
+                int moveA = overlapX / 2;
+                int moveB = overlapX - moveA;
+                if (centerAx < centerBx) {
+                    a.x -= moveA;
+                    b.x += moveB;
                 } else {
-                    a.x += half; b.x -= half;
+                    a.x += moveB;
+                    b.x -= moveA;
                 }
-                // TODO: İkisinin de X HIZINI SIFIRLA! (Örn: a.velocityX = 0; b.velocityX = 0;)
             } else if (!aAnchored) {
                 if (centerAx < centerBx) a.x -= overlapX;
                 else a.x += overlapX;
-                // TODO: A'nın X HIZINI SIFIRLA!
             } else if (!bAnchored) {
                 if (centerBx < centerAx) b.x -= overlapX;
                 else b.x += overlapX;
-                // TODO: B'nin X HIZINI SIFIRLA!
             }
         } else {
-            // Y ekseninde ayır
             if (!aAnchored && !bAnchored) {
-                float half = overlapY / 2.0f;
-                if (centerAy < centerBy) { // MERKEZLERİ KARŞILAŞTIR
-                    a.y -= half; b.y += half;
+                int moveA = overlapY / 2;
+                int moveB = overlapY - moveA;
+                if (centerAy < centerBy) {
+                    a.y -= moveA;
+                    b.y += moveB;
                 } else {
-                    a.y += half; b.y -= half;
+                    a.y += moveB;
+                    b.y -= moveA;
                 }
-                // TODO: İkisinin de Y HIZINI SIFIRLA!
             } else if (!aAnchored) {
                 if (centerAy < centerBy) a.y -= overlapY;
                 else a.y += overlapY;
-                // TODO: A'nın Y HIZINI SIFIRLA! (Özellikle zıplama/düşme yapıyorsan)
             } else if (!bAnchored) {
                 if (centerBy < centerAy) b.y -= overlapY;
                 else b.y += overlapY;
-                // TODO: B'nin Y HIZINI SIFIRLA!
             }
         }
     }
