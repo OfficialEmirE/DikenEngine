@@ -46,7 +46,6 @@ public class RendererPanel extends JPanel {
 	public void present(int scale) {
 		synchronized (frameLock) {
 			this.renderScale = Math.max(1, scale);
-			copyBitmapToImage();
 			blitBufferedToVolatile(Math.max(1, this.logicalWidth * this.renderScale),
 					Math.max(1, this.logicalHeight * this.renderScale));
 		}
@@ -68,16 +67,10 @@ public class RendererPanel extends JPanel {
 		logicalHeight = safeHeight;
 
 		if (frameBitmap.w != safeWidth || frameBitmap.h != safeHeight) {
-			frameBitmap = new Bitmap(safeWidth, safeHeight);
 			frameImage = new BufferedImage(safeWidth, safeHeight, BufferedImage.TYPE_INT_ARGB);
+			frameBitmap = Bitmap.wrap(safeWidth, safeHeight,
+					((DataBufferInt) frameImage.getRaster().getDataBuffer()).getData());
 		}
-	}
-
-	private void copyBitmapToImage() {
-		int[] data = ((DataBufferInt) frameImage.getRaster().getDataBuffer()).getData();
-		frameBitmap.pixels.rewind();
-		frameBitmap.pixels.get(data);
-		frameBitmap.pixels.rewind();
 	}
 
 	private boolean ensureVolatileFrame(int width, int height) {

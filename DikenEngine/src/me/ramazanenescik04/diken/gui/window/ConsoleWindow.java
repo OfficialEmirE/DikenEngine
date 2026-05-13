@@ -6,7 +6,9 @@ import me.ramazanenescik04.diken.gui.component.*;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 
 /**
@@ -20,6 +22,8 @@ public class ConsoleWindow extends Window {
 	public ConsoleWindow(int x, int y, int width, int height) {
 		super(x, y, width, height);
 		this.setTitle("Konsol");
+		ArrayBitmap icons = (ArrayBitmap) ResourceLocator.getResource("win-icons");
+		setIcon(icons.getBitmap(11, 0));
 		this.resizable = true;
 	}
 

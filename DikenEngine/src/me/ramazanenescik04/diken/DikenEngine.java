@@ -52,6 +52,8 @@ public class DikenEngine implements Runnable, IInputListener {
 	private int width;
 	private int height;
 	private int scale = 1;
+	private final int baseWidth;
+	private final int baseHeight;
 	public int currentFPS = -1;
 
 	public UniFont defaultFont;
@@ -71,6 +73,8 @@ public class DikenEngine implements Runnable, IInputListener {
 
 		this.width = tmpW = width;
 		this.height = tmpH = height;
+		this.baseWidth = width;
+		this.baseHeight = height;
 		this.scale = scale;
 		this.rendererPanel = new RendererPanel(width, height);
 
@@ -124,15 +128,27 @@ public class DikenEngine implements Runnable, IInputListener {
 	}
 
 	public int getScaledWidth() {
-		return width / scale;
+		return getInternalRenderWidth() / scale;
 	}
 
 	public int getScaledHeight() {
-		return height / scale;
+		return getInternalRenderHeight() / scale;
 	}
 
 	public int getScale() {
 		return scale;
+	}
+
+	private int getInternalRenderWidth() {
+		return isFixedInternalResolutionEnabled() ? baseWidth : width;
+	}
+
+	private int getInternalRenderHeight() {
+		return isFixedInternalResolutionEnabled() ? baseHeight : height;
+	}
+
+	private boolean isFixedInternalResolutionEnabled() {
+		return this.config.getOrDefaultSetting("fixedInternalResolution", Boolean.class, true).getValue();
 	}
 	
 	public void setFullscreen(boolean bool) {

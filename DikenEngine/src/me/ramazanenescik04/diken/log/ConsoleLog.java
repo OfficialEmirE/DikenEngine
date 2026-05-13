@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 import me.ramazanenescik04.diken.tools.ObservableList;
 
@@ -67,6 +68,9 @@ public class ConsoleLog {
 	}
 	
 	public static void saveLogs() {
+		if (DikenEngine.getEngine().config.getSetting("saveLog", Boolean.class).getValue() == false)
+			return;
+		
 		StringBuilder builder = new StringBuilder();
 		
 		for (LogText text : logs) {

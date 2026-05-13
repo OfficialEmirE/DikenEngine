@@ -36,6 +36,7 @@ import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 public class World extends Panel implements Cloneable {
     private static final long serialVersionUID = 1L;
     private static final int MAX_COLLISION_PASSES = 6;
+    public static final int WORLD_IO_VERSION = 1;
 
     // Her şeyin bağlı olduğu ana düğüm (Sahne)
     public final Node root;
@@ -240,6 +241,7 @@ public class World extends Panel implements Cloneable {
     
     private static void writeWorld(World theWorld, ObjectOutputStream outStream) throws IOException {
         outStream.writeUTF("DikenEngine-WorldFile");
+        outStream.writeInt(WORLD_IO_VERSION);
         
         outStream.writeUTF(theWorld.gameName);
         outStream.writeLong(System.currentTimeMillis());
@@ -264,6 +266,11 @@ public class World extends Panel implements Cloneable {
         String signature = outStream.readUTF();
         if (!signature.equals("DikenEngine-WorldFile")) {
             throw new IOException("DikenENngine World Dosyası Değil!");
+        }
+        
+        int worldVersion = outStream.readInt();
+        if (worldVersion < WORLD_IO_VERSION) {
+        	throw new IOException("Dünya yükleme sistemi, eski dünya dosyaları yüklemeyi desteklemiyor!");
         }
     
         String gameName = outStream.readUTF();

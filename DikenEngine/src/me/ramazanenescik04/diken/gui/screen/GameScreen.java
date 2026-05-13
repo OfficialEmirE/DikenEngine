@@ -191,7 +191,7 @@ public class GameScreen extends Screen {
 		}).setButtonColor(0xff005cff).setTextColor(0xffffffff);
 		Button settingsButton = new Button("Settings", pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2), 120, 22).setRunnable(() -> {
 			if (!this.engine.wManager.isWindowActive(SettingsWindow.class)) {
-				this.engine.wManager.addWindow(new SettingsWindow());
+				this.engine.wManager.addWindow(new SettingsWindow(), true);
 			};
 		}).setButtonColor(0xff005cff).setTextColor(0xffffffff);
 		Button exitButton = new Button("Exit The Game", pausePanel.width / 2 - 120 / 2, (pausePanel.height / 2 - 20 / 2) + 25, 120, 22).setRunnable(() -> {

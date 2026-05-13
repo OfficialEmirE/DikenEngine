@@ -7,6 +7,8 @@ import me.ramazanenescik04.diken.game.entity.*;
 public final class InstanceList {
 	private static final List<Node> NODE_LIST;
 	
+	private InstanceList() {}
+	
 	public static List<Node> getNodeList() {
 		return new ArrayList<>(NODE_LIST);
 	}

@@ -237,12 +237,7 @@ public class OptionWindow extends Window {
 		OptionWindow window = new OptionWindow(message, title, messageType, optionType);
 		window.setSizeAuto();
 		
-		window.setLocation(
-			(DikenEngine.getEngine().getScaledWidth() / 2 - window.getWidth() / 2) ,
-			(DikenEngine.getEngine().getScaledHeight()  / 2 - window.getHeight()  / 2)
-		);
-		
-		DikenEngine.getEngine().wManager.addWindow(window);
+		DikenEngine.getEngine().wManager.addWindow(window, true);
 		
 		Future<Integer> future = window.onCloseFutureRunnable;
 		while (!future.isDone()) {

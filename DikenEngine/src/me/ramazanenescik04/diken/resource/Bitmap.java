@@ -84,6 +84,21 @@ public class Bitmap implements IResource, Cleanable {
 	    this.pixels.put(copy);
 	    this.pixels.rewind();
 	}
+
+	public static Bitmap wrap(int w, int h, int[] pixels) {
+		w = (w <= 0) ? 1 : w;
+		h = (h <= 0) ? 1 : h;
+		
+		if (pixels == null || pixels.length < w * h) {
+			throw new IllegalArgumentException("Pixel array is too small for the requested bitmap size.");
+		}
+		
+		Bitmap bitmap = new Bitmap();
+		bitmap.w = w;
+		bitmap.h = h;
+		bitmap.pixels = IntBuffer.wrap(pixels);
+		return bitmap;
+	}
 	
 	
 	public void rewind() {

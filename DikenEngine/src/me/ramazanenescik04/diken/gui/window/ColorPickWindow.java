@@ -8,7 +8,9 @@ import me.ramazanenescik04.diken.gui.component.color.AlphaPickBar;
 import me.ramazanenescik04.diken.gui.component.color.ColorPickBar;
 import me.ramazanenescik04.diken.gui.component.color.ColorPickBox;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Modernized and refactored ColorPickWindow for DikenEngine.
@@ -34,6 +36,9 @@ public class ColorPickWindow extends Window {
         // Genişletilmiş boyutlar: Alpha bar ve ferah butonlar için 105x170
         super(x, y, 200, 200); 
         this.setTitle("Select Color");
+        
+        ArrayBitmap icons = (ArrayBitmap) ResourceLocator.getResource("win-icons");
+		setIcon(icons.getBitmap(12, 0));
     }
 
     @Override

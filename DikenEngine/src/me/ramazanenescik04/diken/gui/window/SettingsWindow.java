@@ -29,8 +29,8 @@ public class SettingsWindow extends Window {
 	private Panel scrollArea;
 
 	public SettingsWindow() {
-		super(2, 2, 200, 200);
-		this.setTitle("Settings");
+		super(2, 2, 250, 250);
+		this.setTitle("Ayarlar");
 		ArrayBitmap icons = (ArrayBitmap) ResourceLocator.getResource("win-icons");
 		this.setIcon(icons.getBitmap(10, 0));
 	}
@@ -59,7 +59,6 @@ public class SettingsWindow extends Window {
 			settings.put(entry.getKey(), new Setting<>(entry.getValue())); 
 		}
 		
-		this.setLocation(engine.getScaledWidth() / 2 - this.width / 2, engine.getScaledHeight() / 2 - this.height / 2);
 		this.getContentPane().setBackground(new StaticBackground(Bitmap.createClearedBitmap(16, 16, 0xffa0a0a0)));
 		Panel mainPanel = this.getContentPane();
 	    
@@ -102,7 +101,7 @@ public class SettingsWindow extends Window {
         			Button button = new Button(setting.getName() + ": ", 2, i * itemHeight, 176, itemHeight).setButtonIcon(
         					Bitmap.createClearedBitmap(12, 12, (int) setting.getValue())
         			).setButtonIconLeft(false).setRunnable((e) -> {
-        				ColorPickWindow window = new ColorPickWindow(0, 0).setSelectedColor(0xff0000ff).setColorPickFuture(new ColorPickFuture() {
+        				ColorPickWindow window = new ColorPickWindow(0, 0).setSelectedColor((int) setting.getValue()).setColorPickFuture(new ColorPickFuture() {
 							@Override
 							public void cancelled() {
 							}

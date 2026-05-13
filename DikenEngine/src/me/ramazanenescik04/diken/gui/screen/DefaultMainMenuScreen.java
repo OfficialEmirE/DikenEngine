@@ -85,7 +85,7 @@ public class DefaultMainMenuScreen extends Screen {
 				engine.setCurrentScreen(new StudioScreen(DefaultMainMenuScreen.this));
 			}));
 			add(new Button(lang.languageValue("dmainmenu.setting"), 10, 140, 200, 20).setRunnable(() -> {
-				engine.wManager.addWindow(new SettingsWindow()); 
+				engine.wManager.addWindow(new SettingsWindow(), true); 
 			}));
 			add(new Button(lang.languageValue("dmainmenu.exit"), 10, 160, 200, 20).setRunnable(() -> {
 				engine.stop();

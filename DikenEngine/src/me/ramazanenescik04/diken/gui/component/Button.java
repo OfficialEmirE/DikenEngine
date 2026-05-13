@@ -135,7 +135,7 @@ public class Button extends GuiComponent {
         }
         
         if (!active) {
-			bitmap.box(0, 0, width - 1, height - 1, 0x7f000000);
+			bitmap.blendFill(0, 0, width - 1, height - 1, 0x7f000000);
 		}
         
         return bitmap;

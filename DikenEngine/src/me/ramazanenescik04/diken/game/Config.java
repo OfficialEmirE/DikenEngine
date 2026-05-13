@@ -24,6 +24,7 @@ public class Config {
 		defaultConfig.put("sync", new Setting<Boolean>("V-Sync", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("debug", new Setting<Boolean>("Hata Ayıklama", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("useOldScaleCode", new Setting<Boolean>("Eski Boyutlandırma Sistemi Kullan", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Sabit İc Cozünürlük", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		defaultConfig.put("lang", new Setting<String>("Dil", "tr-TR", String.class, EnumSettingType.TEXT_FIELD));
 		
@@ -32,6 +33,8 @@ public class Config {
 		
 		defaultConfig.put("guiScale", new Setting<Integer>("GUI Ölceği", 1, 1, 3, Integer.class, EnumSettingType.SLIDER));
 		defaultConfig.put("screenshotPath", new Setting<String>("Ekran Görüntüsü Kaydetme Konumu", "./", String.class, EnumSettingType.TEXT_FIELD));
+		
+		defaultConfig.put("saveLog", new Setting<Boolean>("Logları Kaydet", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		this.config.putAll(defaultConfig);
 	}

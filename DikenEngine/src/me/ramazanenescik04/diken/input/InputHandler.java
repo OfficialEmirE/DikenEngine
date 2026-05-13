@@ -154,8 +154,8 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     }
 
     private void updateMouse(MouseEvent e) {
-    	int mouseX = e.getX() / DikenEngine.getEngine().getScale();
-    	int mouseY = e.getY() / DikenEngine.getEngine().getScale();
+    	int mouseX = toLogicalX(e.getX());
+    	int mouseY = toLogicalY(e.getY());
     	
         mousePosition.setLocation(mouseX, mouseY);
         mouseHitbox.setLocation(mouseX, mouseY);
@@ -163,9 +163,26 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     }
 
     private void notifyMouse(int mode, int x, int y, int clicked) {
+    	int logicalX = x >= 0 ? toLogicalX(x) : x;
+    	int logicalY = y >= 0 ? toLogicalY(y) : y;
+    	
         for (IInputListener l : listeners) {
-            l.mouseHandled(mode, x / DikenEngine.getEngine().getScale(), y / DikenEngine.getEngine().getScale(), clicked);
+            l.mouseHandled(mode, logicalX, logicalY, clicked);
         }
+    }
+
+    private int toLogicalX(int panelX) {
+    	int panelWidth = Math.max(1, this.thePanel.getWidth());
+    	int logicalWidth = Math.max(1, DikenEngine.getEngine().getScaledWidth());
+    	int clampedX = Math.max(0, Math.min(panelX, panelWidth - 1));
+    	return (int) ((long) clampedX * logicalWidth / panelWidth);
+    }
+
+    private int toLogicalY(int panelY) {
+    	int panelHeight = Math.max(1, this.thePanel.getHeight());
+    	int logicalHeight = Math.max(1, DikenEngine.getEngine().getScaledHeight());
+    	int clampedY = Math.max(0, Math.min(panelY, panelHeight - 1));
+    	return (int) ((long) clampedY * logicalHeight / panelHeight);
     }
 
     @Override
