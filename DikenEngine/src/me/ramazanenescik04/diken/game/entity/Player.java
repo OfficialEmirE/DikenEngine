@@ -11,6 +11,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+@Deprecated(since = "2.2.0", forRemoval = true)
 public class Player extends Humanoid {
 	private static final long serialVersionUID = -5395842731409825680L;
 	public transient Bitmap body, hand, defaultFace;

@@ -11,6 +11,7 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
+@Deprecated(since = "2.2.0", forRemoval = true)
 public class SoloPlayer extends Player {
 	private static final long serialVersionUID = -8240969167111897631L;
 	
