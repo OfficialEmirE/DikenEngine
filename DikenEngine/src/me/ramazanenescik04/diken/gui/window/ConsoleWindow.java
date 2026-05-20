@@ -6,6 +6,7 @@ import me.ramazanenescik04.diken.gui.component.*;
 import me.ramazanenescik04.diken.gui.screen.StaticBackground;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
+import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -45,7 +46,13 @@ public class ConsoleWindow extends Window {
 		ConsoleLog.setListAdapter(new ListAdapter<LogText>() {
 			@Override
 			public void onAdd(LogText item) {
-				textLine.add(item.toString());
+				if (item.type() == LogType.CLIENT_ERROR || item.type() == LogType.SERVER_ERROR) {
+					textLine.add("§ff0000" + item.toString());
+				} else if(item.type() == LogType.CLIENT_WARNING || item.type() == LogType.SERVER_WARNING) {
+					textLine.add("§ffff00" + item.toString());
+				} else {
+					textLine.add(item.toString());
+				}
 				textLine.autoSetSize();
 			}
 

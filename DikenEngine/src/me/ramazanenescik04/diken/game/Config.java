@@ -104,7 +104,12 @@ public class Config {
 	    return s;
 	}
 	
+	/**
+	 * @deprecated Bunu kullanmak yerine LÜTFEN {@link Config#getSetting(String, Class)} kullanın!
+	 * @return Ayarlar
+	 */
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public <T> Setting<T> getOrDefaultSetting(
 	        String key,
 	        Class<T> type,

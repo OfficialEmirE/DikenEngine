@@ -181,7 +181,7 @@ public class WindowManager {
             activeWindow.moved();
         }
         
-        Setting<Boolean> useOldScaleSystem = engine.config.getOrDefaultSetting("useOldScaleCode", Boolean.class, false);
+        Setting<Boolean> useOldScaleSystem = engine.config.getSetting("useOldScaleCode", Boolean.class);
         
         if (useOldScaleSystem.getValue()) {
         	// Boyutlandırma

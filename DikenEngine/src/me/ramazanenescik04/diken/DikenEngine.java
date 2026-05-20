@@ -22,6 +22,7 @@ import me.ramazanenescik04.diken.gui.window.WindowManager;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.log.ConsoleLog;
+import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -148,7 +149,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	}
 
 	private boolean isFixedInternalResolutionEnabled() {
-		return this.config.getOrDefaultSetting("fixedInternalResolution", Boolean.class, true).getValue();
+		return this.config.getSetting("fixedInternalResolution", Boolean.class).getValue();
 	}
 	
 	public void setFullscreen(boolean bool) {
@@ -159,15 +160,22 @@ public class DikenEngine implements Runnable, IInputListener {
 	public boolean getFullscreen() {
 		return this.fullscreen;
 	}
+	
+	public static void log(ConsoleLog.LogType logType, String message) {
+		if (logType == LogType.CLIENT_ERROR || logType == LogType.SERVER_ERROR) {
+			System.err.println("[" + logType.toString() + "] " + message);
+		} else {
+			System.out.println("[" + logType.toString() + "] " + message);
+		}
+		ConsoleLog.sendLog(logType, message);
+	}
 
 	public static void log(String message) {
-		System.out.println("[DikenEngine] " + message);
-		ConsoleLog.sendLog(message);
+		log(LogType.CLIENT_DEFAULT, message);
 	}
 
 	public static void errorLog(String message) {
-		System.err.println("[DikenEngine] " + message);
-		ConsoleLog.sendLog(ConsoleLog.LogType.ERROR, message);
+		log(LogType.CLIENT_ERROR, message);
 	}
 
 	@Override
@@ -239,7 +247,7 @@ public class DikenEngine implements Runnable, IInputListener {
 					String fileName = "screenshot-"
 							+ new Date().toString().replaceAll(" ", "_").replaceAll(":", "-") + ".png";
 
-					File pathFile = new File(this.config.getOrDefaultSetting("screenshotPath", String.class, "./").getValue());
+					File pathFile = new File(this.config.getSetting("screenshotPath", String.class).getValue());
 					pathFile.mkdirs();
 
 					File file = new File(pathFile, fileName);
@@ -497,7 +505,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	}
 
 	private void crash(Throwable e) {
-		ConsoleLog.sendLog(Utils.getStackTraceString(e));
+		ConsoleLog.sendLog(LogType.CLIENT_ERROR, Utils.getStackTraceString(e));
 		ConsoleLog.saveLogs();
 
 		String title = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().trim();

@@ -181,7 +181,7 @@ public class Humanoid extends Part {
 	}
 	
 	public boolean isAlive() {
-		return this.health > 1;
+		return this.health >= 1;
 	}
 	
 	@Override

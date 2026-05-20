@@ -151,6 +151,7 @@ public class GameScreen extends Screen {
 		theWorld.setZoom(1.0f);
 		theWorld.setBounds(0, 0, engine.getScaledWidth(), engine.getScaledHeight());
 		theWorld.addNode(thePlayer);
+		theWorld.startScripts();
 		
 		thePlayer.teleportSpawnLocation(theWorld);
 		thePlayer.setFollowCamera(true);

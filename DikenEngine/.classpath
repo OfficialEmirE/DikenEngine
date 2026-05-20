@@ -7,5 +7,6 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="res"/>
+	<classpathentry kind="lib" path="libs/luaj-jse-3.0.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

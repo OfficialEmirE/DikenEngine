@@ -38,7 +38,7 @@ public class ConsoleLog {
 	}
 	
 	public static void sendLog(String log) {
-		sendLog(LogType.CLIENT, log);
+		sendLog(LogType.CLIENT_DEFAULT, log);
 	}
 	
 	public static List<LogText> getLogs() {
@@ -96,8 +96,14 @@ public class ConsoleLog {
 	}
 	
 	public static enum LogType {
-		SERVER,
-		CLIENT,
-		ERROR,
+		// Server LogType
+		SERVER_ERROR,
+		SERVER_WARNING,
+		SERVER_DEFAULT,
+
+		// Client LogType
+		CLIENT_ERROR,
+		CLIENT_WARNING,
+		CLIENT_DEFAULT
 	}
 }

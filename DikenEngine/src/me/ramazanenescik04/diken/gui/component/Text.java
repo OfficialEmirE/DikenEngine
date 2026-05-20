@@ -14,6 +14,9 @@ public class Text extends GuiComponent {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	private static final char COLOR_CODE_MARKER = '\u00A7';
+	private static final int RGB_HEX_LENGTH = 6;
+	private static final int ARGB_HEX_LENGTH = 8;
 	public String text;
 	public int color;
 	public UniFont font;
@@ -80,16 +83,23 @@ public class Text extends GuiComponent {
 	    // Height of a single line (approximate)
 	    int lineHeight = stringBitmapAverageHeight(new String[] {text}, font) + 2; // Add a small padding
 	    
+	    int currentColor = color;
 	    for (int i = 0; i < texts.length; i++) {
 	        String lineText = texts[i];
-	        Bitmap[] chars = UniFont.getBitmapChars(lineText, font);
 	        int w = 0;
 	        
-	        for (int j = 0; j < chars.length; j++) {
-	            Bitmap btp = chars[j];
+	        for (int j = 0; j < lineText.length(); j++) {
+	        	ColorCode colorCode = readColorCode(lineText, j);
+	        	if (colorCode != null) {
+	        		currentColor = colorCode.color;
+	        		j = colorCode.endIndex;
+	        		continue;
+	        	}
+	        	
+	            Bitmap btp = UniFont.getBitmapChar(lineText.charAt(j), font);
 	            
 	            // Render character
-	            bitmap.blendDraw(btp, x + w, y + (i * lineHeight), color);
+	            bitmap.blendDraw(btp, x + w, y + (i * lineHeight), currentColor);
 	            
 	            w += ((btp.w));
 	        }
@@ -121,16 +131,21 @@ public class Text extends GuiComponent {
 	}
 	
 	public static void renderCenter(String string, Bitmap bitmap, int x, int y, int color, UniFont font) {
-		int x1 = x - (string.length() * 6 / 2);
+		int x1 = x - (stringBitmapWidth(string, font) / 2);
 		
 		render(string, bitmap,x1, y, color, font);
 	}
 	
 	public static int stringBitmapWidth(String text, UniFont font) {
-		Bitmap[] chars = UniFont.getBitmapChars(text, font);
 		int w = 0;
-		for (int i = 0; i < chars.length; i++) {
-			Bitmap btp = chars[i];
+		for (int i = 0; i < text.length(); i++) {
+			ColorCode colorCode = readColorCode(text, i);
+			if (colorCode != null) {
+				i = colorCode.endIndex;
+				continue;
+			}
+			
+			Bitmap btp = UniFont.getBitmapChar(text.charAt(i), font);
 			w += ((btp.w));
 		}
 		
@@ -141,10 +156,15 @@ public class Text extends GuiComponent {
 		int maxLength = 0;
 	    for (String str : texts) {
 	    	 if (str != null) {
-	    		 Bitmap[] chars = UniFont.getBitmapChars(str, font);
 	             int length = 0;
-	             for (int i = 0; i < chars.length; i++) {
-	                 Bitmap btp = chars[i];
+	             for (int i = 0; i < str.length(); i++) {
+	            	ColorCode colorCode = readColorCode(str, i);
+	     			if (colorCode != null) {
+	     				i = colorCode.endIndex;
+	     				continue;
+	     			}
+	     			
+	                 Bitmap btp = UniFont.getBitmapChar(str.charAt(i), font);
 	                 length += ((btp.w));
 	             }
 	             if (length > maxLength) {
@@ -174,9 +194,14 @@ public class Text extends GuiComponent {
 		int maxHeight = 0;
 	    for (String str : texts) {
 	    	 if (str != null) {
-	    		 Bitmap[] chars = UniFont.getBitmapChars(str, font);
-	             for (int i = 0; i < chars.length; i++) {
-	                 Bitmap btp = chars[i];
+	             for (int i = 0; i < str.length(); i++) {
+	            	ColorCode colorCode = readColorCode(str, i);
+	     			if (colorCode != null) {
+	     				i = colorCode.endIndex;
+	     				continue;
+	     			}
+	     			
+	                 Bitmap btp = UniFont.getBitmapChar(str.charAt(i), font);
 	                 if (btp.h > maxHeight) {
 	                     maxHeight = btp.h;
 	                 }
@@ -184,7 +209,60 @@ public class Text extends GuiComponent {
 	         }
 	    }
 	    
-	    return maxHeight;
+		return maxHeight;
+	}
+
+	private static ColorCode readColorCode(String text, int markerIndex) {
+		if (text.charAt(markerIndex) != COLOR_CODE_MARKER) {
+			return null;
+		}
+		
+		ColorCode argbColor = readColorCode(text, markerIndex, ARGB_HEX_LENGTH);
+		if (argbColor != null) {
+			return argbColor;
+		}
+		
+		ColorCode rgbColor = readColorCode(text, markerIndex, RGB_HEX_LENGTH);
+		if (rgbColor != null) {
+			return rgbColor;
+		}
+		
+		return null;
+	}
+
+	private static ColorCode readColorCode(String text, int markerIndex, int hexLength) {
+		int hexStartIndex = markerIndex + 1;
+		int hexEndIndex = hexStartIndex + hexLength;
+		if (hexEndIndex > text.length()) {
+			return null;
+		}
+		
+		for (int i = hexStartIndex; i < hexEndIndex; i++) {
+			if (!isHexChar(text.charAt(i))) {
+				return null;
+			}
+		}
+		
+		long parsedColor = Long.parseLong(text.substring(hexStartIndex, hexEndIndex), 16);
+		if (hexLength == RGB_HEX_LENGTH) {
+			parsedColor |= 0xff000000L;
+		}
+		
+		return new ColorCode((int) parsedColor, hexEndIndex - 1);
+	}
+
+	private static boolean isHexChar(char c) {
+		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+	}
+
+	private static class ColorCode {
+		private final int color;
+		private final int endIndex;
+
+		private ColorCode(int color, int endIndex) {
+			this.color = color;
+			this.endIndex = endIndex;
+		}
 	}
 
 	public static String wordWrapString(String message, int i, UniFont defaultFont) {

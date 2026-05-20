@@ -1,9 +1,13 @@
 package me.ramazanenescik04.diken.game;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
+
+import org.luaj.vm2.LuaValue;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
@@ -24,6 +28,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	// Hiyerarşi
     protected Node parent;
     protected List<Node> children = new ArrayList<>();
+    private Map<String, List<LuaValue>> eventMap = new HashMap<>();
     protected UUID netId = UUID.randomUUID();
     
     // Temel Özellikler
@@ -160,6 +165,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     }
 
     public final void draw(Bitmap btp, Hitbox viewport) {
+    	triggerEvent("OnPreRender");
         if (!visible) return;
 
         if (shouldRenderSelf(viewport)) {
@@ -182,6 +188,8 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         	Node child = children.get(i);
             child.draw(btp, viewport);
         }
+        
+        triggerEvent("OnPostRender");
     }
 
     /**
@@ -220,6 +228,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
     public void update(World world, DikenEngine engine) {
         // Override edilebilir logic
+    	triggerEvent("OnUpdate");
         
     	// Çocukları güncelle
         for (int i = 0; i < this.children.size(); i++) {
@@ -416,10 +425,39 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	    return null;
 	}
 	
+	public void registerLuaEvent(String eventName, LuaValue luaFunction) {
+        if (luaFunction == null || !luaFunction.isfunction()) return;
+
+        // Eğer bu event adı haritada yoksa, yeni bir liste oluştur ve ekle
+        eventMap.computeIfAbsent(eventName, _ -> new ArrayList<>()).add(luaFunction);
+    }
+	
+	public void triggerEvent(String eventName, Object... args) {
+        List<LuaValue> listeners = eventMap.get(eventName);
+        if (listeners == null || listeners.isEmpty()) return;
+
+        // Gönderilen Java parametrelerini LuaJ'in anlayacağı LuaValue dizisine çeviriyoruz
+        LuaValue[] luaArgs = new LuaValue[args.length];
+        for (int i = 0; i < args.length; i++) {
+            luaArgs[i] = org.luaj.vm2.lib.jse.CoerceJavaToLua.coerce(args[i]);
+        }
+
+        // Kayıtlı tüm fonksiyonları sırayla çalıştır
+        for (LuaValue listener : listeners) {
+            try {
+                // birden fazla parametreyi güvenle göndermek için invoke kullanıyoruz
+                listener.invoke(LuaValue.varargsOf(luaArgs));
+            } catch (Exception e) {
+                DikenEngine.errorLog("Lua Event Error [" + eventName + "]: " + e.getMessage());
+            }
+        }
+    }
+	
 	public void sendDisposeAllNodes(Node parent) {
 	    for (Node child : parent.children) {
 	        sendDisposeAllNodes(child);
 	    }
+	    parent.triggerEvent("OnDispose");
 	    parent.dispose();
 	}
 	
@@ -427,6 +465,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	    for (Node child : parent.children) {
 	    	sendReloadAllNodes(child);
 	    }
+	    parent.triggerEvent("OnReload");
 	    parent.reloadNode();
 	}
 	
@@ -534,6 +573,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	public void removeNode() {
 		this.removed = true;
+		triggerEvent("OnDestroy");
 	}
 	
 	public boolean isRemoved() {

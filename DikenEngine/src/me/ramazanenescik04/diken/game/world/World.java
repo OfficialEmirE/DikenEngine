@@ -25,6 +25,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.IResource;
+import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.gui.component.GuiComponent;
 import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
@@ -171,6 +172,9 @@ public class World extends Panel implements Cloneable {
 	                    
 	                    a.onCollision(b);
 	                    b.onCollision(a);
+	                    
+	                    a.triggerEvent("OnCollision", b);
+	                    b.triggerEvent("OnCollision", a);
 
 	                    if (a.isSolid() && b.isSolid()) {
 	                    	Node.resolveCollision(a, b);
@@ -193,6 +197,13 @@ public class World extends Panel implements Cloneable {
         for (Node child : current.getChildren()) {
             collectCollidableNodes(child, list);
         }
+    }
+    
+    public void startScripts() {
+    	List<Script> scripts = this.root.findByClass(Script.class);
+    	for (Script script : scripts) {
+    		script.initialize(root);
+    	}
     }
 
     // --- Setter/Getter ---

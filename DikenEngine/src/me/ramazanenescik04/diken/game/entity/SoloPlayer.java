@@ -89,7 +89,7 @@ public class SoloPlayer extends Player {
 
 	@Override
 	public List<SettingCategory> getNodeSettings() {
-		var key = new SettingCategory.SettingKey("thePlayer", "Player", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 1));
+		var key = new SettingCategory.SettingKey("thePlayer", "Player (WTF HOW BRO)", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 1));
 		
 		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
 				.createSettingCategory(key));
