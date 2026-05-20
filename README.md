@@ -8,10 +8,8 @@ Java'da 2D Oyun yapmak için tasarlanmış oyun motoru! (Şüpheli)
 
 DikenEngine'i derlemek için aşağıdaki talimatları izleyin:
 1. DikenEngine deposunu klonlayın. `git clone https://github.com/OfficialEmirE/DikenEngine.git`
-2. DikenEngine klasörüne girin. 
-- Windows: `cd ./DikenEngine/DikenEngine` 
-- Android: `Şu an için desteklenmiyor.`
-3. Derleme 
+2. DikenEngine klasörüne girin. `cd ./DikenEngine/DikenEngine` 
+3. Derleme (değiştirilecek. şu an bu satır geçersiz) 
 - Tüm java kodunu derleyin: `javac -d bin src/**/*.java`
 - Jar haline getir:` jar --create --file DikenEngine.jar --main-class=me.ramazanenescik04.diken.DikenEngine -C bin . -C . res`
 - Jar'ı çalıştır ve test et: `java -jar DikenEngine.jar`
