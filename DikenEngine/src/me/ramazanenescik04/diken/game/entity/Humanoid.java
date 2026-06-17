@@ -5,18 +5,17 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Animation;
+import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
+import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
 import me.ramazanenescik04.diken.game.nodes.Tool;
-import me.ramazanenescik04.diken.game.world.World;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -58,7 +57,7 @@ public class Humanoid extends Part {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = FrameBitmapPool.newBitmap(this.aabb.width, this.aabb.height);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(this.aabb.getWidth(), this.aabb.getHeight());
 		bitmap.clear(color);
 		return bitmap;
 	}
@@ -83,15 +82,15 @@ public class Humanoid extends Part {
 	}
 	
 	public void teleportSpawnLocation(World world) {
-		List<SpawnLocation> spawnLocations = world.root.findByClass(SpawnLocation.class);
+		List<SpawnLocation> spawnLocations = world.getWorkspace().findByClass(SpawnLocation.class);
 		
 		if (spawnLocations.isEmpty()) {
 			this.x = 0; // Yeniden doğma pozisyonu
 			this.y = 0;
 		} else {
 			SpawnLocation spawnLocation = spawnLocations.get(ThreadLocalRandom.current().nextInt(spawnLocations.size()));
-			this.x = (spawnLocation.getGlobalAABB().width / 2 - render().w / 2) + spawnLocation.getGlobalX();
-			this.y = (spawnLocation.getGlobalAABB().height / 2 - render().h / 2) + spawnLocation.getGlobalY();
+			this.x = (spawnLocation.getGlobalAABB().getWidth() / 2 - render().w / 2) + spawnLocation.getGlobalX();
+			this.y = (spawnLocation.getGlobalAABB().getHeight() / 2 - render().h / 2) + spawnLocation.getGlobalY();
 		}
 	}
 	
@@ -187,9 +186,9 @@ public class Humanoid extends Part {
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("humanoid", "Humanoid", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 1));
-		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<Boolean>("Follow Camera", followCamera, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setFollowCamera)))
+				.addSetting(new Setting<Boolean>("Follow Camera", followCamera, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setFollowCamera))
 				.addSetting(new Setting<Boolean>("Can Move", canMove, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setCanMove))
 				.addSetting(new Setting<Float>("Speed", speed, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setSpeed))
 				.addSetting(new Setting<Integer>("Health", health, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setHealth))

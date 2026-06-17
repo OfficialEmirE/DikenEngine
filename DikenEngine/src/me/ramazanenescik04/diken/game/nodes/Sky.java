@@ -3,22 +3,21 @@ package me.ramazanenescik04.diken.game.nodes;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
-import me.ramazanenescik04.diken.game.world.World;
+import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
-import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Represents the `Sky` type within the DikenEngine `game.nodes` package.
  */
-public class Sky extends Node {
+public class Sky extends Instance {
 	private static final long serialVersionUID = 9068692202217556542L;
 	private transient Bitmap skyBitmap;
 	private transient int width = 1, height = 1;
@@ -92,12 +91,12 @@ public class Sky extends Node {
 	}
 
 	@Override
-	protected int getRenderX() {
+	public int getRenderX() {
 		return -10;
 	}
 	
 	@Override
-	protected int getRenderY() {
+	public int getRenderY() {
 		return -10;
 	}
 	
@@ -115,9 +114,9 @@ public class Sky extends Node {
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("sky", "Sky", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(3, 1));
 		
-		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture)));
+				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

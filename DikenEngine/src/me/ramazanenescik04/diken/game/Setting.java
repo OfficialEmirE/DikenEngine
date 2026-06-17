@@ -27,6 +27,9 @@ public class Setting<T> {
     private T min;
     private T max;
     
+    // List ayarı için liste
+    private T[] options;
+    
     private boolean changeable = true; // Ayarın değiştirilebilir olup olmadığını kontrol eder (örneğin, bazı ayarlar sadece belirli koşullarda değiştirilebilir olabilir)
 
     // Basit Constructor
@@ -53,6 +56,11 @@ public class Setting<T> {
         this.max = max;
     }
     
+    public Setting(String name, T defaultValue, T[] options, Class<T> type, EnumSettingType settingType) {
+		this(name, defaultValue, type, settingType);
+		this.options = options;
+	}
+    
     // Deep Copy için Constructor
     public Setting(Setting<T> setting) {
         // Temel alanları kopyala
@@ -65,6 +73,7 @@ public class Setting<T> {
         // Opsiyonel Slider/Scrollbar alanlarını kopyala
         this.min = (T) setting.min;
         this.max = (T) setting.max;
+        this.options = setting.options != null ? Arrays.copyOf(setting.options, setting.options.length) : null;
     }
 
     // --- Getter ve Setter Metotları ---
@@ -88,6 +97,10 @@ public class Setting<T> {
     public boolean isSlider() {
 		return type == EnumSettingType.SLIDER;
 	}
+    
+    public boolean isListSelect() {
+    	return type == EnumSettingType.LIST_SELECT;
+    }
 
     public T getValue() {
         return value;
@@ -106,6 +119,13 @@ public class Setting<T> {
             if (val < minVal) value = min;
             else if (val > maxVal) value = max;
         }
+        
+        if (type == EnumSettingType.LIST_SELECT && options != null) {
+			boolean validOption = Arrays.asList(options).contains(value);
+			if (!validOption) {
+				throw new IllegalArgumentException("Geçersiz seçenek! Değer, tanımlı seçenekler arasında olmalıdır.");
+			}
+		}
 
         this.value = value;
 
@@ -114,6 +134,14 @@ public class Setting<T> {
             onChangeEvent.accept(this.value);
         }
     }
+    
+    public void setOptions(T[] options) {
+		if (!type.isAllowedClasses(options.getClass().getComponentType())) {
+			throw new IllegalArgumentException("Bu EnumSettingType için geçersiz seçenekler!");
+		}
+		
+		this.options = options;
+	}
 
     public void reset() {
         setValue(defaultValue);
@@ -136,6 +164,7 @@ public class Setting<T> {
     public String getDescription() { return description; }
     public T getMin() { return min; }
     public T getMax() { return max; }
+    public T[] getOptions() { return options; }
 	public Class<T> getTypeClass() { return valueClass; }
 	
 	private void writeObject(Object value, DataOutput out) throws IOException {
@@ -181,7 +210,14 @@ public class Setting<T> {
 	            out.writeByte(8);
 	            out.writeUTF(clazz.getName());
 	        }
-	        default -> throw new IllegalArgumentException("Unsupported type: " + value.getClass());
+	        case Object[] arr -> {
+	            out.writeByte(9);
+	            out.writeInt(arr.length);
+	            for (Object elem : arr) {
+	                writeObject(elem, out);
+	            }
+	        }
+	        default -> throw new IllegalArgumentException("Unsupported type: " + value.getClass().getName());
 	    }
 	}
 	
@@ -217,6 +253,14 @@ public class Setting<T> {
     		        defaultSetting = null;
     		    }
     		}
+    		case 9 -> {
+			    int length = in.readInt();
+			    Object[] arr = new Object[length];
+			    for (int i = 0; i < length; i++) {
+			        arr[i] = readObject(in);
+			    }
+			    defaultSetting = arr;
+			}
     		case(-1) -> defaultSetting = null;
     	}
     	
@@ -234,6 +278,7 @@ public class Setting<T> {
     	writeObject(this.defaultValue, out);
     	writeObject(this.min, out);
     	writeObject(this.max, out);
+    	writeObject(this.options, out);
     }
     
     @SuppressWarnings("unchecked")
@@ -248,12 +293,14 @@ public class Setting<T> {
     	Object defaultValue = null;
     	Object min = null;
     	Object max = null;
+    	Object options = null;
 		try {
 			clazz = (Class<?>) readObject(in);
 			value = readObject(in);
 			defaultValue = readObject(in);
 			min = readObject(in);
 			max = readObject(in);
+			options = readObject(in);
 		} catch (ClassNotFoundException | IOException e) {
 			e.printStackTrace();
 		}
@@ -264,29 +311,8 @@ public class Setting<T> {
     	
     	setting.min = (T) min;
     	setting.max = (T) max;
+    	setting.options = (T[]) options;
     	
 		return setting;
-    }
-    
-    // --- Enum ---
-    public enum EnumSettingType {
-        CHECK_BOX(Boolean.class),      					   // Boolean değerler için
-        TEXT_FIELD(String.class, Integer.class, 
-        	 Short.class, Byte.class, Long.class, 
-        	 Float.class, Double.class),     			   // String değerler için
-        SLIDER(Float.class, Double.class, Integer.class),  // Float/Double/Int değerler için (ScrollBar yerine Slider daha yaygın terimdir)
-        COLOR_PICKER(Integer.class),   					   // Renk seçimi için
-        KEY_BIND(Character.class, Integer.class),          // Tuş atamaları için
-    	RESOURCE_SELECT(String.class);
-    	
-    	public Class<?>[] allowedClasses;
-    	
-    	EnumSettingType(Class<?>...classes) {
-    		this.allowedClasses = classes;
-    	}
-
-		public boolean isAllowedClasses(Class<?> type) {
-			return Arrays.stream(allowedClasses).anyMatch(clazz -> clazz.isAssignableFrom(type));
-		}
     }
 }

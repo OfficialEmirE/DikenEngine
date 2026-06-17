@@ -3,8 +3,14 @@ package me.ramazanenescik04.diken.gui.component;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.UniFont;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Represents the `TextLine` type within the DikenEngine `gui.compoment` package.
@@ -19,8 +25,8 @@ public class TextLine extends GuiComponent {
 	private UniFont font = DikenEngine.getEngine().defaultFont;
 	private int color = 0xffffffff, bgColor = 0xff484848; // Default text color is white
 
-	public TextLine(int x, int y, int width, int height) {
-		super(x, y, width, height);
+	public TextLine(UDim2 position, UDim2 size) {
+		super("TextLine", position, size);
 	}
 	
 	//API START
@@ -128,7 +134,13 @@ public class TextLine extends GuiComponent {
 	}
 	
 	public TextLine clone() {
-		TextLine cloned = new TextLine(x, y, width, height);
+		TextLine cloned;
+		try {
+			cloned = new TextLine(this.getPosition().clone(), this.getSize().clone());
+		} catch (CloneNotSupportedException e) {
+			e.printStackTrace();
+			cloned = new TextLine(UDim2.defaultV, UDim2.defaultV);
+		}
 		cloned.setFocused(this.isFocused);
 		cloned.setEditable(this.editable);
 		cloned.setTextLines(new ArrayList<>(this.textLines));
@@ -142,14 +154,14 @@ public class TextLine extends GuiComponent {
 		Bitmap bitmap = super.render();
 		bitmap.clear(bgColor);
 		
-		bitmap.box(0, 0, width - 1, height - 1, isFocused() ? 0xffffff00 : 0xffffffff);
+		bitmap.box(0, 0, getWidth() - 1, getHeight() - 1, isFocused() ? 0xffffff00 : 0xffffffff);
 		
 		//Render Text Lines
 		for (int i = 0; i < textLines.size(); i++) {
 			String line = textLines.get(i);
 			int averageHeight = Text.stringBitmapAverageHeight(line, DikenEngine.getEngine().defaultFont);
 			int yOffset = 2 + (i * averageHeight); // Assuming each line is 12 pixels tall
-			if (yOffset < height - 2) { // Ensure we don't draw outside the bounds
+			if (yOffset < this.getHeight() - 2) { // Ensure we don't draw outside the bounds
 				Text.render(line, bitmap, 2, yOffset, this.color);
 			}
 		}
@@ -188,5 +200,19 @@ public class TextLine extends GuiComponent {
 		int h = Text.stringBitmapAverageHeight(array, font) * (array.length + 2);
 		
 		this.setSize(w, h);
+	}
+	
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("textLine", "TextLine", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(14, 2));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<Boolean>("Focused", this.isFocused, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setFocused))
+				.addSetting(new Setting<Boolean>("Editable", this.editable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setEditable));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
 	}
 }

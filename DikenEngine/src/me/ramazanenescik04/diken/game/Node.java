@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.game;
 
+import java.awt.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,15 +9,15 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 import org.luaj.vm2.LuaValue;
+import org.luaj.vm2.Varargs;
+import org.luaj.vm2.lib.VarArgFunction;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
-import me.ramazanenescik04.diken.game.world.World;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
-import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.tools.ListAdapter;
+import me.ramazanenescik04.diken.tools.ObservableList;
 
 // Java 25 ile gelen özellikleri kullanabiliriz ama temel yapı sağlam olmalı.
 /**
@@ -27,28 +28,15 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	// Hiyerarşi
     protected Node parent;
-    protected List<Node> children = new ArrayList<>();
-    private Map<String, List<LuaValue>> eventMap = new HashMap<>();
+    protected List<Node> children = new ObservableList<>();
+    private transient Map<String, List<LuaValue>> eventMap = new HashMap<>();
     protected UUID netId = UUID.randomUUID();
     
     // Temel Özellikler
-    public String name;
-    public boolean visible = true;
-    
-    // Transform (Basit tuttum, Vector2f veya Matrix kullanıyorsan değiştirebilirsin)
-    public int x, y; 
-    public float scaleX = 1.0f, scaleY = 1.0f;
-    public float rotation = 0.0f;
-
-    // Renk (0xAARRGGBB formatında int veya senin Color sınıfın)
-    public int color = 0xFFFFFFFF; // Varsayılan Beyaz
-
-    // 1. AABB Sistemi (Null ise collision yok/hayalet)
-    protected Hitbox aabb = null;
+    protected String name;
     
     protected boolean debug = false;
-    protected boolean solid = true;
-    protected boolean anchored = false;
+    protected boolean archiveable = true; // Kaydedilebilir mi?
     protected boolean removed = false;
 
     // Constructor
@@ -59,25 +47,30 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public Node(String name) {
         this.name = name;
     }
-    
-    public Node(String name, int x, int y) {
-        this.name = name;
-        this.x = x;
-        this.y = y;
-    }
 
     // --- Hiyerarşi Yönetimi ---
+    
+    public void setListAdapter(ListAdapter<Node> l) {
+    	((ObservableList<Node>) children).setListAdapter(l);
+    }
 
     public void addChild(Node child) {
+    	triggerEvent("OnAddChild", child); // 3. Lifecycle Event
+    	
         if (child.parent != null) {
             child.parent.removeChild(child); // Eski ailesinden kopar
         }
         child.parent = this;
         children.add(child);
         child.onAdded(); // 3. Lifecycle Event
+        
+        notifyAncestors("OnAddDescendant", child);
     }
     
     public void insertChild(int index, Node child) {
+    	triggerEvent("OnInsertChild", child, index); // 3. Lifecycle Event
+    	notifyAncestors("OnInsertDescendant", child, index);
+    	
     	if (child == null || child == this || this.isDescendantOf(child)) {
     		return;
     	}
@@ -129,13 +122,28 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     }
 
     public void removeChild(Node child) {
+    	triggerEvent("OnRemoveChild", child); // 3. Lifecycle Event
+    	
         if (children.remove(child)) {
             child.onRemoved(); // 3. Lifecycle Event
             child.parent = null;
         }
+        
+        notifyAncestors("OnRemoveDescendant", child);
+    }
+    
+    private void notifyAncestors(String eventName, Object... datas) {
+        var current = this;
+        while (current != null) {
+        	current.triggerEvent(eventName, datas);
+        	current = current.parent;
+        }
     }
     
     public void replaceChild(Node oldChild, Node newChild) {
+    	triggerEvent("OnReplaceChild", oldChild, newChild); // 3. Lifecycle Event
+    	notifyAncestors("OnReplaceDescendant", oldChild, newChild);
+    	
         int index = children.indexOf(oldChild);
         if (index < 0) {
             return;
@@ -151,67 +159,23 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public Node getParent() {
     	return parent;
     }
-    
-    // --- Render Sistemi ---
-    
-    /**
-     * Bu metod motor tarafından otomatik çağrılır.
-     * 1. Node'un resmini (render() metodundan) alır.
-     * 2. Bu resmi ana ekrana (btp) yapıştırır.
-     * 3. Çocukları için aynı işlemi yapar.
-     */
-    public final void draw(Bitmap btp) {
-        draw(btp, null);
-    }
-
-    public final void draw(Bitmap btp, Hitbox viewport) {
-    	triggerEvent("OnPreRender");
-        if (!visible) return;
-
-        if (shouldRenderSelf(viewport)) {
-            Bitmap myTexture = render();
-
-            if (myTexture != null) {
-                int renderX = getRenderX();
-                int renderY = getRenderY();
-                btp.draw(myTexture, renderX, renderY);
-                
-                if (debug && aabb != null) {
-					Hitbox globalBox = getGlobalAABB();
-					btp.box(globalBox.x, globalBox.y, globalBox.x + globalBox.width, globalBox.y + globalBox.height, 0xffff0000);
-					btp.box(renderX, renderY, renderX + myTexture.w, renderY + myTexture.h, 0xff00ff00);
-				}
-            }
-        }
-
-        for (int i = 0; i < children.size(); i++) {
-        	Node child = children.get(i);
-            child.draw(btp, viewport);
-        }
-        
-        triggerEvent("OnPostRender");
-    }
-
-    /**
-     * Alt sınıflar artık çizim kodu yazmayacak, 
-     * sadece kendilerini temsil eden Bitmap'i döndürecek.
-     * @return Çizilecek resim (veya null, eğer sadece container ise)
-     */
-    public abstract Bitmap render();
 
     protected boolean shouldRenderSelf(Hitbox viewport) {
     	if (isCameraIndependent() || viewport == null) {
     		return true;
     	}
     	
-    	Hitbox globalBox = getGlobalAABB();
-    	if (globalBox == null) {
-    		return true;
+    	if (this instanceof Instance instance) {
+    	    Hitbox globalBox = instance.getGlobalAABB();
+    	    if (globalBox == null) {
+    	        return true;
+    	    }
+    	    return globalBox.intersects(viewport);
     	}
     	
-    	return globalBox.intersects(viewport);
+    	return true;
     }
-    
+
     protected int getRenderX() {
     	return getGlobalX();
     }
@@ -242,51 +206,24 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         }
     }
 
-    // AABB'yi ayarlamak için
-    public void setAABB(int width, int height) {
-        this.aabb = new Hitbox(0, 0, width, height); // Local coordinates
-    }
-    
-    public boolean hasAABB() {
-    	return this.aabb != null;
-    }
-    
-    public int getAABBWidth() {
-    	return this.aabb != null ? this.aabb.width : 0;
-    }
-    
-    public int getAABBHeight() {
-    	return this.aabb != null ? this.aabb.height : 0;
-    }
-    
-    public void setAABBSize(int width, int height) {
-    	if (this.aabb == null) {
-    		return;
-    	}
-    	
-    	this.aabb.width = Math.max(1, width);
-    	this.aabb.height = Math.max(1, height);
-    }
-    
-    public Hitbox getGlobalAABB() {
-        if (aabb == null) return null; // İçinden geçilebilir (Ghost)
-        
-        // Local AABB'yi Dünya koordinatlarına taşı
-        int globalX = getGlobalX() + aabb.x;
-        int globalY = getGlobalY() + aabb.y;
-        return new Hitbox(globalX, globalY, aabb.width, aabb.height);
-    }
-    
     // Global pozisyonu bulmak için parent zincirini takip et
-    public int getGlobalX() {
-        if (parent == null) return x;
-        return parent.getGlobalX() + x;
+    protected int getGlobalX() {
+        if (parent instanceof Instance parentInstance) {
+            return parentInstance.getGlobalX();
+        }
+        return 0;
     }
 
-    public int getGlobalY() {
-        if (parent == null) return y;
-        return parent.getGlobalY() + y;
+    protected int getGlobalY() {
+        if (parent instanceof Instance parentInstance) {
+            return parentInstance.getGlobalY();
+        }
+        return 0;
     }
+    
+    public Point toPoint() {
+		return new Point(getGlobalX(), getGlobalY());
+	}
     
     public List<Node> getChildren() {
 		return new ArrayList<>(children); // Kopya döndür
@@ -347,24 +284,6 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         return found;
     }
 	
-	public List<Node> findInArea(Hitbox area) {
-		List<Node> result = new ArrayList<>();
-		
-		for (Node child : getChildren()) {
-			if (child.getGlobalAABB() != null && child.getGlobalAABB().intersects(area)) {
-				result.add(child);
-			}
-	    }
-	    
-	    // Eğer çocuklarda yoksa, derinlemesine (recursive) ara
-	    for (Node child : getChildren()) {
-	        List<Node> childResult = child.findInArea(area);
-	        result.addAll(childResult);
-	    }
-	    
-	    return result;
-	}
-	
 	/**
 	 * İsme göre ilk bulduğu düğümü döndürür. Hiç bulamazsa null döner.
 	 */
@@ -374,12 +293,6 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	        if (child.getName().equalsIgnoreCase(name)) {
 	            return child;
 	        }
-	    }
-	    
-	    // Eğer çocuklarda yoksa, derinlemesine (recursive) ara
-	    for (Node child : getChildren()) {
-	        Node found = child.findFirstChild(name);
-	        if (found != null) return found;
 	    }
 	    
 	    return null;
@@ -416,42 +329,74 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	        }
 	    }
 	    
-	    // Derinlemesine ara
-	    for (Node child : getChildren()) {
-	        T found = child.findFirstChildOfClass(clazz);
-	        if (found != null) return found;
-	    }
-	    
 	    return null;
+	}
+	
+	public List<Node> getDescendants() {
+	    List<Node> descendants = new ArrayList<>();
+	    for (Node child : getChildren()) {
+	        descendants.add(child);
+	        descendants.addAll(child.getDescendants());
+	    }
+	    return descendants;
 	}
 	
 	public void registerLuaEvent(String eventName, LuaValue luaFunction) {
         if (luaFunction == null || !luaFunction.isfunction()) return;
+        
+        if (eventMap == null) eventMap = new HashMap<>();
 
-        // Eğer bu event adı haritada yoksa, yeni bir liste oluştur ve ekle
         eventMap.computeIfAbsent(eventName, _ -> new ArrayList<>()).add(luaFunction);
     }
 	
 	public void triggerEvent(String eventName, Object... args) {
+		if (eventMap == null) eventMap = new HashMap<>();
+		
         List<LuaValue> listeners = eventMap.get(eventName);
+        
         if (listeners == null || listeners.isEmpty()) return;
 
-        // Gönderilen Java parametrelerini LuaJ'in anlayacağı LuaValue dizisine çeviriyoruz
         LuaValue[] luaArgs = new LuaValue[args.length];
         for (int i = 0; i < args.length; i++) {
             luaArgs[i] = org.luaj.vm2.lib.jse.CoerceJavaToLua.coerce(args[i]);
         }
 
-        // Kayıtlı tüm fonksiyonları sırayla çalıştır
         for (LuaValue listener : listeners) {
             try {
-                // birden fazla parametreyi güvenle göndermek için invoke kullanıyoruz
                 listener.invoke(LuaValue.varargsOf(luaArgs));
             } catch (Exception e) {
                 DikenEngine.errorLog("Lua Event Error [" + eventName + "]: " + e.getMessage());
             }
         }
     }
+	
+	public void addLuaEventListener(String eventName, LuaEventListenerJava javaListener) {
+	    if (javaListener == null) return;
+
+	    LuaValue luaFunctionWrapper = new VarArgFunction() {
+	        @Override
+	        public Varargs invoke(Varargs luaArgs) {
+	            int count = luaArgs.narg();
+	            Object[] javaArgs = new Object[count];
+	            
+	            for (int i = 1; i <= count; i++) {
+	                LuaValue arg = luaArgs.arg(i);
+	                
+	                if (arg.isuserdata()) {
+	                    javaArgs[i - 1] = arg.checkuserdata();
+	                } else {
+	                    javaArgs[i - 1] = arg.isnil() ? null : arg.tojstring();
+	                }
+	            }
+	            
+	            javaListener.onEvent(javaArgs);
+	            
+	            return LuaValue.NIL; 
+	        }
+	    };
+
+	    registerLuaEvent(eventName, luaFunctionWrapper);
+	}
 	
 	public void sendDisposeAllNodes(Node parent) {
 	    for (Node child : parent.children) {
@@ -488,13 +433,13 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public void onCollision(Node other) {
     }
     
-    public static void resolveCollision(Node a, Node b) {
+    public static void resolveCollision(Instance a, Instance b) {
         Hitbox boxA = a.getGlobalAABB();
         Hitbox boxB = b.getGlobalAABB();
         if (boxA == null || boxB == null) return;
 
-        int overlapX = Math.min(boxA.x + boxA.width, boxB.x + boxB.width) - Math.max(boxA.x, boxB.x);
-        int overlapY = Math.min(boxA.y + boxA.height, boxB.y + boxB.height) - Math.max(boxA.y, boxB.y);
+        int overlapX = Math.min(boxA.getX() + boxA.getX(), boxB.getX() + boxB.getWidth()) - Math.max(boxA.getX(), boxB.getX());
+        int overlapY = Math.min(boxA.getY() + boxA.getY(), boxB.getY() + boxB.getHeight()) - Math.max(boxA.getY(), boxB.getY());
 
         if (overlapX <= 0 || overlapY <= 0) return;
 
@@ -503,10 +448,10 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
         if (aAnchored && bAnchored) return;
 
-        float centerAx = boxA.x + (boxA.width / 2.0f);
-        float centerBx = boxB.x + (boxB.width / 2.0f);
-        float centerAy = boxA.y + (boxA.height / 2.0f);
-        float centerBy = boxB.y + (boxB.height / 2.0f);
+        float centerAx = boxA.getX() + (boxA.getWidth() / 2.0f);
+        float centerBx = boxB.getX() + (boxB.getWidth() / 2.0f);
+        float centerAy = boxA.getY() + (boxA.getHeight() / 2.0f);
+        float centerBy = boxB.getY() + (boxB.getHeight() / 2.0f);
 
         if (overlapX < overlapY) {
             if (!aAnchored && !bAnchored) {
@@ -554,21 +499,13 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	public void setDebugRenderer(boolean debug) {
 		this.debug = debug;
 	}
-
-	public boolean isSolid() {
-		return solid;
+	
+	public boolean isArchiveable() {
+		return archiveable;
 	}
-
-	public void setSolid(boolean isSolid) {
-		this.solid = isSolid;
-	}
-
-	public boolean isAnchored() {
-		return this.anchored;
-	}
-
-	public void setAnchored(boolean isStatic) {
-		this.anchored = isStatic;
+	
+	public void setArchiveable(boolean archiveable) {
+		this.archiveable = archiveable;
 	}
 	
 	public void removeNode() {
@@ -582,39 +519,17 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("default", "Node", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(8, 1));
-		var cat = SettingCategoryHelper.getOrCreateCategory(key, () -> this.generateDefaultSettings(key));
 		
 		var list = new ArrayList<SettingCategory>();
-		list.add(cat);
+		list.add(this.generateDefaultSettings(key));
 		return list;
 	}
 	
 	private SettingCategory generateDefaultSettings(SettingCategory.SettingKey key) {
 		var s = SettingCategory.createSettingCategory(key)
 				.addSetting(new Setting<String>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setName))
-				.addSetting(new Setting<Integer>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.x = val))
-				.addSetting(new Setting<Integer>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.y = val))
-				.addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(val -> this.visible = val))
 				.addSetting(new Setting<Boolean>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setDebugRenderer))
-				.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setSolid))
-				.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setAnchored))
-				.addSetting(new Setting<Integer>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(val -> this.color = val));
-		
-		if (this.aabb != null) {
-			s.addSetting(new Setting<Integer>("Hitbox Width", aabb.width, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
-				if (aabb != null) aabb.width = val;
-			}))
-			.addSetting(new Setting<Integer>("Hitbox Height", aabb.height, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
-				if (aabb != null) aabb.height = val;
-			}))
-			.addSetting(new Setting<Integer>("Hitbox Offset X", aabb.x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
-				if (aabb != null) aabb.x = val;
-			}))
-			.addSetting(new Setting<Integer>("Hitbox Offset Y", aabb.y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
-				if (aabb != null) aabb.y = val;
-			}));
-		}
-		
+				.addSetting(new Setting<Boolean>("Archiveable", archiveable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(val -> this.archiveable = val));
 		return s;
 	}
 
@@ -626,26 +541,15 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     protected void dispose() {}
     
     public Node copy() {
+    	if (!isArchiveable())
+    		return null;
+    	
         try {
             // 1. Yüzeysel kopya
             Node newNode = (Node) super.clone();
 
             // 2. Parent bağını kopar
             newNode.parent = null;
-
-            // 3. Hitbox'ı kopyala
-            if (this.aabb != null) {
-                newNode.aabb = new Hitbox(
-                    this.aabb.x, 
-                    this.aabb.y, 
-                    this.aabb.width, 
-                    this.aabb.height
-                );
-            }
-
-            // --- KRİTİK NOKTA ---
-            // clear() yerine yeni bir liste örneği oluşturuyoruz!
-            // ArrayList kullandığını varsayıyorum, kendi liste tipine göre değiştir:
             newNode.children = new ArrayList<>(); 
             
             // Şimdi orijinal liste (this.children) hala dolu, güvenle dönebiliriz:
@@ -663,6 +567,10 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
 	@Override
 	public String toString() {
-		return "[" + this.getName() + "-X=" + this.x + "-Y=" + this.y + "]";
+		return "[" + this.getName() + "]";
+	}
+	
+	public static interface LuaEventListenerJava {
+		void onEvent(Object... args);
 	}
 }

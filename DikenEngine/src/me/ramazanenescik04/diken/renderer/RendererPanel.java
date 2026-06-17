@@ -2,36 +2,41 @@ package me.ramazanenescik04.diken.renderer;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
-import java.awt.image.VolatileImage;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 
-import javax.swing.JPanel;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.AWTGLCanvas;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 /**
  * Represents the `RendererPanel` type within the DikenEngine `renderer` package.
  */
-public class RendererPanel extends JPanel {
+public class RendererPanel extends AWTGLCanvas {
 	private static final long serialVersionUID = -4127449942800588594L;
 
 	private final Object frameLock = new Object();
 
 	private Bitmap frameBitmap = new Bitmap(1, 1);
-	private BufferedImage frameImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-	private VolatileImage volatileFrame;
+	private IntBuffer presentedPixels = createDirectIntBuffer(1);
 
 	private int logicalWidth = 1;
 	private int logicalHeight = 1;
+	private int presentedWidth = 1;
+	private int presentedHeight = 1;
 	private int renderScale = 1;
 
-	public RendererPanel(int width, int height) {
+	private boolean glInitialized;
+	private int textureId;
+	private int textureWidth = 1;
+	private int textureHeight = 1;
+	
+	public RendererPanel(int width, int height) throws LWJGLException {
 		setPreferredSize(new Dimension(Math.max(1, width), Math.max(1, height)));
-		setDoubleBuffered(false);
 		setBackground(Color.BLACK);
 		setFocusable(true);
 	}
@@ -46,8 +51,7 @@ public class RendererPanel extends JPanel {
 	public void present(int scale) {
 		synchronized (frameLock) {
 			this.renderScale = Math.max(1, scale);
-			blitBufferedToVolatile(Math.max(1, this.logicalWidth * this.renderScale),
-					Math.max(1, this.logicalHeight * this.renderScale));
+			copyFrameForPresentation();
 		}
 
 		repaint();
@@ -61,99 +65,164 @@ public class RendererPanel extends JPanel {
 
 	private void ensureFrameBuffers(int requestedWidth, int requestedHeight) {
 		int safeWidth = Math.max(1, requestedWidth);
-		int safeHeight = Math.max(1, requestedHeight);
+		int safeHeight = Math.max(1, requestedHeight);		
 
 		logicalWidth = safeWidth;
 		logicalHeight = safeHeight;
 
 		if (frameBitmap.w != safeWidth || frameBitmap.h != safeHeight) {
-			frameImage = new BufferedImage(safeWidth, safeHeight, BufferedImage.TYPE_INT_ARGB);
-			frameBitmap = Bitmap.wrap(safeWidth, safeHeight,
-					((DataBufferInt) frameImage.getRaster().getDataBuffer()).getData());
+			frameBitmap = new Bitmap(safeWidth, safeHeight);
 		}
 	}
 
-	private boolean ensureVolatileFrame(int width, int height) {
-		GraphicsConfiguration gc = getGraphicsConfiguration();
-		if (gc == null) {
-			return false;
+	private void copyFrameForPresentation() {
+		int pixelCount = logicalWidth * logicalHeight;
+		if (presentedPixels.capacity() != pixelCount) {
+			presentedPixels = createDirectIntBuffer(pixelCount);
 		}
 
-		if (volatileFrame == null || volatileFrame.getWidth() != width || volatileFrame.getHeight() != height) {
-			if (volatileFrame != null) {
-				volatileFrame.flush();
-			}
-			volatileFrame = gc.createCompatibleVolatileImage(width, height);
-		}
+		IntBuffer source = frameBitmap.pixels.convertDirectIntBuffer();
+		source.clear();
+		source.limit(pixelCount);
 
-		if (volatileFrame == null) {
-			return false;
-		}
+		presentedPixels.clear();
+		presentedPixels.put(source);
+		presentedPixels.flip();
 
-		int validationResult = volatileFrame.validate(gc);
-		if (validationResult == VolatileImage.IMAGE_INCOMPATIBLE) {
-			volatileFrame.flush();
-			volatileFrame = gc.createCompatibleVolatileImage(width, height);
-		}
-
-		return volatileFrame != null;
-	}
-
-	private void blitBufferedToVolatile(int targetWidth, int targetHeight) {
-		if (!ensureVolatileFrame(targetWidth, targetHeight)) {
-			return;
-		}
-
-		do {
-			Graphics2D g = volatileFrame.createGraphics();
-			g.setColor(Color.BLACK);
-			g.fillRect(0, 0, targetWidth, targetHeight);
-			g.drawImage(frameImage, 0, 0, targetWidth, targetHeight, null);
-			g.dispose();
-		} while (volatileFrame.contentsLost());
+		presentedWidth = logicalWidth;
+		presentedHeight = logicalHeight;
 	}
 
 	@Override
-	protected void paintComponent(Graphics g) {
-		super.paintComponent(g);
+	protected void paintGL() {
+		int canvasWidth = Math.max(1, getWidth());
+		int canvasHeight = Math.max(1, getHeight());
+		
+		initGLIfNeeded(canvasWidth, canvasHeight);
 
-		int panelWidth = Math.max(1, getWidth());
-		int panelHeight = Math.max(1, getHeight());
+		GL11.glViewport(0, 0, canvasWidth, canvasHeight);
+		GL11.glMatrixMode(GL11.GL_PROJECTION);
+		GL11.glLoadIdentity();
+		GL11.glOrtho(0.0D, canvasWidth, canvasHeight, 0.0D, -1.0D, 1.0D);
+		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+		GL11.glLoadIdentity();
+
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 
 		synchronized (frameLock) {
-			g.setColor(Color.BLACK);
-			g.fillRect(0, 0, panelWidth, panelHeight);
-
-			int targetWidth = Math.max(1, logicalWidth * Math.max(1, renderScale));
-			int targetHeight = Math.max(1, logicalHeight * Math.max(1, renderScale));
-
-			if (volatileFrame != null) {
-				if (volatileFrame.contentsLost() || volatileFrame.getWidth() != targetWidth
-						|| volatileFrame.getHeight() != targetHeight) {
-					blitBufferedToVolatile(targetWidth, targetHeight);
-				}
-			}
-
-			if (volatileFrame != null) {
-				if (panelWidth == volatileFrame.getWidth() && panelHeight == volatileFrame.getHeight()) {
-					g.drawImage(volatileFrame, 0, 0, null);
-				} else {
-					g.drawImage(volatileFrame, 0, 0, panelWidth, panelHeight, null);
-				}
-			} else {
-				g.drawImage(frameImage, 0, 0, panelWidth, panelHeight, null);
-			}
+			ensureTextureCapacity(presentedWidth, presentedHeight);
+			uploadPresentedFrame();
+			drawPresentedFrame(canvasWidth, canvasHeight);
 		}
+
+		try {
+			swapBuffers();
+		} catch (LWJGLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void initGLIfNeeded(int w, int h) {
+		if (glInitialized) {
+			return;
+		}
+
+		GL11.glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_LIGHTING);
+		GL11.glEnable(GL11.GL_TEXTURE_2D);
+
+		textureId = GL11.glGenTextures();
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+		
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, w, h, 0,
+				GL12.GL_BGRA, GL12.GL_UNSIGNED_INT_8_8_8_8_REV, (java.nio.ByteBuffer) null);
+
+		glInitialized = true;
+	}
+
+	private void ensureTextureCapacity(int width, int height) {
+		int requiredWidth = nextPowerOfTwo(Math.max(1, width));
+		int requiredHeight = nextPowerOfTwo(Math.max(1, height));
+
+		if (textureWidth == requiredWidth && textureHeight == requiredHeight) {
+			return;
+		}
+
+		textureWidth = requiredWidth;
+		textureHeight = requiredHeight;
+
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA8, textureWidth, textureHeight, 0, GL12.GL_BGRA,
+				GL11.GL_UNSIGNED_BYTE, (ByteBuffer) null);
+	}
+
+	private void uploadPresentedFrame() {
+		presentedPixels.rewind();
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
+		GL11.glTexSubImage2D(GL11.GL_TEXTURE_2D, 0, 0, 0, presentedWidth, presentedHeight, GL12.GL_BGRA,
+				GL11.GL_UNSIGNED_BYTE, presentedPixels);
+	}
+
+	private void drawPresentedFrame(int canvasWidth, int canvasHeight) {
+		float textureU = (float) presentedWidth / (float) textureWidth;
+		float textureV = (float) presentedHeight / (float) textureHeight;
+
+		int targetWidth = Math.max(1, presentedWidth * Math.max(1, renderScale));
+		int targetHeight = Math.max(1, presentedHeight * Math.max(1, renderScale));
+
+		if (targetWidth != canvasWidth || targetHeight != canvasHeight) {
+			targetWidth = canvasWidth;
+			targetHeight = canvasHeight;
+		}
+
+		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+		GL11.glBegin(GL11.GL_QUADS);
+		GL11.glTexCoord2f(0.0F, 0.0F);
+		GL11.glVertex2i(0, 0);
+		GL11.glTexCoord2f(textureU, 0.0F);
+		GL11.glVertex2i(targetWidth, 0);
+		GL11.glTexCoord2f(textureU, textureV);
+		GL11.glVertex2i(targetWidth, targetHeight);
+		GL11.glTexCoord2f(0.0F, textureV);
+		GL11.glVertex2i(0, targetHeight);
+		GL11.glEnd();
+	}
+
+	private int nextPowerOfTwo(int value) {
+		int result = 1;
+		while (result < value) {
+			result <<= 1;
+		}
+		return result;
+	}
+
+	private static IntBuffer createDirectIntBuffer(int capacity) {
+		return ByteBuffer.allocateDirect(Math.max(1, capacity) * 4).order(ByteOrder.nativeOrder()).asIntBuffer();
 	}
 
 	@Override
 	public void removeNotify() {
-		synchronized (frameLock) {
-			if (volatileFrame != null) {
-				volatileFrame.flush();
-				volatileFrame = null;
+		try {
+			if (glInitialized) {
+				makeCurrent();
+				GL11.glDeleteTextures(textureId);
+				glInitialized = false;
+				textureId = 0;
 			}
+		} catch (LWJGLException e) {
+			e.printStackTrace();
 		}
+
 		super.removeNotify();
 	}
+	
+	@Override
+    public java.awt.Dimension getMinimumSize() {
+        return new java.awt.Dimension(0, 0);
+    }
 }

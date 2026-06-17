@@ -1,11 +1,18 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.gui.UDim2;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.FrameBitmapPool;
+import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -13,8 +20,8 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public class Button extends GuiComponent {
 	private static final long serialVersionUID = 1L;
-	public String text = "";
-	public int tColor = 0xff000000, bColor = 0xffffffff;
+	private String text = "";
+	private int tColor = 0xff000000, bColor = 0xffffffff;
 	
 	private int textOffset = 0; // Yazı kaydırma için offset
     private boolean movingRight = true; // Yazının hareket yönü
@@ -22,13 +29,15 @@ public class Button extends GuiComponent {
     private double textOffsetLong = 0;
     
     private Consumer<Button> runnable;
-    private Bitmap icon;
+    private transient Bitmap icon;
+    private transient boolean iconLoaded = false;
+    private String iconID = "empty";
     
     protected boolean isTouching = false;
     private boolean isIconLeft = true;
 	
-	public Button(String text, int x, int y, int width, int height) {
-		super(x, y, width, height);
+	public Button(String text, UDim2 position, UDim2 size) {
+		super("Button", position, size);
 		this.text = text;	
 	}
 	
@@ -42,12 +51,17 @@ public class Button extends GuiComponent {
 		return this;
 	}
 	
-	public Button setButtonIcon(Bitmap icon) {
-		this.icon = icon;
+	public Button setButtonIcon(String icon) {
+		this.iconID = (icon == null || icon.isBlank() ? "empty" : icon);
+		this.iconLoaded = false;
 		return this;
 	}
 	
-	public Bitmap getButtonIcon() {
+	public String getButtonIcon() {
+		return this.iconID;
+	}
+	
+	public Bitmap GetButtonIconBitmap() {
 		return this.icon;
 	}
 	
@@ -60,7 +74,15 @@ public class Button extends GuiComponent {
 		return this.isIconLeft;
 	}
 	
-	protected Bitmap createButtonTexture() {
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	protected Bitmap createButtonTexture(int width, int height) {		
 		Bitmap buttonBitmap = FrameBitmapPool.newBitmap(width, height);
 		buttonBitmap.fill(0, 0, width, height, 0xffd3d3d3);
 		
@@ -84,8 +106,12 @@ public class Button extends GuiComponent {
 	}
 	
 	public Bitmap render() {
+		var bounds = this.getLocalAbsoluteBounds();
+		var width = bounds.getWidth();
+		var height = bounds.getHeight();
+		
 		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
-		bitmap.blendDraw(createButtonTexture(), 0, 0, bColor);
+		bitmap.blendDraw(createButtonTexture(width, height), 0, 0, bColor);
 		
 		// Yazı genişliğini kontrol et
         int textWidth = Text.stringBitmapWidth(text, DikenEngine.getEngine().defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);
@@ -134,14 +160,27 @@ public class Button extends GuiComponent {
         	bitmap.box(0, 0, width - 1, height - 1, 0xffFFDF00);
         }
         
-        if (!active) {
+        if (!isActive()) {
 			bitmap.blendFill(0, 0, width - 1, height - 1, 0x7f000000);
 		}
         
         return bitmap;
 	}
+	
+	@Override
+	public void update(World world, DikenEngine engine) {
+		super.update(world, engine);
+		
+		if (!iconLoaded) {
+			this.icon = world.getResource(iconID, EnumResource.IMAGE);
+			this.iconLoaded = true;
+		}
+	}
 
 	public void tick(DikenEngine engine) {
+		var bounds = this.getAbsoluteBounds();
+		var width = bounds.getWidth();
+		
 		int textWidth = Text.stringBitmapWidth(text, engine.defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);;
 		if (textWidth > width) {
 			// Yazı genişlikten büyükse kaydırma işlemi yap
@@ -162,14 +201,14 @@ public class Button extends GuiComponent {
 
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {
 		if (isTouch || isTouching) {
-			if (button == 0 && runnable != null && this.active) {
+			if (button == 0 && runnable != null && this.isActive()) {
 				runnable.accept(this);
 			}
 		}
 	}
 	
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
-		if (active) this.isTouching = isTouch;
+		if (isActive()) this.isTouching = isTouch;
 		else this.isTouching = false;
 	}
 
@@ -185,5 +224,27 @@ public class Button extends GuiComponent {
 	
 	public boolean isTouchingMouse() {
 		return this.isTouching;
+	}
+	
+	@Override
+	protected void reloadNode() {
+		iconLoaded = false;
+	}
+	
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("button", "Button", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 2));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<String>("Text", this.text, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText))
+				.addSetting(new Setting<Integer>("Text Color", this.tColor, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setTextColor))
+				.addSetting(new Setting<Integer>("Button Color", this.bColor, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setButtonColor))
+				.addSetting(new Setting<String>("Button Icon", this.iconID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setButtonIcon))
+				.addSetting(new Setting<Boolean>("Is Icon Left", this.isIconLeft, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setButtonIconLeft));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
 	}
 }

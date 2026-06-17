@@ -2,8 +2,8 @@ package me.ramazanenescik04.diken.game.nodes;
 
 import java.util.List;
 
+import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -28,7 +28,10 @@ public class Decal extends ImageNode {
 			return null;
 		}
 		
-		Bitmap parentBitmap = this.parent.render();
+		Bitmap parentBitmap = null;
+		if (this.parent instanceof Instance i) {
+			parentBitmap = i.render();
+		}
 		
 		if (parentBitmap == null || this.texture == null) {
 			return null;
@@ -41,8 +44,8 @@ public class Decal extends ImageNode {
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("decal", "Decal", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 1));
 		
-		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
-				.createSettingCategory(key));
+		var settingCategory = SettingCategory
+				.createSettingCategory(key);
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

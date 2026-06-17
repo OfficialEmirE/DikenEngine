@@ -24,14 +24,14 @@ public class IOResource {
 			try {
 				img = ImageIO.read(stream);
 			} catch (Exception e) {
-				e.printStackTrace();
+				System.err.println("Error loading image resource: " + e.getMessage());
 			}
 			return Bitmap.toBitmap(img);
 		} else if (_enum == EnumResource.SOUND) {
 			try {
 				return SoundResource.fromWav(stream, java.util.UUID.randomUUID().toString());
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Error loading sound resource: " + e.getMessage());
 			}
 		} else if (_enum == EnumResource.CURSOR) {
 			Bitmap cursorBitmap = (Bitmap) loadResource(stream, EnumResource.IMAGE);
@@ -43,7 +43,8 @@ public class IOResource {
 			try {
 				return Animation.load(stream);
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Error loading animation resource: " + e.getMessage());
+				return null;
 			}
 		}
 		return null;

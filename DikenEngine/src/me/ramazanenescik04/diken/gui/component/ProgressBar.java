@@ -1,8 +1,16 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.util.List;
+
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.FrameBitmapPool;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Represents the `ProgressBar` type within the DikenEngine `gui.compoment` package.
@@ -10,16 +18,19 @@ import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 public class ProgressBar extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 
-	public int value = 100, maxValue = 100;
-	public int color = 0xff00ff00, color2 = 0xff00ff00, bgColor = 0xff000000;
-	public String text = "";
+	private int value = 100, maxValue = 100;
+	private int color = 0xff00ff00, color2 = 0xff00ff00, bgColor = 0xff000000;
+	private String text = "";
 	
-	public ProgressBar(int x, int y, int width, int height) {
-		super(x, y, width, height);
+	public ProgressBar(UDim2 position, UDim2 size) {
+		super("ProgressBar", position, size);
 	}
 
 	@Override
 	public Bitmap render() {
+		var width = this.getAbsoluteBounds().getWidth();
+		var height = this.getAbsoluteBounds().getHeight();
+		
 		Bitmap bitmap = super.render();
 		bitmap.clear(bgColor);
 		bitmap.box(0, 0, bitmap.w - 1, bitmap.h - 1, 0xffffffff);
@@ -40,6 +51,73 @@ public class ProgressBar extends GuiComponent {
         bitmap.drawText(text.isEmpty() ? value + "%" : text, 4, height / 2 - Text.stringBitmapAverageHeight(text, DikenEngine.getEngine().defaultFont) / 2, false);
 		
 		return bitmap;
+	}
+	
+	
+	public int getValue() {
+		return value;
+	}
+
+	public void setValue(int value) {
+		this.value = value;
+	}
+
+	public int getMaxValue() {
+		return maxValue;
+	}
+
+	public void setMaxValue(int maxValue) {
+		this.maxValue = maxValue;
+	}
+
+	public int getColor() {
+		return color;
+	}
+
+	public void setColor(int color) {
+		this.color = color;
+	}
+
+	public int getColor2() {
+		return color2;
+	}
+
+	public void setColor2(int color2) {
+		this.color2 = color2;
+	}
+
+	public int getBackgroundColor() {
+		return bgColor;
+	}
+
+	public void setBackgroundColor(int bgColor) {
+		this.bgColor = bgColor;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
+	}
+
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("progressBar", "ProgressBar", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(11, 2));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<Integer>("Value", this.value, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setValue))
+				.addSetting(new Setting<Integer>("Max Value", this.maxValue, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setMaxValue))
+				.addSetting(new Setting<Integer>("First Color", this.color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor))
+				.addSetting(new Setting<Integer>("Second Color", this.color2, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor2))
+				.addSetting(new Setting<Integer>("Background Color", this.bgColor, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setBackgroundColor))
+				.addSetting(new Setting<String>("Text", this.text, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
 	}
 
 }

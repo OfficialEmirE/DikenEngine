@@ -30,5 +30,6 @@ dmainmenu.soundtest=Sound Test
 dmainmenu.setting=Settings
 dmainmenu.exit=Exit Game
 dmainmenu.about=About
+dmainmenu.reportbug=Report Bug
 
 about.author=Authors

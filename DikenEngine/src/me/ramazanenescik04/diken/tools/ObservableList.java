@@ -12,7 +12,7 @@ public class ObservableList<E> extends ArrayList<E> {
     private static final long serialVersionUID = 8387720031395531503L;
     
     // ListAdapter'ın bir List interface'i olduğunu varsayarak:
-    private ListAdapter<E> onActionCallback;
+    private transient ListAdapter<E> onActionCallback;
 
     public void setListAdapter(ListAdapter<E> callback) {
         this.onActionCallback = callback;

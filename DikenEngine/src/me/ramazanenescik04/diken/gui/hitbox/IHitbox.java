@@ -33,6 +33,12 @@ public interface IHitbox {
 	void setBounds(int x, int y, int width, int height);
 
 	void setSize(int width, int height);
+	
+	float getRotation();
+	
+	IHitbox setRotation(float rotation);
+	
+	IHitbox rotate(float deltaDegress);
 
 	IHitbox getBounds();
 }

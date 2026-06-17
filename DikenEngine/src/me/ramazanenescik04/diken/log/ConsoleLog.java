@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -34,11 +35,19 @@ public class ConsoleLog {
 	}
 	
 	public static void sendLog(LogType type, String log) {
-		logs.add(new LogText(type, log));
+		var logText = new LogText(type, log);
+		
+		logs.add(logText);
+		
+		if (type == LogType.C_ERR || type == LogType.S_ERR) {
+			System.err.println(logText.toString());
+		} else {
+			System.out.println(logText.toString());
+		}
 	}
 	
 	public static void sendLog(String log) {
-		sendLog(LogType.CLIENT_DEFAULT, log);
+		sendLog(LogType.C_LOG, log);
 	}
 	
 	public static List<LogText> getLogs() {
@@ -91,19 +100,22 @@ public class ConsoleLog {
 	
 	public record LogText(LogType type, String log) {
 		public String toString() {
-			return "[" + type.name() + "] " + log;
+			var date = Calendar.getInstance();
+			
+			return "[%d:%d:%d] [%s] %s".formatted(date.get(Calendar.HOUR_OF_DAY), date.get(Calendar.MINUTE),
+					date.get(Calendar.SECOND), type.name(), log);
 		}
 	}
 	
 	public static enum LogType {
 		// Server LogType
-		SERVER_ERROR,
-		SERVER_WARNING,
-		SERVER_DEFAULT,
+		S_ERR,
+		S_WARN,
+		S_LOG,
 
 		// Client LogType
-		CLIENT_ERROR,
-		CLIENT_WARNING,
-		CLIENT_DEFAULT
+		C_ERR,
+		C_WARN,
+		C_LOG
 	}
 }

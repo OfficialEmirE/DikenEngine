@@ -9,7 +9,7 @@ import java.io.FileOutputStream;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
+import me.ramazanenescik04.diken.language.Language;
 
 /**
  * Represents the `Config` type within the DikenEngine `game` package.
@@ -26,7 +26,9 @@ public class Config {
 		defaultConfig.put("useOldScaleCode", new Setting<Boolean>("Eski Boyutlandırma Sistemi Kullan", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Sabit İc Cozünürlük", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
-		defaultConfig.put("lang", new Setting<String>("Dil", "tr-TR", String.class, EnumSettingType.TEXT_FIELD));
+		defaultConfig.put("lang", new Setting<Integer>("Dil", 0, Language.getLanguageListIdBoxed(), Integer.class, EnumSettingType.LIST_SELECT).addChangeListener((value -> {
+			DikenEngine.getEngine().defaultLanguage = Language.getLanguageById(value);
+		})));
 		
 		defaultConfig.put("activeWindowColor", new Setting<Integer>("Aktif Pencere Rengi", 0xff000080, Integer.class, EnumSettingType.COLOR_PICKER));
 		defaultConfig.put("windowColor", new Setting<Integer>("Aktif Olmayan Pencere Rengi", Color.GRAY.getRGB(), Integer.class, EnumSettingType.COLOR_PICKER));
@@ -102,6 +104,10 @@ public class Config {
 	    @SuppressWarnings("unchecked")
 	    Setting<T> s = (Setting<T>) setting;
 	    return s;
+	}
+	
+	public <T> T getSettingValue(String key, Class<T> type) {
+	    return getSetting(key, type).getValue();
 	}
 	
 	/**

@@ -3,12 +3,11 @@ package me.ramazanenescik04.diken.game.nodes;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
-import me.ramazanenescik04.diken.game.world.World;
+import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
@@ -17,7 +16,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 /**
  * Represents the `ImageNode` type within the DikenEngine `game.nodes` package.
  */
-public abstract class ImageNode extends Node {
+public abstract class ImageNode extends Instance {
 	private static final long serialVersionUID = -5489915245652040387L;
 	
 	protected transient Bitmap texture = new Bitmap(16, 16);
@@ -69,9 +68,9 @@ public abstract class ImageNode extends Node {
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("imageNode", "ImageNode", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 1));
-		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture)));
+				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

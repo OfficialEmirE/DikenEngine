@@ -1,9 +1,16 @@
 package me.ramazanenescik04.diken.gui.component.color;
 
+import java.util.List;
 import java.util.function.Consumer;
 
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 
 /**
@@ -17,8 +24,8 @@ public class ColorPickBar extends GuiComponent {
     private Consumer<Integer> consumer;
     private Bitmap cachedHueMap; // Performans için renk haritasını önbelleğe alıyoruz
 
-    public ColorPickBar(int x, int y, int width, int height) {
-        super(x, y, width, height);
+    public ColorPickBar(UDim2 position, UDim2 size) {
+        super(position, size);
     }
     
     public ColorPickBar setConsumer(Consumer<Integer> consumer) {
@@ -28,7 +35,7 @@ public class ColorPickBar extends GuiComponent {
     
     public ColorPickBar setSelectedColor(int color) {
         this.selectedColor = color;
-        this.selectorX = (int)(PixelToColor.rgbToHsv(color)[0] * 255) * (this.width - 3) / 255;
+        this.selectorX = (int)(PixelToColor.rgbToHsv(color)[0] * 255) * (this.getAbsoluteBounds().getWidth() - 3) / 255;
         return this;
     }
     
@@ -40,9 +47,10 @@ public class ColorPickBar extends GuiComponent {
      * Renk haritasını sadece boyut değiştiğinde veya ilk açılışta oluşturur.
      */
     private void updateCache() {
-        if (cachedHueMap == null || cachedHueMap.w != width - 2 || cachedHueMap.h != height - 2) {
+    	var bounds = this.getAbsoluteBounds();
+        if (cachedHueMap == null || cachedHueMap.w != bounds.getWidth() - 2 || cachedHueMap.h != bounds.getHeight() - 2) {
             // Sadece gerekli alanı kaplayacak şekilde oluştur
-            cachedHueMap = PixelToColor.createHColorRect(width - 2, height - 2);
+            cachedHueMap = PixelToColor.createHColorRect(bounds.getWidth() - 2, bounds.getHeight() - 2);
         }
     }
 
@@ -75,9 +83,9 @@ public class ColorPickBar extends GuiComponent {
 
     @Override
     public void mouseClicked(int x, int y, int button, boolean isTouch) {
-        // 'active' kontrolü bileşenin tıklanabilir olup olmadığını belirler
+        var bounds = this.getAbsoluteBounds();
         if (this.active && button == 0) {
-        	if (x <= 0 || y <= 0 || x >= width - 1 || y >= height - 1 || cachedHueMap == null) return;
+        	if (x <= 0 || y <= 0 || x >= bounds.getWidth() - 1 || y >= bounds.getHeight() - 1 || cachedHueMap == null) return;
             // Pikselleri render edilmiş bitmap'ten çekmek yerine direkt cache'den çekmek daha güvenlidir
             if (cachedHueMap != null) {
                 // Koordinatları 1 piksel içeri kaydırıyoruz (kenarlıktan dolayı)
@@ -93,4 +101,17 @@ public class ColorPickBar extends GuiComponent {
             }
         }
     }
+    
+    @Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("colorPickBar", "ColorPickBar", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(14, 3));
+		var settingCategory = 
+				SettingCategory.createSettingCategory(key)
+				.addSetting(new Setting<Integer>("Selector X", this.selectorX, 0, 255, Integer.class, EnumSettingType.SLIDER).addChangeListener(e -> this.selectorX = e))
+				.addSetting(new Setting<Integer>("Selected Color", this.selectedColor, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setSelectedColor));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
+	}
 }

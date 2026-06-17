@@ -9,15 +9,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.ref.Cleaner.Cleanable;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.IntBuffer;
 import java.util.*;
 
 import javax.imageio.ImageIO;
 
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.component.Text;
+import me.ramazanenescik04.diken.renderer.ArrayBuffer;
 
 /**
  * Represents the `Bitmap` type within the DikenEngine `resource` package.
@@ -25,11 +23,10 @@ import me.ramazanenescik04.diken.gui.component.Text;
 public class Bitmap implements IResource, Cleanable {
 	private static final long serialVersionUID = 1L;
 	
-	private static final IntBuffer empty_pixels =
-		    ByteBuffer.allocateDirect(4).order(ByteOrder.nativeOrder()).asIntBuffer();
+	private static final ArrayBuffer empty_pixels = new ArrayBuffer(1);
 	public static final Bitmap empty = new Bitmap(1, 1);
 	
-	public transient IntBuffer pixels = empty_pixels;
+	public transient ArrayBuffer pixels = empty_pixels;
 	public int w;
 	public int h;
 	public int xOffs;
@@ -48,26 +45,17 @@ public class Bitmap implements IResource, Cleanable {
 		
 		this.w = w;
 	    this.h = h;
-		
-		ByteBuffer buffer = ByteBuffer.allocateDirect(w * h * 4)
-		        .order(ByteOrder.nativeOrder());
-		this.pixels = buffer.asIntBuffer();
+		this.pixels = new ArrayBuffer(w * h);
 	}
 	
-	public Bitmap(int w, int h, IntBuffer copy) {
+	public Bitmap(int w, int h, ArrayBuffer copy) {
 		w = (w <= 0) ? 1 : w;
 		h = (h <= 0) ? 1 : h;
 		
 		this.w = w;
-	    this.h = h;
-	    
-	    this.pixels = ByteBuffer
-	        .allocateDirect(copy.capacity() * 4)
-	        .order(ByteOrder.nativeOrder())
-	        .asIntBuffer();
-	    copy.rewind();
+	    this.h = h; 
+	    this.pixels = new ArrayBuffer(copy.size());
 	    this.pixels.put(copy);
-	    this.pixels.rewind();
 	}
 	
 	public Bitmap(int w, int h, int[] copy) {
@@ -76,13 +64,7 @@ public class Bitmap implements IResource, Cleanable {
 		
 		this.w = w;
 	    this.h = h;
-	    
-	    this.pixels = ByteBuffer
-	        .allocateDirect(copy.length * 4)
-	        .order(ByteOrder.nativeOrder())
-	        .asIntBuffer();
-	    this.pixels.put(copy);
-	    this.pixels.rewind();
+	    this.pixels = new ArrayBuffer(copy);
 	}
 
 	public static Bitmap wrap(int w, int h, int[] pixels) {
@@ -96,23 +78,21 @@ public class Bitmap implements IResource, Cleanable {
 		Bitmap bitmap = new Bitmap();
 		bitmap.w = w;
 		bitmap.h = h;
-		bitmap.pixels = IntBuffer.wrap(pixels);
+		bitmap.pixels = ArrayBuffer.wrap(pixels);
 		return bitmap;
 	}
 	
-	
-	public void rewind() {
-		this.pixels.rewind();
-	}
+	@Deprecated
+	public void rewind() {}
 
 	public BufferedImage toImage() {
-		BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-		int[] pixels = new int[w * h];
-		rewind();
-		this.pixels.get(pixels);
-		img.setRGB(0, 0, w, h, pixels, 0, w);
-		rewind();
-		return img;
+		var localArray = this.pixels.array();
+
+	    DataBufferInt buffer = new DataBufferInt(localArray, localArray.length);
+	    SampleModel sm = new SinglePixelPackedSampleModel(DataBuffer.TYPE_INT, w, h, new int[]{0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000});
+	    WritableRaster raster = Raster.createWritableRaster(sm, buffer, null);
+	    
+	    return new BufferedImage(new DirectColorModel(32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000), raster, false, null);
 	}
 	
 	public Bitmap resize(int newWidth, int newHeight) {
@@ -134,64 +114,80 @@ public class Bitmap implements IResource, Cleanable {
 		return resize(w * scale, h * scale);
 	}
 	
-	public Bitmap rotate(double angle) {
-	    double radians = Math.toRadians(angle);
-	    double cosA = Math.cos(radians);
-	    double sinA = Math.sin(radians);
+	public Bitmap rotate(float degress) {
+		return rotate(degress, 0x00000000);
+	}
+	
+	public Bitmap rotate(float degrees, int fillColor) {
+	    if (degrees % 360 == 0) return clone();
 
-	    // Yeni bitmap boyutlarını hesapla
-	    int newWidth = (int) Math.abs(w * cosA) + (int) Math.abs(h * sinA);
-	    int newHeight = (int) Math.abs(w * sinA) + (int) Math.abs(h * cosA);
-	    Bitmap rotated = new Bitmap(newWidth, newHeight);
+	    double rad = Math.toRadians(degrees);
+	    double cos = Math.cos(rad);
+	    double sin = Math.sin(rad);
 
-	    // Merkez koordinatları
-	    int x0 = w / 2;
-	    int y0 = h / 2;
-	    int newX0 = newWidth / 2;
-	    int newY0 = newHeight / 2;
+	    // --- 1. Yeni canvas boyutunu hesapla ---
+	    // Orijinal köşelerin döndürülmüş hallerinin kapsadığı alanı bul
+	    double hw = w / 2.0, hh = h / 2.0;
+	    double[][] corners = {
+	        rotatePoint(-hw, -hh, cos, sin),
+	        rotatePoint( hw, -hh, cos, sin),
+	        rotatePoint( hw,  hh, cos, sin),
+	        rotatePoint(-hw,  hh, cos, sin)
+	    };
 
-	    for (int y = 0; y < newHeight; y++) {
-	        for (int x = 0; x < newWidth; x++) {
-	            // Yeni bitmap'teki (x, y) pikseli, orijinal bitmap'teki koordinatları geri hesapla
-	            int dx = x - newX0;
-	            int dy = y - newY0;
+	    double minX = Double.MAX_VALUE, maxX = -Double.MAX_VALUE;
+	    double minY = Double.MAX_VALUE, maxY = -Double.MAX_VALUE;
+	    for (double[] c : corners) {
+	        if (c[0] < minX) minX = c[0];
+	        if (c[0] > maxX) maxX = c[0];
+	        if (c[1] < minY) minY = c[1];
+	        if (c[1] > maxY) maxY = c[1];
+	    }
 
-	            double oldX = dx * cosA + dy * sinA + x0;
-	            double oldY = -dx * sinA + dy * cosA + y0;
+	    int newW = (int) Math.ceil(maxX - minX);
+	    int newH = (int) Math.ceil(maxY - minY);
 
-	            // Eğer orijinal bitmap sınırları içindeyse interpolasyonu uygula
-	            if (oldX >= 0 && oldX < w - 1 && oldY >= 0 && oldY < h - 1) {
-	                int xFloor = (int) Math.floor(oldX); // Sol piksel (tam sayı)
-	                int yFloor = (int) Math.floor(oldY); // Üst piksel (tam sayı)
-	                int xCeil = xFloor + 1;             // Sağ piksel
-	                int yCeil = yFloor + 1;             // Alt piksel
+	    // --- 2. Yeni resmi doldur ---
+	    int[] newPixels = new int[newW * newH];
 
-	                // Piksel renklerini al (sınır kontrolü yap)
-	                int topLeft = pixels.get(yFloor * w + xFloor);
-	                int topRight = pixels.get(yFloor * w + (xCeil < w ? xCeil : xFloor));
-	                int bottomLeft = pixels.get((yCeil < h ? yCeil : yFloor) * w + xFloor);
-	                int bottomRight = pixels.get((yCeil < h ? yCeil : yFloor) * w + (xCeil < w ? xCeil : xFloor));
+	    // Yeni canvas'ın merkezi
+	    double newCX = newW / 2.0;
+	    double newCY = newH / 2.0;
 
-	                // Kesirli kısımları al (ağırlıklar)
-	                double xWeight = oldX - xFloor;
-	                double yWeight = oldY - yFloor;
+	    // Ters dönüşüm için -θ kullan
+	    double cosR = Math.cos(-rad);
+	    double sinR = Math.sin(-rad);
 
-	                // Renk bileşenlerini interpolasyonla hesapla
-	                int interpolatedColor = bilinearInterpolation(topLeft, topRight, bottomLeft, bottomRight, xWeight, yWeight);
+	    for (int dy = 0; dy < newH; dy++) {
+	        for (int dx = 0; dx < newW; dx++) {
 
-	                // Rotated bitmap'e yeni renk ata
-	                rotated.pixels.put(y * newWidth + x, interpolatedColor);
+	            // Hedef pikseli merkeze göre konumlandır
+	            double ox = dx - newCX;
+	            double oy = dy - newCY;
+
+	            // Ters döndür → kaynaktaki konuma ulaş
+	            double srcXd = cosR * ox - sinR * oy + hw;
+	            double srcYd = sinR * ox + cosR * oy + hh;
+
+	            int srcX = (int) Math.round(srcXd);
+	            int srcY = (int) Math.round(srcYd);
+
+	            if (srcX >= 0 && srcX < w && srcY >= 0 && srcY < h) {
+	                newPixels[dx + dy * newW] = pixels.localArray[srcX + srcY * w];
 	            } else {
-	                // Eğer orijinal bitmap'in dışına düşüyorsa siyah renk ata
-	                rotated.pixels.put(y * newWidth + x, 0);
+	                newPixels[dx + dy * newW] = fillColor; // kenar rengi
 	            }
 	        }
 	    }
-	    
-	    rewind();
-	    rotated.rewind();
 
-	    return rotated;
+	    Bitmap result = new Bitmap(newW, newH, newPixels);
+
+	    return result;
+	}
+
+	/** Noktayı orijin etrafında döndürür */
+	private static double[] rotatePoint(double x, double y, double cos, double sin) {
+	    return new double[]{ x * cos - y * sin, x * sin + y * cos };
 	}
 	
 	public void drawGradient(int color1, int color2) {
@@ -223,35 +219,6 @@ public class Bitmap implements IResource, Cleanable {
 	            this.pixels.put(x + y * w, finalColor);
 	        }
 	    }
-	}
-
-	// Bilinear interpolation metodu
-	private int bilinearInterpolation(int topLeft, int topRight, int bottomLeft, int bottomRight, double xWeight, double yWeight) {
-	    // Renk bileşenlerini parçala (ARGB formatında)
-	    int aTL = (topLeft >> 24) & 0xFF, rTL = (topLeft >> 16) & 0xFF, gTL = (topLeft >> 8) & 0xFF, bTL = topLeft & 0xFF;
-	    int aTR = (topRight >> 24) & 0xFF, rTR = (topRight >> 16) & 0xFF, gTR = (topRight >> 8) & 0xFF, bTR = topRight & 0xFF;
-	    int aBL = (bottomLeft >> 24) & 0xFF, rBL = (bottomLeft >> 16) & 0xFF, gBL = (bottomLeft >> 8) & 0xFF, bBL = bottomLeft & 0xFF;
-	    int aBR = (bottomRight >> 24) & 0xFF, rBR = (bottomRight >> 16) & 0xFF, gBR = (bottomRight >> 8) & 0xFF, bBR = bottomRight & 0xFF;
-
-	    // Üst ve alt interpolasyonu yap
-	    double aTop = aTL + xWeight * (aTR - aTL);
-	    double rTop = rTL + xWeight * (rTR - rTL);
-	    double gTop = gTL + xWeight * (gTR - gTL);
-	    double bTop = bTL + xWeight * (bTR - bTL);
-
-	    double aBottom = aBL + xWeight * (aBR - aBL);
-	    double rBottom = rBL + xWeight * (rBR - rBL);
-	    double gBottom = gBL + xWeight * (gBR - gBL);
-	    double bBottom = bBL + xWeight * (bBR - bBL);
-
-	    // Üst ve alt sonuçlarını birleştir
-	    int a = (int) (aTop + yWeight * (aBottom - aTop));
-	    int r = (int) (rTop + yWeight * (rBottom - rTop));
-	    int g = (int) (gTop + yWeight * (gBottom - gTop));
-	    int b = (int) (bTop + yWeight * (bBottom - bTop));
-
-	    // Son rengi birleştir
-	    return (a << 24) | (r << 16) | (g << 8) | b;
 	}
 
 	public void drawLine(int x1, int y1, int x2, int y2, int color, int width) {
@@ -590,10 +557,9 @@ public class Bitmap implements IResource, Cleanable {
 	}
 
 	public void clear(int color) {
-		for (int i = 0; i < pixels.capacity(); i++) {
+		for (int i = 0; i < pixels.size(); i++) {
 		    pixels.put(i, color);
 		}
-		pixels.rewind();
 	}
 
 	public void setPixel(int xp, int yp, int color) {
@@ -602,13 +568,12 @@ public class Bitmap implements IResource, Cleanable {
 		if (xp >= 0 && yp >= 0 && xp < w && yp < h) {
 			pixels.put(xp + yp * w, color);
 		}
-		pixels.rewind();
 	}
 
 	public void shade(Bitmap shadows) {
 		shadows.ensurePixels();
 		
-		for (int i = 0; i < pixels.capacity(); i++) {
+		for (int i = 0; i < pixels.size(); i++) {
 			if (shadows.pixels.get(i) > 0) {
 				int r = ((pixels.get(i) & 0xff0000) * 200) >> 8 & 0xff0000;
 				int g = ((pixels.get(i) & 0xff00) * 200) >> 8 & 0xff00;
@@ -735,17 +700,16 @@ public class Bitmap implements IResource, Cleanable {
 	}
 	
 	public Bitmap clone() {
-		IntBuffer copy = ByteBuffer
-		        .allocateDirect(pixels.capacity() * 4)
-		        .order(ByteOrder.nativeOrder())
-		        .asIntBuffer();
-
-		pixels.rewind(); // kaynağı başa sar
-		copy.put(pixels);
-		pixels.rewind(); // orijinalin pozisyonunu eski haline getir (isteğe bağlı)
-		copy.rewind();
-
-		return new Bitmap(w, h, copy);
+		var localArray = this.pixels.array();
+		var copyArray = new int[localArray.length];
+		System.arraycopy(localArray, 0, copyArray, 0, localArray.length); 
+		
+		var cloned = new Bitmap(w, h, copyArray);
+		cloned.xFlip = this.xFlip;
+		cloned.xOffs = this.xOffs;
+		cloned.yOffs = this.yOffs;
+		
+		return cloned;
 	}
 	
 	public Bitmap clone(int w, int h) {
@@ -760,7 +724,7 @@ public class Bitmap implements IResource, Cleanable {
 	}
 
 	public int getPixel(int srcX, int srcY) {
-		return pixels.rewind().get(srcX + srcY * w);
+		return pixels.get(srcX + srcY * w);
 	}
 
 	public static Bitmap createClearedBitmap(int w, int h, int color) {
@@ -824,16 +788,14 @@ public class Bitmap implements IResource, Cleanable {
 		   
 		int sw = img.getWidth();
 		int sh = img.getHeight();
-		Bitmap result = new Bitmap(sw, sh);
+
 		int[] pixels = new int[sw * sh];
 		img.getRGB(0, 0, sw, sh, pixels, 0, sw);
-		result.pixels.clear();
-		result.pixels.put(pixels);
-		result.rewind();
-		return result;
+
+		return new Bitmap(sw, sh, pixels);
 	}
 
-
+    @Deprecated
 	public Bitmap opposite(boolean upMode) {
 		Bitmap bitmap = new Bitmap(w, h);
     	for (int y = 0; y < h; y++) {
@@ -883,10 +845,8 @@ public class Bitmap implements IResource, Cleanable {
 	}
 
 	@Override
-	public void clean() {
-		this.pixels.clear();
-		this.rewind();
-	}
+	@Deprecated
+	public void clean() {}
 	
 	public Bitmap replaceColor(int targetColor, int replaceColor) {
 		Bitmap cloned = this.clone();

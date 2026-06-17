@@ -3,13 +3,13 @@ package me.ramazanenescik04.diken.game.nodes;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
+import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
-import me.ramazanenescik04.diken.game.world.World;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -20,7 +20,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 /**
  * Represents the `Tool` type within the DikenEngine `game.nodes` package.
  */
-public class Tool extends Node {
+public class Tool extends Instance {
 	private static final long serialVersionUID = -3315727912522278757L;
 	
 	private transient Bitmap icon = new Bitmap(16, 16);
@@ -102,9 +102,9 @@ public class Tool extends Node {
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("tool", "Tool", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(4, 1));
-		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Icon ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setIcon)));
+				.addSetting(new Setting<String>("Icon ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setIcon));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

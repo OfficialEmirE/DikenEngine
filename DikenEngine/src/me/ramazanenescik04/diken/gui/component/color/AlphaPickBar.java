@@ -1,9 +1,16 @@
 package me.ramazanenescik04.diken.gui.component.color;
 
+import java.util.List;
 import java.util.function.Consumer;
 
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.component.GuiComponent;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 
 /**
@@ -18,8 +25,8 @@ public class AlphaPickBar extends GuiComponent {
 
 	private int cursorX;
 
-    public AlphaPickBar(int x, int y, int width, int height) {
-        super(x, y, width, height);
+    public AlphaPickBar(UDim2 position, UDim2 size) {
+        super("AlphaPickBar", position, size);
     }
     
     public AlphaPickBar setConsumer(Consumer<Integer> consumer) {
@@ -29,7 +36,7 @@ public class AlphaPickBar extends GuiComponent {
     
     public AlphaPickBar setSelectedAlpha(int alpha) {
         this.selectedAlpha = Math.max(0, Math.min(255, alpha));
-        this.cursorX = (selectedAlpha * (width - 3)) / 255;
+        this.cursorX = (selectedAlpha * (this.getAbsoluteBounds().getWidth() - 3)) / 255;
         return this;
     }
 
@@ -68,11 +75,24 @@ public class AlphaPickBar extends GuiComponent {
     public void mouseClicked(int x, int y, int button, boolean isTouch) {
         if (isTouch && this.active && button == 0) {
             // Tıklanan yere göre 0-255 arası alpha hesapla
-        	cursorX = Math.max(0, Math.min(x - 1, this.width - 3));
-            this.selectedAlpha = ((x - 1) * 255) / (this.width - 2);
+        	cursorX = Math.max(0, Math.min(x - 1, this.getAbsoluteBounds().getWidth() - 3));
+            this.selectedAlpha = ((x - 1) * 255) / (this.getAbsoluteBounds().getHeight() - 2);
             this.selectedAlpha = Math.max(0, Math.min(255, this.selectedAlpha));
             
             if (this.consumer != null) this.consumer.accept(this.selectedAlpha);
         }
     }
+    
+    @Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("alphaPickBar", "AlphaPickBar", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(15, 3));
+		var settingCategory = 
+				SettingCategory.createSettingCategory(key)
+				.addSetting(new Setting<Integer>("Selected Alpha", this.selectedAlpha, 0, 255, Integer.class, EnumSettingType.SLIDER).addChangeListener(this::setSelectedAlpha))
+				.addSetting(new Setting<Integer>("Base Color", this.baseColor, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setBaseColor));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
+	}
 }

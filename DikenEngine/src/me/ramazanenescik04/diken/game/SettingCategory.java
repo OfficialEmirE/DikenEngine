@@ -1,7 +1,6 @@
 package me.ramazanenescik04.diken.game;
 
 import java.util.List;
-import java.util.function.Supplier;
 
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -79,16 +78,6 @@ public class SettingCategory {
 		@Override
 		public int hashCode() {
 			return java.util.Objects.hash(id, image, category);
-		}
-	}
-	
-	public static class SettingCategoryHelper {
-		//private static final Map<SettingCategory.SettingKey, SettingCategory> settingsCache = new HashMap<>();
-
-		public static SettingCategory getOrCreateCategory(SettingCategory.SettingKey key,
-		                                             Supplier<SettingCategory> factory) {
-		    //return settingsCache.computeIfAbsent(key, _ -> factory.get());
-			return factory.get();
 		}
 	}
 }

@@ -1,11 +1,20 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.event.KeyEvent;
+import java.util.List;
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.UniFont;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * TextField class for creating a text input field in the GUI.
@@ -17,19 +26,20 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 public class TextField extends GuiComponent {
 	
 	public static final long serialVersionUID = 1L;	
-	public String text = "";
+	private String text = "";
 	
 	private int counter;
 	private boolean isFocused;
-	public boolean isNumberField = false;
+	private boolean isPressingControl;
+	private boolean isNumberField = false;
 	private Consumer<String> textChanced;
 
-	public TextField(int x, int y, int width, int height) {
-		super(x, y, width, height);
+	public TextField(UDim2 position, UDim2 size) {
+		this("", position, size);
 	}
 	
-	public TextField(String text, int x, int y, int width, int height) {
-		super(x, y, width, height);
+	public TextField(String text, UDim2 position, UDim2 size) {
+		super("TextField", position, size);
 		this.text = text;
 	}
 	
@@ -39,6 +49,9 @@ public class TextField extends GuiComponent {
 	}
 
 	public Bitmap render() {
+		var width = this.getWidth();
+		var height = this.getHeight();
+		
 		Bitmap bitmap = super.render();
 		bitmap.fill(0, 0, width, height, 0xff484848);
 		bitmap.box(0, 0, width - 1, height - 1, isFocused() ? 0xffffff00 : 0xffffffff);
@@ -76,12 +89,32 @@ public class TextField extends GuiComponent {
 
 	public void tick(DikenEngine engine) {
 		counter++;
+		isPressingControl = engine.input.isKeyDown(KeyEvent.VK_CONTROL);
 	}
 
 	public void keyPressed(char var1, int var2) {
 		UniFont defaultFont = DikenEngine.getEngine().defaultFont;
 		if (isFocused) {
-			if (var2 == KeyEvent.VK_BACK_SPACE) {
+			if (isPressingControl && var2 == KeyEvent.VK_V) {
+				String clipboardText = "";
+				try {
+					clipboardText = Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor).toString();
+				} catch (Exception e) {
+					DikenEngine.errorLog("Paste Clipboard Failed: ", e);
+				}
+				if (clipboardText != null) {
+					text += clipboardText;
+					if (textChanced != null) {
+						textChanced.accept(text);
+					}
+				}
+			} else if (isPressingControl && var2 == KeyEvent.VK_C) {
+				try {
+					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new java.awt.datatransfer.StringSelection(text), null);
+				} catch (Exception e) {
+					DikenEngine.errorLog("Copy Clipboard Failed: ", e);
+				}
+		    } else if (var2 == KeyEvent.VK_BACK_SPACE) {
 				if (text.length() > 0) {
 					text = text.substring(0, text.length() - 1);
 				}
@@ -125,5 +158,40 @@ public class TextField extends GuiComponent {
 	public TextField setNumberic() {
 		this.isNumberField = true;
 		return this;
+	}
+	
+	private void setNumberic(boolean b) {
+		this.isNumberField = b;
+	}
+
+	public boolean isNumberField() {
+		return isNumberField;
+	}
+
+	public void setNumberField(boolean isNumberField) {
+		this.isNumberField = isNumberField;
+	}
+
+	public Consumer<String> getTextChanced() {
+		return textChanced;
+	}
+
+	public void setTextChanced(Consumer<String> textChanced) {
+		this.textChanced = textChanced;
+	}
+
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("textField", "TextField", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(3, 2));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<Boolean>("Focused", this.isFocused, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setFocused))
+				.addSetting(new Setting<Boolean>("Numberic", this.isNumberField, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setNumberic))
+				.addSetting(new Setting<String>("Text", this.text, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
 	}
 }

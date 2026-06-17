@@ -3,14 +3,12 @@ package me.ramazanenescik04.diken.game.nodes;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.Setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.SettingCategory.SettingCategoryHelper;
-import me.ramazanenescik04.diken.game.world.World;
+import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
-import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.resource.SoundResource;
@@ -31,10 +29,6 @@ public class Audio extends Node {
 
 	public Audio(String name) {
 		super(name);
-		this.setSolid(false);
-		this.setAnchored(false);
-		
-		this.aabb = null;
 	}
 	
 	public String getSound() {
@@ -48,11 +42,6 @@ public class Audio extends Node {
 			this.resourceID = soundID;
 		
 		this.textureLoaded = false;
-	}
-	
-	@Override
-	public Bitmap render() {
-		return null;
 	}
 
 	@Override
@@ -91,12 +80,12 @@ public class Audio extends Node {
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("audio", "Audio", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(11, 1));
-		var settingCategory = SettingCategoryHelper.getOrCreateCategory(key, () -> SettingCategory
+		var settingCategory = SettingCategory
 				.createSettingCategory(key)
 				.addSetting(new Setting<String>("Sound ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setSound))
 				.addSetting(new Setting<Boolean>("Playing", texture != null ? texture.isPlaying() : false, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::playAudio))
 				.addSetting(new Setting<Boolean>("Loop", texture != null ? texture.isLoop() : false, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(texture::setLoop))
-				.addSetting(new Setting<Float>("Volume", texture != null ? texture.getVolume() : 0.0f, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(texture::setVolume)));
+				.addSetting(new Setting<Float>("Volume", texture != null ? texture.getVolume() : 0.0f, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(texture::setVolume));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

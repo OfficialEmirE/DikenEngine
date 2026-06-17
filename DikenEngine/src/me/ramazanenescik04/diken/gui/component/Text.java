@@ -1,18 +1,22 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.UniFont;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Represents the `Text` type within the DikenEngine `gui.compoment` package.
  */
 public class Text extends GuiComponent {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private static final char COLOR_CODE_MARKER = '\u00A7';
 	private static final int RGB_HEX_LENGTH = 6;
@@ -21,56 +25,104 @@ public class Text extends GuiComponent {
 	public int color;
 	public UniFont font;
 	
-	public int offsetX, offsetY;
+	public UDim2 offsetPosition;
 
-	public Text(String text, int x, int y) {
-		this(text, x, y, 0xffffffff, 0, 0, DikenEngine.getEngine().defaultFont);
+	public Text(String text, UDim2 position) {
+		this(text, position, UDim2.zero, 0xffffffff, DikenEngine.getEngine().defaultFont);
 	}
 	
-	public Text(String text, int x, int y, UniFont font) {
-		this(text, x, y, 0, 0, 0xffffffff, font);
+	public Text(String text, UDim2 position, UniFont font) {
+		this(text, position, UDim2.zero, 0xffffffff, font);
 	}
 	
-	public Text(String text, int x, int y, int offsetX, int offsetY, int color, UniFont font) {
-		super(x, y, Text.stringBitmapAverageWidth(text, font) + offsetX, Text.stringBitmapAverageHeight(text, font) + offsetY);
+	public Text(String text, UDim2 position, UDim2 offsetPosition, int color, UniFont font) {
+		super("Text", position, new UDim2(0, 
+				Text.stringBitmapAverageWidth(text, font) + offsetPosition.x.offset,
+				0,
+				Text.stringBitmapAverageHeight(text, font) + offsetPosition.y.offset
+		));
+		
 		this.text = text;
 		this.color = color;
 		this.font = font;
-		this.offsetX = offsetX;
-		this.offsetY = offsetY;
+		this.offsetPosition = offsetPosition;
 	}
 	
-	public Text(String text, int x, int y, int color) {
-		this(text, x, y, 0, 0, color, DikenEngine.getEngine().defaultFont);
+	public Text(String text, UDim2 position, int color) {
+		this(text, position, UDim2.zero, color, DikenEngine.getEngine().defaultFont);
 	}
 	
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
-		Text.render(text, bitmap, offsetX, offsetY, color, font);
+		Text.render(text, bitmap, offsetPosition.x.offset, offsetPosition.y.offset, color, font);
 		return bitmap;
 	}
 	
 	@Override
 	public void tick(DikenEngine engine) {
-		if((this.width != Text.stringBitmapWidth(text, font) + offsetX)) {
-			this.width = Text.stringBitmapWidth(text, font) + offsetX;
+		var bounds = this.getAbsoluteBounds();
+		
+		var textWidth = Text.stringBitmapWidth(text, font) + offsetPosition.x.offset;
+		var textHeight = Text.stringBitmapAverageHeight(text, font) + offsetPosition.y.offset;
+		
+		if(bounds.getWidth() != textWidth) {
+			var oldSize = this.getSize();
+			
+			this.setSize(new UDim2(0, textWidth, oldSize.y.scale, oldSize.y.offset));
 		}
 		
-		if((this.height != Text.stringBitmapAverageHeight(text, font) + offsetY)) {
-			this.height = Text.stringBitmapAverageHeight(text, font) + offsetY;
+		if(bounds.getHeight() != textHeight) {
+			var oldSize = this.getSize();
+			
+			this.setSize(new UDim2(oldSize.x.scale, oldSize.x.offset, 0, textHeight));
 		}
 	}
 	
-	public Text setOffsetLocation(int x, int y) {
-		this.offsetX = x;
-		this.offsetY = y;
+	public String getText() {
+		return this.text;
+	}
+	
+	public Text setText(String text) {
+		this.text = text;
 		return this;
+	}
+	
+	public UDim2 getOffsetPosition() {
+		return this.offsetPosition;
+	}
+	
+	public Text setOffsetPosition(UDim2 location) {
+		this.offsetPosition = location;
+		return this;
+	}
+	
+	public int getColor() {
+		return this.color;
 	}
 	
 	public Text setColor(int color) {
 		this.color = color;
 		return null;
 	}
+	
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("text", "Text", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(6, 2));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<String>("Text", this.text, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText))
+				.addSetting(new Setting<String>("Offset Position", this.offsetPosition.toString(), String.class, EnumSettingType.TEXT_FIELD).addChangeListener(
+						e -> this.setOffsetPosition(toUDim2(e))
+				))
+				.addSetting(new Setting<Integer>("Color", this.color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
+	}
+	
+	// !STATIC FUNCTIONS!
 
 	public static void render(String text, Bitmap bitmap, int x, int y, int color, UniFont font) {
 		if (font == null) {

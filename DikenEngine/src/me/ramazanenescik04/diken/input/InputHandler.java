@@ -1,6 +1,7 @@
 package me.ramazanenescik04.diken.input;
 
 import java.awt.Point;
+import java.awt.Component;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     private final boolean[] keys = new boolean[65536];
     private final boolean[] lastKeys = new boolean[65536];
 
-    private final javax.swing.JPanel thePanel;
+    private final Component thePanel;
     private final List<IInputListener> listeners = new ArrayList<>();
 
     private IHitbox mouseHitbox = new Hitbox(0, 0, 1, 1);
@@ -38,7 +39,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     
     private Timer wheelTimer;
 
-    public InputHandler(javax.swing.JPanel panel) {
+    public InputHandler(Component panel) {
         this.thePanel = panel;
 
         panel.setFocusable(true);

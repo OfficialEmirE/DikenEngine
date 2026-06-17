@@ -36,7 +36,7 @@ public class UniFont {
 	public static void createFont(String fontName) {
 		UniFont font = new UniFont();
 		
-		Bitmap bitmap = (Bitmap) IOResource.loadResource(IOResource.createClassResourceStream("/fonts/" + fontName + "/font_bitmap.png"), EnumResource.IMAGE);
+		Bitmap bitmap = (Bitmap) IOResource.loadResource(UniFont.class.getResourceAsStream("/fonts/" + fontName + "/font_bitmap.png"), EnumResource.IMAGE);
 		font.name = fontName;
 		BufferedReader reader = new BufferedReader(new InputStreamReader(UniFont.class.getResourceAsStream("/fonts/" + fontName + "/font_data.json")));
 		String data = "",data2 = "";

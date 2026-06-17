@@ -1,7 +1,33 @@
-Instance = {}
-game = {}
+local world, DikenBridge = ...
 
-function modifyMetatable(javaObj)
+Instance = {}
+
+local orijinalPrint = print
+
+print = function(...)
+    local args = {...}
+    local textList = {}
+    
+    for i = 1, select("#", ...) do
+        local v = args[i]
+        
+        if v == nil then
+            textList[i] = "nil"
+        elseif type(v) == "table" and v._javaRef ~= nil then
+            textList[i] = tostring(v)
+        else
+            textList[i] = tostring(v)
+        end
+    end
+    
+    local lastText = table.concat(textList, " ")
+    
+    pcall(function()
+        DikenBridge:log(lastText)
+    end)
+end
+
+local function modifyMetatable(javaObj)
     if javaObj == nil then return nil end
     
     if type(javaObj) == "table" and javaObj._javaRef ~= nil then
@@ -13,6 +39,16 @@ function modifyMetatable(javaObj)
     }
     
     local mt = {}
+	
+	mt.__tostring = function(self)
+	    local rawJava = self._javaRef
+	    local success, name = pcall(function() return rawJava:getName() end)
+	    if success and name then
+	        return name
+	    end
+
+		return "Instance: " .. tostring(rawJava)
+	end
     
     mt.__index = function(self, key)
         local rawJava = self._javaRef
@@ -94,7 +130,16 @@ function modifyMetatable(javaObj)
 end
 
 -- Ana dünyayı sarmalayıp atıyoruz
-game.Workspace = modifyMetatable(rootNodeJava)
+game = modifyMetatable(world:getRoot())
+
+rawset(game, "GetService", function(self, service) 
+    return modifyMetatable(world:getService(service))
+end)
+
+rawset(game, "HttpGet", function(self, url)
+    return DikenBridge:httpGet(url)
+end)
+
 script = modifyMetatable(DikenBridge:getCurrentScript())
 
 hex = function(str)
@@ -107,5 +152,10 @@ end
 -- Instance.new çıktısını otomatik sarmalıyoruz
 Instance.new = function(className)
     local rawNewObj = DikenBridge:create(className)
+    return modifyMetatable(rawNewObj)
+end
+
+Instance.clone = function(object)
+    local rawNewObj = DikenBridge:clone(object)
     return modifyMetatable(rawNewObj)
 end

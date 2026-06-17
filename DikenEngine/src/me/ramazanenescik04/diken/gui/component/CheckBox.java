@@ -1,11 +1,17 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.gui.UDim2;
+import me.ramazanenescik04.diken.gui.UniFont;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -20,9 +26,11 @@ public class CheckBox extends GuiComponent {
 	
 	public Text text;
 
-	public CheckBox(String text, int x, int y) {
-		super(x, y, 16, 16);
-		this.text = new Text(text, x, y, 0, 0, 0xFFFFFFFF, DikenEngine.getEngine().defaultFont);
+	public CheckBox(String text, UDim2 position, UDim2 size) {
+		super("CheckBox", position, size);
+		
+		// TODO test edilmeli!
+		this.text = new Text(text, UDim2.zero, UDim2.zero, 0xFFFFFFFF, UniFont.getFont("default_font"));
 	}
 	
 	public CheckBox setConsumer(Consumer<CheckBox> r) {
@@ -39,9 +47,22 @@ public class CheckBox extends GuiComponent {
 		return this;
 	}
 
+	public String getText() {
+		return text.text;
+	}
+	
+	public Text getTextNode() {
+		return text;
+	}
+
+	public CheckBox setText(String text) {
+		this.text.text = text;
+		return this;
+	}
+
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = FrameBitmapPool.newBitmap(20 + text.width + 2, 20);
+		Bitmap bitmap = FrameBitmapPool.newBitmap(20 + text.getAbsoluteBounds().getWidth() + 2, 20);
 		
 		ArrayBitmap array = (ArrayBitmap) ResourceLocator.getResource("checkbox-array");
 		bitmap.draw(checked ? array.getBitmap(0, 0) : array.getBitmap(1, 0), 2, 2);
@@ -72,5 +93,19 @@ public class CheckBox extends GuiComponent {
 	@Override
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
 		this.touching = isTouch;
+	}
+	
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("checkBox", "CheckBox", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 2));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<String>("Text", this.getText(), String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText))
+				.addSetting(new Setting<Boolean>("Checked", this.checked, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setChecked));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
 	}
 }
