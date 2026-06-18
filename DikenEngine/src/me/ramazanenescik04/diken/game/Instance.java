@@ -16,7 +16,7 @@ public abstract class Instance extends Node {
     
     public float scaleX = 1.0f;
     public float scaleY = 1.0f;
-    public float rotation = 0.0f;
+    private float rotation = 0.0f;
     
     protected Hitbox aabb = null;
     public int color = 0xFFFFFFFF; // Varsayılan Beyaz
@@ -47,6 +47,11 @@ public abstract class Instance extends Node {
 
     public final void draw(Bitmap btp, Hitbox viewport) {
     	triggerEvent("OnPreRender");
+    	
+    	if (aabb != null && aabb.getRotation() != this.rotation) {
+    		this.aabb.setRotation(rotation);
+    	}
+    	
         if (!visible) return;
 
         if (shouldRenderSelf(viewport)) {
@@ -63,7 +68,7 @@ public abstract class Instance extends Node {
                 	screenY -= viewport.getY();
                 }
                 
-                btp.draw(myTexture, screenX, screenY);
+                btp.draw(myTexture.rotate(rotation), screenX, screenY);
                 
                 if (debug && this instanceof Instance instance && instance.hasAABB()) {
                     Hitbox globalBox = instance.getGlobalAABB();
@@ -118,7 +123,7 @@ public abstract class Instance extends Node {
     }
 
     public void setAABB(int width, int height) {
-        this.aabb = new Hitbox(0, 0, width, height);
+        this.aabb = new Hitbox(0, 0, width, height).setRotation(rotation);
     }
 
     public boolean hasAABB() {
@@ -165,7 +170,15 @@ public abstract class Instance extends Node {
 		this.visible = visible;
 	}
     
-    public List<Instance> findInArea(Hitbox area) {
+    public float getRotation() {
+		return rotation;
+	}
+
+	public void setRotation(float rotation) {
+		this.rotation = rotation;
+	}
+
+	public List<Instance> findInArea(Hitbox area) {
 		List<Instance> result = new ArrayList<>();
 		
 		for (Node child : getChildren()) {
@@ -187,9 +200,9 @@ public abstract class Instance extends Node {
 
     public Hitbox getGlobalAABB() {
         if (aabb == null) return null;
-        int globalX = getGlobalX() + aabb.getWidth();
-        int globalY = getGlobalY() + aabb.getHeight();
-        return new Hitbox(globalX, globalY, aabb.getWidth(), aabb.getHeight());
+        int globalX = getGlobalX() + aabb.getX();
+        int globalY = getGlobalY() + aabb.getY();
+        return new Hitbox(globalX, globalY, aabb.getWidth(), aabb.getHeight()).setRotation(rotation);
     }
 
     @Override
@@ -201,6 +214,7 @@ public abstract class Instance extends Node {
                 .createSettingCategory(key)
                 .addSetting(new Setting<Integer>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.x = val))
                 .addSetting(new Setting<Integer>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.y = val))
+                .addSetting(new Setting<Float>("Rotation", rotation, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setRotation))
                 .addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setVisible))
 				.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setSolid))
 				.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setAnchored))

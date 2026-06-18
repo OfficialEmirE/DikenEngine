@@ -9,11 +9,15 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 
 import java.awt.Font;
-import javax.swing.JToolBar;
+import java.awt.Image;
+
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import java.awt.event.ActionListener;
 import java.util.List;
@@ -24,6 +28,9 @@ import javax.swing.text.DefaultCaret;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
+
+import bibliothek.gui.dock.common.action.CButton;
+
 import javax.swing.JTextField;
 import javax.swing.JScrollPane;
 
@@ -39,14 +46,10 @@ public class ConsolePanel extends DockablePanel {
 		setBackground(new Color(63, 63, 63));
 		setLayout(new BorderLayout(0, 0));
 		
-		JToolBar toolBar = new JToolBar();
-		toolBar.setBackground(new Color(83, 83, 83));
-		toolBar.setFloatable(false);
-		add(toolBar, BorderLayout.NORTH);
-		
-		JButton clearScreen = new JButton("C");
-		clearScreen.setToolTipText("Clear Screen");
-		toolBar.add(clearScreen);
+		var img = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(12, 0).toImage();
+		var scaled = img.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
+		CButton clearScreen = new CButton("Konsolu Temizle", new ImageIcon(scaled));
+		dock.addAction(clearScreen);
 		
 		JPanel commandLinePanel = new JPanel();
 		commandLinePanel.setBackground(new Color(83, 83, 83));

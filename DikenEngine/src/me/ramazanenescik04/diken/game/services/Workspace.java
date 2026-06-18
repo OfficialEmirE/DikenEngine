@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.game.services;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
@@ -44,5 +45,25 @@ public class Workspace extends Service {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	public List<Instance> findInArea(Hitbox area) {
+		List<Instance> result = new ArrayList<>();
+		
+		for (Node child : getChildren()) {
+			if (child instanceof Instance instance && instance.getGlobalAABB() != null && instance.getGlobalAABB().intersects(area)) {
+				result.add(instance);
+			}
+	    }
+	    
+	    // Eğer çocuklarda yoksa, derinlemesine (recursive) ara
+	    for (Node child : getChildren()) {
+	    	if (child instanceof Instance instance) {
+	    		List<Instance> childResult = instance.findInArea(area);
+		        result.addAll(childResult);
+	    	}
+	    }
+	    
+	    return result;
 	}
 }

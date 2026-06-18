@@ -25,7 +25,7 @@ public class ColorPickBar extends GuiComponent {
     private Bitmap cachedHueMap; // Performans için renk haritasını önbelleğe alıyoruz
 
     public ColorPickBar(UDim2 position, UDim2 size) {
-        super(position, size);
+        super("ColorPickBar", position, size);
     }
     
     public ColorPickBar setConsumer(Consumer<Integer> consumer) {
@@ -107,7 +107,9 @@ public class ColorPickBar extends GuiComponent {
 		var key = new SettingCategory.SettingKey("colorPickBar", "ColorPickBar", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(14, 3));
 		var settingCategory = 
 				SettingCategory.createSettingCategory(key)
-				.addSetting(new Setting<Integer>("Selector X", this.selectorX, 0, 255, Integer.class, EnumSettingType.SLIDER).addChangeListener(e -> this.selectorX = e))
+						.addSetting(new Setting<Integer>("Selector X", this.selectorX, 0, 255, Integer.class,
+								EnumSettingType.SLIDER).addChangeListener(
+										e -> this.selectorX = e * (this.getAbsoluteBounds().getWidth() - 3) / 255))
 				.addSetting(new Setting<Integer>("Selected Color", this.selectedColor, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setSelectedColor));
 		
 		var list = super.getNodeSettings();

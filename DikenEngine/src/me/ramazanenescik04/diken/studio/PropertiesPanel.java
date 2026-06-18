@@ -34,6 +34,7 @@ public class PropertiesPanel extends DockablePanel {
         contentPanel.setBackground(new Color(45, 45, 45));
 
         JScrollPane scrollPane = new JScrollPane(contentPanel);
+        
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
         scrollPane.setBackground(new Color(45, 45, 45));
@@ -260,6 +261,15 @@ public class PropertiesPanel extends DockablePanel {
             	});
             	
                 return slider;
+            }
+            case LIST_SELECT -> {
+            	var comboBox = new JComboBox<T>(setting.getOptions());
+            	comboBox.setSelectedItem(setting.getValue());
+            	comboBox.addActionListener(_ -> {
+            		applySettingValue(setting, comboBox.getSelectedItem());
+            	});
+            	
+            	return comboBox;
             }
             default -> {
                 JLabel fallback = new JLabel(String.valueOf(setting.getValue()));

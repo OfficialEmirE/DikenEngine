@@ -1,6 +1,8 @@
 package me.ramazanenescik04.diken.game;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
 import me.ramazanenescik04.diken.game.nodes.*;
 import me.ramazanenescik04.diken.game.nodes.values.*;
 import me.ramazanenescik04.diken.gui.UDim2;
@@ -11,11 +13,16 @@ import me.ramazanenescik04.diken.game.entity.*;
 
 public final class InstanceList {
 	private static final ArrayList<Node> NODE_LIST;
+	private static final Map<CategoryKey, List<Node>> NODE_TYPES;
 	
 	private InstanceList() {}
 	
 	public synchronized static List<Node> getNodeList() {
 		return new ArrayList<>(NODE_LIST);
+	}
+	
+	public synchronized static Map<CategoryKey, List<Node>> getTypedNodes() {
+		return NODE_TYPES;
 	}
 	
 	public synchronized static int registeredNodeCount() {
@@ -45,6 +52,41 @@ public final class InstanceList {
 	    return false;
 	}
 	
+	private static CategoryKey getCategoryName(Object obj) {
+	    String nPackage = obj.getClass().getPackageName();
+	    
+	    if (nPackage.contains(".game.nodes.values")) {
+	        return new CategoryKey(0, 2, "Değerler");
+	    } else if (nPackage.contains(".game.nodes") || nPackage.contains(".game.entity")) {
+	        return new CategoryKey(9, 1, "Temel Nesneler");
+	    } else if (nPackage.contains(".gui.component") || nPackage.contains(".gui.component.color")) {
+	        return new CategoryKey(15, 1, "Grafik Arayüz");
+	    } else if (nPackage.contains(".scripting")) {
+	        return new CategoryKey(12, 1, "Scriptler");
+	    }
+	    return new CategoryKey(12, 1, "Diğer");
+	}
+	
+	public static record CategoryKey(int iconX, int iconY, String displayName) {
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            CategoryKey that = (CategoryKey) obj;
+            return iconX == (that.iconX) && iconY == that.iconY && displayName.equals(that.displayName);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(iconX, iconY, displayName);
+		}
+
+		@Override
+		public String toString() {
+			return "CategoryKey=[" + iconX + "x" + iconY + ", " + displayName + "]";
+		}
+	}
+	
 	static {
 		NODE_LIST = new ArrayList<>();
 		
@@ -58,6 +100,7 @@ public final class InstanceList {
 		NODE_LIST.add(new Texture());
 		NODE_LIST.add(new Tool());
 		NODE_LIST.add(new Audio());
+		NODE_LIST.add(new Light());
 		
 		// e.ramazanenescik04.diken.game.nodes.values
 		NODE_LIST.add(new StringValue());
@@ -90,5 +133,10 @@ public final class InstanceList {
 		
 		// me.ramazanenescik04.diken.scripting
 		NODE_LIST.add(new Script());
+		
+		NODE_TYPES = NODE_LIST.stream()
+		        .collect(Collectors.groupingBy(
+		        		obj -> getCategoryName(obj)
+		        ));
 	}
 }

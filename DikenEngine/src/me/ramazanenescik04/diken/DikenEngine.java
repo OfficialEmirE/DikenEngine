@@ -475,14 +475,18 @@ public class DikenEngine implements Runnable, IInputListener {
 
 		ArrayBitmap win_icons = new ArrayBitmap();
 		win_icons.setArray(
-				IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/win_icons.png"), 16, 16));
+				IOResource.loadResourceAndCut(IOResource.createClassResource("/win_icons.png"), 16, 16));
 		ResourceLocator.addResource("win-icons", win_icons);
 
-		ResourceLocator.addResource("editor_icons", new ArrayBitmap(IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/editor_icons.png"), 16, 16)));
+		ResourceLocator.addResource("editor_icons", new ArrayBitmap(
+				IOResource.loadResourceAndCut(IOResource.createClassResource("/editor_icons.png"), 16, 16)));
+		
+		ResourceLocator.addResource("surface", new ArrayBitmap(
+				IOResource.loadResourceAndCut(IOResource.createClassResource("/surface.png"), 16, 16)));
 
 		ArrayBitmap win_cursors = new ArrayBitmap();
 		win_cursors
-				.setArray(IOResource.loadResourceAndCut(IOResource.createClassResourceStream("/scl_cur.png"), 32, 32));
+				.setArray(IOResource.loadResourceAndCut(IOResource.createClassResource("/cursors.png"), 32, 32));
 
 		for (int j = 0; j < 3; j++) {
 			CursorResource cursor = new CursorResource();

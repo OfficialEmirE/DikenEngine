@@ -555,6 +555,45 @@ public class Bitmap implements IResource, Cleanable {
 	    b.rewind();
 	    rewind();
 	}
+	
+	public void multiplyBlend(Bitmap b, int xp, int yp) {
+	    b.ensurePixels();
+
+	    xp += xOffs;
+	    yp += yOffs;
+	    int x0 = xp;
+	    int x1 = xp + b.w;
+	    int y0 = yp;
+	    int y1 = yp + b.h;
+	    if (x0 < 0) x0 = 0;
+	    if (y0 < 0) y0 = 0;
+	    if (x1 > w) x1 = w;
+	    if (y1 > h) y1 = h;
+
+	    for (int y = y0; y < y1; y++) {
+	        int sp = (y - yp) * b.w - xp;
+	        int dp = y * w;
+
+	        for (int x = x0; x < x1; x++) {
+	            int c = b.pixels.get(sp + x);
+
+	            int srcR = (c >> 16) & 0xff;
+	            int srcG = (c >> 8) & 0xff;
+	            int srcB = c & 0xff;
+
+	            int bgColor = pixels.get(dp + x);
+	            int bgR = (bgColor >> 16) & 0xff;
+	            int bgG = (bgColor >> 8) & 0xff;
+	            int bgB = bgColor & 0xff;
+
+	            int newR = (srcR * bgR) / 255;
+	            int newG = (srcG * bgG) / 255;
+	            int newB = (srcB * bgB) / 255;
+
+	            pixels.put(dp + x, 0xff000000 | (newR << 16) | (newG << 8) | newB);
+	        }
+	    }
+	}
 
 	public void clear(int color) {
 		for (int i = 0; i < pixels.size(); i++) {

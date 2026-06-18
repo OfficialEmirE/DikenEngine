@@ -49,8 +49,6 @@ public class Script extends Node {
         
         LuaValue rootNode = CoerceJavaToLua.coerce(theWorld);
         LuaValue brige = CoerceJavaToLua.coerce(bridge);
-        
-        globals.set("script", CoerceJavaToLua.coerce(this));
 
         try {
 			globals.load(Files.readString(Paths.get(Script.class.getResource("/scripts/init.lua").toURI()))).call(rootNode, brige);

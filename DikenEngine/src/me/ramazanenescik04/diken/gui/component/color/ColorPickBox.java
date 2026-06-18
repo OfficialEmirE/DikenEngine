@@ -28,7 +28,7 @@ public class ColorPickBox extends GuiComponent {
 	private int selectedY = -1;
 
 	public ColorPickBox(UDim2 position, UDim2 size) {
-		super(position, size);
+		super("ColorPickBox", position, size);
 	}
 
 	public ColorPickBox setConsumer(Consumer<Integer> consumer) {

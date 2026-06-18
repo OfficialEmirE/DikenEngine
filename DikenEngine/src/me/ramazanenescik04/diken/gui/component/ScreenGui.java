@@ -62,9 +62,25 @@ public class ScreenGui extends Node {
 	}
 	
 	private void sendMousePosition(int x, int y, int clicked) {
+		for (var descendant : this.getDescendants()) {
+			if (descendant instanceof GuiComponent component) {
+				if (!(component.isActive() || component.isVisible())) continue;
+				var hitbox = component.getAbsoluteBounds();
+				
+				component.mouseGetInfo(x - hitbox.getX(), y - hitbox.getY(), hitbox.intersects(new Hitbox(x, y)));
+			}
+		}
 	}
 	
 	private void sendMouseClicked(int x, int y, int clicked) {
+		for (var descendant : this.getDescendants()) {
+			if (descendant instanceof GuiComponent component) {
+				if (!(component.isActive() || component.isVisible())) continue;
+				var hitbox = component.getAbsoluteBounds();
+				
+				component.mouseClicked(x - hitbox.getX(), y - hitbox.getY(), clicked, hitbox.intersects(new Hitbox(x, y)));
+			}
+		}
 	}
 	
 	public boolean isEnabled() {

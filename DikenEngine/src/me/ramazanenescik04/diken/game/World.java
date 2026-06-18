@@ -137,8 +137,9 @@ public class World implements Cloneable {
         var lighting = this.getService(Lighting.class);
         var ui = this.getService(UIService.class);
         
-        lighting.draw(sceneBitmap, viewport);
+        lighting.drawSky(sceneBitmap, viewport);
         workspace.draw(sceneBitmap, viewport);
+        lighting.applyLightOverlay(sceneBitmap, viewport, workspace);
         
         Bitmap worldBitmap;
         if (sceneWidth == width && sceneHeight == height) {

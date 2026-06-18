@@ -68,7 +68,7 @@ public class IOResource {
 	    return result;
 	}
 	
-	public static InputStream createClassResourceStream(String path) {
+	public static InputStream createClassResource(String path) {
 		InputStream stream = IOResource.class.getResourceAsStream(path);
 		if (stream == null) {
 			System.err.println("Error: Resource not found: " + path);

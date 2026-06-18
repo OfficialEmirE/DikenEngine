@@ -6,12 +6,14 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.nodes.Sky;
 import me.ramazanenescik04.diken.game.services.Lighting;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
+import me.ramazanenescik04.diken.scripting.Script;
 
 import javax.swing.JToolBar;
 
@@ -24,6 +26,8 @@ import java.awt.BorderLayout;
 
 import javax.swing.JButton;
 import java.awt.Dimension;
+import java.io.File;
+import java.io.IOException;
 import java.awt.Color;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -35,7 +39,9 @@ public class StudioPanel extends JPanel {
 	private JFrame engineWindow;
 	private RendererPanel gamePanel;
 	private DikenEngine engine;
+	
 	private CControl control;
+	private File layoutFile = new File(Config.defaultConfigFile.getParentFile(), "layout.dat");
 	
 	private World theWorld;
 
@@ -93,7 +99,7 @@ public class StudioPanel extends JPanel {
 		JMenuBar menuBar = new JMenuBar();
 		panel.add(menuBar, BorderLayout.NORTH);
 		
-		addMenus(menuBar);
+		addMenus(menuBar, explorerPanel);	
 		
 		CGrid grid = new CGrid(control);
 
@@ -106,9 +112,21 @@ public class StudioPanel extends JPanel {
 
         // Tasarımı ekrana uygula
         control.getContentArea().deploy(grid);
+        
+        try {
+			control.read(layoutFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void stop() {
+		try {
+			control.write(layoutFile);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		engine.stop();
 	}
 	
@@ -122,7 +140,7 @@ public class StudioPanel extends JPanel {
 		toolBar.add(newaWorldButton);
 	}
 	
-	private void addMenus(JMenuBar menuBar) {
+	private void addMenus(JMenuBar menuBar, ExplorerPanel explorerPanel) {
 		JMenu fileMenu = new JMenu("Dosya");
 		fileMenu.setMnemonic('f');
 		menuBar.add(fileMenu);
@@ -138,7 +156,30 @@ public class StudioPanel extends JPanel {
         JMenu toolsMenu = new JMenu("Araçlar");
 		menuBar.add(toolsMenu);
 		
-		JMenuItem executeScriptMenuItem = new JMenuItem("New menu item");
+		JMenuItem executeScriptMenuItem = new JMenuItem("Script Çalıştır");
 		toolsMenu.add(executeScriptMenuItem);
+		
+		executeScriptMenuItem.addActionListener(_ -> {
+			explorerPanel.startPickMode(node -> {
+				if (node == null) return;
+				
+				if (node instanceof Script script) {
+					Script executeScript = (Script) script.copy();
+					script.getParent().addChild(executeScript);
+					executeScript.setName("[EXECUTING SCRIPT] " + script.getName());
+					executeScript.initialize(theWorld);
+				}
+			});
+		});
+		
+		JMenu helpMenu = new JMenu("Yardım");
+		menuBar.add(helpMenu);
+		
+		JMenuItem aboutMenuItem = new JMenuItem("Hakkında");
+		aboutMenuItem.addActionListener(_ -> {
+			var window = new AboutWindow(engineWindow);
+			window.setVisible(true);
+		});
+		helpMenu.add(aboutMenuItem);
 	}
 }
