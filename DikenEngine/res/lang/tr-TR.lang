@@ -1,0 +1,35 @@
+lang.name=Türkçe-TR
+lang.title=Diller
+
+gui.done=Tamam
+gui.cancel=Vazgeç
+gui.resetdata=Tüm Verileri Sıfırla
+gui.selectlang=Dil Seç
+gui.apply=Uygula
+gui.back=Geri Dön
+
+options.title=Ayarlar
+options.console=Konsol
+options.display=Görüntü
+options.maxfps=Maksimum FPS
+options.expermental=Deneysel Özellikler
+options.legacycrash=Eski Çökme
+options.debug=Hata Ayıklama Ekranı
+options.showfps=FPS Göster
+options.fullscreen=Tam Ekran (F11)
+options.sync=Senkronizasyon (Sync)
+options.enableconsole=Konsol'u Etkinleştir (END)
+options.antialiasing=Anti Aliasing
+
+legacycrash.title=DikenEngine Çöktü!
+legacycrash.issusegithub=Lütfen bu sorunu GitHub üzerinden bildirin.
+legacycrash.exit=Motordan Çıkmak İçin ALT+F4 Tuşlarına Basın.
+
+dmainmenu.editor=DikenEditor'u Aç
+dmainmenu.soundtest=Ses Testi
+dmainmenu.setting=Ayarlar
+dmainmenu.exit=Oyundan Çık
+dmainmenu.about=Hakkında
+dmainmenu.reportbug=Hata Bildir
+
+about.author=Yapanlar
