@@ -1,7 +1,7 @@
 {
     "name": "DikenEngine",
     "short_name": "Diken",
-    "description": "Create 2D games and virtual worlds with DikenEngine.",
+    "description": "Create 2D games with DikenEngine.",
     "start_url": "/",
     "scope": "/",
     "display": "standalone",

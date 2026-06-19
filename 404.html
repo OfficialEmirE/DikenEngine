@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>404 - DikenEngine</title>
+
+    <link rel="icon" type="image/x-icon" href="/assets/images/favicons/favicon.ico">
+    <link rel="stylesheet" href="/assets/css/style.css">
+
+    <style>
+        .error-page {
+            min-height: 100vh;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error-content {
+            max-width: 700px;
+        }
+
+        .error-logo {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+
+            margin-bottom: 20px;
+        }
+
+        .error-code {
+            font-size: 100px;
+            font-weight: bold;
+
+            line-height: 1;
+        }
+
+        .error-title {
+            font-size: 36px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .error-description {
+            color: #c2c2c2;
+            font-size: 20px;
+
+            margin-bottom: 35px;
+        }
+
+        .error-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .error-code {
+                font-size: 72px;
+            }
+
+            .error-title {
+                font-size: 28px;
+            }
+
+            .error-description {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="error-page">
+
+        <div class="error-content">
+            <div class="error-code">404</div>
+
+            <h1 class="error-title">
+                Page Not Found
+            </h1>
+
+            <p class="error-description">
+                The page you are looking for doesn't exist or has been moved.
+            </p>
+
+            <div class="error-buttons">
+
+                <a href="/" class="btn-main">
+                    Go Home
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+</body>
+</html>
