@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.studio;
+package me.ramazanenescik04.diken.studio.dockables;
 
 import javax.swing.JMenuItem;
 import java.awt.BorderLayout;
@@ -11,7 +11,9 @@ import javax.swing.tree.TreeSelectionModel;
 
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.services.AbstractService;
 import me.ramazanenescik04.diken.scripting.Script;
+import me.ramazanenescik04.diken.studio.StudioTreeRenderer;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.JPopupMenu;
@@ -35,7 +37,7 @@ public class ExplorerPanel extends DockablePanel {
 	private JTree tree;
     private DefaultMutableTreeNode rootTreeNode = new DefaultMutableTreeNode();
     private List<SelectedNodeListener> selectedNodeListeners = new ArrayList<>();
-    private World theWorld;
+    public World theWorld;
     
     private List<Node> clipboard = new ArrayList<>();
     public boolean suppressRebuild = false;
@@ -72,19 +74,19 @@ public class ExplorerPanel extends DockablePanel {
 		rebuildExplorer();
 		
 		var root = world.getRoot();
-		root.addLuaEventListener("OnAddDescendant", (_) -> {
+		root.OnAddDescendant.Connect(_ -> {
 			rebuildExplorer();
 		});
 		
-		root.addLuaEventListener("OnInsertDescendant", (_) -> {
+		root.OnInsertDescendant.Connect(_ -> {
 			rebuildExplorer();
 		});
 		
-		root.addLuaEventListener("OnRemoveDescendant", (_) -> {
+		root.OnRemoveDescendant.Connect(_ -> {
 			rebuildExplorer();
 		});
 		
-		root.addLuaEventListener("OnReplaceDescendant", (_) -> {
+		root.OnReplaceDescendant.Connect(_ -> {
 			rebuildExplorer();
 		});
 		
@@ -150,6 +152,12 @@ public class ExplorerPanel extends DockablePanel {
 		        }
 		    }
 		});
+	}
+	
+	public void reloadWorld(World newWorld) {
+		this.theWorld = newWorld;
+		
+		this.rebuildExplorer();
 	}
 	
 	public DefaultMutableTreeNode createStudioObject(DefaultMutableTreeNode parentNode, Node node) {
@@ -540,7 +548,7 @@ public class ExplorerPanel extends DockablePanel {
 	}
 	
 	boolean isService(Node node) {
-	    return theWorld.getServices().contains(node);
+	    return node instanceof AbstractService;
 	}
 
 	private boolean isServiceOrRoot(DefaultMutableTreeNode treeNode) {

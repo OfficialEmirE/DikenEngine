@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.studio;
+package me.ramazanenescik04.diken.studio.dockables;
 
 import javax.swing.JComponent;
 import javax.swing.JTree;

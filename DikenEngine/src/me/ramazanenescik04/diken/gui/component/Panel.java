@@ -20,7 +20,12 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public class Panel extends GuiComponent {
 	private static final long serialVersionUID = 1L;
 	
+	public enum BorderStyle {
+		
+	}
+	
 	private boolean clipsDescendants;
+	private BorderStyle panelBorder;
 
 	public Panel(UDim2 position, UDim2 size) {
 		super("Panel", position, size);
@@ -40,7 +45,7 @@ public class Panel extends GuiComponent {
 
 	@Override
 	public void drawComponent(Bitmap sceneBitmap, Hitbox viewport) {
-		triggerEvent("OnPreRender");
+		OnPreRender.FireEvent();
         if (!visible) return;
 
         if (super.shouldRenderSelf(viewport)) {
@@ -68,7 +73,7 @@ public class Panel extends GuiComponent {
 			}
         }
         
-        triggerEvent("OnPostRender");
+        OnPostRender.FireEvent();
 	}
 
 	protected boolean shouldRenderSelf(GuiComponent childComponent, Hitbox viewport) {
@@ -94,6 +99,14 @@ public class Panel extends GuiComponent {
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
 				.addSetting(new Setting<Boolean>("Clips Descendants", this.clipsDescendants, Boolean.class,
+						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
+				.addSetting(new Setting<Boolean>("Border Style", this.clipsDescendants, Boolean.class,
+						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
+				.addSetting(new Setting<Boolean>("Background Color", this.clipsDescendants, Boolean.class,
+						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
+				.addSetting(new Setting<Boolean>("Border Color", this.clipsDescendants, Boolean.class,
+						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
+				.addSetting(new Setting<Boolean>("Border Size", this.clipsDescendants, Boolean.class,
 						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants));
 		
 		var list = super.getNodeSettings();

@@ -12,10 +12,8 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 
 import org.lwjgl.LWJGLException;
-
 import com.formdev.flatlaf.FlatDarkLaf;
 
 import me.ramazanenescik04.diken.game.Config;
@@ -36,6 +34,7 @@ import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.studio.LoadingDialog;
 import me.ramazanenescik04.diken.studio.StudioPanel;
 import me.ramazanenescik04.diken.tools.PixelToColor;
 import me.ramazanenescik04.diken.tools.Utils;
@@ -50,6 +49,8 @@ public class DikenEngine implements Runnable, IInputListener {
 	private static DikenEngine instance;
 
 	private JFrame engineWindow;
+	private LoadingDialog loadingDialog;
+	private StudioPanel studioPanel;
 	private boolean fullscreen;
 
 	private boolean running = false;
@@ -109,14 +110,17 @@ public class DikenEngine implements Runnable, IInputListener {
 		this.engineWindow.setIconImage(new javax.swing.ImageIcon(DikenEngine.class.getResource("/icon-x16.png")).getImage());
 		
 		if (openStudio) {
-			var panel = new StudioPanel(this.engineWindow, this.rendererPanel, this);
+			loadingDialog = new LoadingDialog();
+			loadingDialog.setVisible(true);
+			
+			studioPanel = new StudioPanel(this.engineWindow, this.rendererPanel, this);
 			
 			this.engineWindow.addWindowListener(new WindowAdapter() {
 				public void windowClosing(WindowEvent e) {
-					panel.stop();
+					studioPanel.stop();
 				}
 			});
-			this.engineWindow.setContentPane(panel);
+			this.engineWindow.setContentPane(studioPanel);
 		} else {
 			this.engineWindow.addWindowListener(new WindowAdapter() {
 				public void windowClosing(WindowEvent e) {
@@ -133,6 +137,7 @@ public class DikenEngine implements Runnable, IInputListener {
 		running = true;
 		this.engineWindow.setVisible(true);
 		this.rendererPanel.requestFocusInWindow();
+		this.loadingDialog.dispose();
 		new Thread(this, "DikenEngine Thread").start();
 	}
 
@@ -143,7 +148,6 @@ public class DikenEngine implements Runnable, IInputListener {
 	public void setWorld(World world) {
 		if (world != null) {
 			world.engine = this;
-			world.startScripts();
 		}
 		
 		this.listeners.forEach(l -> l.worldChanged(theWorld, world));
@@ -231,7 +235,7 @@ public class DikenEngine implements Runnable, IInputListener {
 
 	@Override
 	public void run() {
-		try {
+		try {			
 			log("Starting DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ")");
 
 			defaultFont = UniFont.getFont("default_font");
@@ -408,6 +412,10 @@ public class DikenEngine implements Runnable, IInputListener {
 		if (theWorld != null) {
 			theWorld.tick(this);
 		}
+		
+		if (studioMode && studioPanel != null) {
+			studioPanel.tick();
+		}
 
 		if (this.cursorResource == null && rendererPanel.getCursor() != Cursor.getDefaultCursor()) {
 			rendererPanel.setCursor(Cursor.getDefaultCursor());
@@ -515,29 +523,6 @@ public class DikenEngine implements Runnable, IInputListener {
 		ConsoleLog.sendLog(LogType.C_ERR, Utils.getStackTraceString(e));
 		ConsoleLog.saveLogs();
 
-		String title = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage().trim();
-		StringBuilder desc = new StringBuilder();
-		desc.append("DikenEngine Version: ").append(VERSION).append("\n");
-		desc.append("Protocol Version: ").append(protocolVersion).append("\n");
-		desc.append("Java Version: ").append(System.getProperty("java.version")).append("\n");
-		desc.append("OS: ").append(System.getProperty("os.name")).append(" (").append(System.getProperty("os.arch"))
-				.append(")\n\n");
-		desc.append("Date: ").append(new Date()).append("\n");
-
-		String[] errorLines = Utils.getStackTraceStringArray(e);
-		if (errorLines.length > 0) {
-			desc.append("Error: ").append(errorLines[0]).append("\n");
-		}
-
-		if (errorLines.length > 1) {
-			desc.append("Stack Trace:\n");
-			for (String line : errorLines) {
-				desc.append(line).append("\n");
-			}
-		} else {
-			desc.append("No stack trace available.\n");
-		}
-
-		JOptionPane.showMessageDialog(null, desc.toString().trim(), title, JOptionPane.ERROR_MESSAGE);
+		CrashDialog.crash(engineWindow, e);
 	}
 }

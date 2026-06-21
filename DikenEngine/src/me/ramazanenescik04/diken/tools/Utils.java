@@ -1,7 +1,9 @@
 package me.ramazanenescik04.diken.tools;
 
+import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -125,5 +127,15 @@ public class Utils {
 					""".formatted(e.getMessage());
 		}
 		return response.body();
+	}
+	
+	public static void openPage(URI uri) {
+		if (Desktop.isDesktopSupported()) {
+			try {
+				Desktop.getDesktop().browse(uri);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

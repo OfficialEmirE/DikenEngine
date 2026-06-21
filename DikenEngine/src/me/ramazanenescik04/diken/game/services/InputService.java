@@ -5,6 +5,7 @@ import java.util.List;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -12,7 +13,16 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public class InputService extends Service {
 	private static final long serialVersionUID = 6035548334767273241L;
 	
-	private UIService uiService;
+	// Keyboard listeners
+	public final Event OnKeyHandled = new Event();
+	public final Event OnKeyDown = new Event();
+		
+	// Mouse listeners
+	public final Event OnMouseHandled = new Event();
+	public final Event OnMouseClicked = new Event();
+	
+	private transient UIService uiService;
+	private transient DikenEngine engine;
 	
 	public InputService() {
 		this("InputService");
@@ -28,6 +38,9 @@ public class InputService extends Service {
 		
 		if (uiService == null)
 			uiService = world.getService(UIService.class);
+		
+		if (this.engine == null)
+			this.engine = engine;
 	}
 
 	@Override
@@ -41,16 +54,28 @@ public class InputService extends Service {
 		list.add(settingCategory);
 		return list;
 	}
+	
+	public boolean isKeyDown(int key) {
+		return engine.input.isKeyDown(key);
+	}
+	
+	public boolean isKeyPressed(int key) {
+		return engine.input.isKeyPressed(key);
+	}
+	
+	public boolean isKeyReleased(int key) {
+		return engine.input.isKeyReleased(key);
+	}
 
 	public void keyHandled(int inputMode, int key, char character) {
 		if (uiService != null) {
 			uiService.keyHandled(inputMode, key, character);
 		}
 		
-		triggerEvent("OnKeyHandled", inputMode, key, character);
+		OnKeyHandled.FireEvent(inputMode, key, character);
 		
 		if (inputMode == InputHandler.INPUT_PRESSED || inputMode == InputHandler.INPUT_REPEATED) {
-			triggerEvent("OnKeyDown", key, character);
+			OnKeyDown.FireEvent(key, character);
 		}
 	}
 	
@@ -59,10 +84,10 @@ public class InputService extends Service {
 			uiService.mouseHandled(inputMode, x, y, clicked);
 		}
 		
-		triggerEvent("OnMouseHandled", inputMode, x, y, clicked);
+		OnMouseHandled.FireEvent(inputMode, x, y, clicked);
 		
 		if (inputMode == InputHandler.INPUT_PRESSED) {
-			triggerEvent("OnMouseCkicked", x, y, clicked);
+			OnMouseClicked.FireEvent(x, y, clicked);
 		}
 	}
 }

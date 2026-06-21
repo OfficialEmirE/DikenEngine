@@ -19,9 +19,7 @@ public class Lighting extends Service {
 	private static final long serialVersionUID = 1L;
 
 	private Sky sky;
-
 	public int ambientColor = 0xFF3C3C3C;
-
 	public boolean lightingEnabled = true;
 
 	public Lighting() {
@@ -37,13 +35,13 @@ public class Lighting extends Service {
 	}
 
 	public void drawSky(Bitmap sceneBitmap, Hitbox viewport) {
-		triggerEvent("OnPreRender");
+		OnPreRender.FireEvent();
 
 		if (sky != null) {
 			sky.draw(sceneBitmap, viewport);
 		}
 
-		triggerEvent("OnPostRender");
+		OnPostRender.FireEvent();
 	}
 
 	public void applyLightOverlay(Bitmap sceneBitmap, Hitbox viewport, Workspace workspace) {

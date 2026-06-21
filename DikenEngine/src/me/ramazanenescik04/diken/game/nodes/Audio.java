@@ -62,7 +62,7 @@ public class Audio extends Node {
 		textureLoaded = false;
 	}
 	
-	private void playAudio(boolean play) {
+	public void playAudio(boolean play) {
 		if (texture == null)
 			return;
 		
@@ -77,15 +77,62 @@ public class Audio extends Node {
 		}
 	}
 	
+	public boolean isPlaying() {
+		if (texture == null) return false;
+		return texture.isPlaying();
+	}
+	
+	public void setLoop(boolean loop) {
+		if (texture == null) return ;
+		texture.setLoop(loop);
+	}
+	
+	public boolean isLoop() {
+		if (texture == null) return false;
+		return texture.isLoop();
+	}
+	
+	public void setVolume(float volume) {
+		if (texture == null) return;
+		texture.setVolume(volume);
+	}
+	
+	public float getVolume() {
+		if (texture == null) return 0f;
+		return texture.getVolume();
+	}
+	
+	public void setPosition(long position) {
+		if (texture == null) return;
+		texture.setPosition(position);
+	}
+	
+	public long getPosition() {
+		if (texture == null) return 0;
+		return texture.getPosition();
+	}
+	
+	public void setPitch(float pitch) {
+		if (texture == null) return;
+		texture.setPitch(pitch);
+	}
+	
+	public float getPitch() {
+		if (texture == null) return 0f;
+		return texture.getPitch();
+	}
+	
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("audio", "Audio", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(11, 1));
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
 				.addSetting(new Setting<String>("Sound ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setSound))
-				.addSetting(new Setting<Boolean>("Playing", texture != null ? texture.isPlaying() : false, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::playAudio))
-				.addSetting(new Setting<Boolean>("Loop", texture != null ? texture.isLoop() : false, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(texture::setLoop))
-				.addSetting(new Setting<Float>("Volume", texture != null ? texture.getVolume() : 0.0f, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(texture::setVolume));
+				.addSetting(new Setting<Boolean>("Playing", isPlaying(), Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::playAudio))
+				.addSetting(new Setting<Boolean>("Loop", isLoop(), Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setLoop))
+				.addSetting(new Setting<Float>("Volume", getVolume(), Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setVolume))
+				.addSetting(new Setting<Long>("Position", getPosition(), Long.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setPosition))
+				.addSetting(new Setting<Float>("Pitch", getPitch(), Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setPitch));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

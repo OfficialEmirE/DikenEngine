@@ -2,19 +2,15 @@ package me.ramazanenescik04.diken.game;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Predicate;
 
-import org.luaj.vm2.LuaValue;
-import org.luaj.vm2.Varargs;
-import org.luaj.vm2.lib.VarArgFunction;
-
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
+import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 import me.ramazanenescik04.diken.tools.ObservableList;
@@ -26,10 +22,31 @@ import me.ramazanenescik04.diken.tools.ObservableList;
 public abstract class Node implements java.io.Serializable, Cloneable {
 	private static final long serialVersionUID = -4123363831057244200L;
 	
+	// Child listeners
+	public final Event OnAddChild = new Event();
+	public final Event OnRemoveChild = new Event();
+	public final Event OnInsertChild = new Event();
+	public final Event OnReplaceChild = new Event();
+	
+	// Descendant listeners
+	public final Event OnAddDescendant = new Event();
+	public final Event OnRemoveDescendant = new Event();
+	public final Event OnInsertDescendant = new Event();
+	public final Event OnReplaceDescendant = new Event();
+	
+	// Default listeners
+	public final Event OnUpdate = new Event();
+	public final Event OnDispose = new Event();
+	public final Event OnReload = new Event();
+	public final Event OnDestroy = new Event();
+	
+	// Render listeners
+	public final Event OnPreRender = new Event();
+    public final Event OnPostRender = new Event();
+	
 	// Hiyerarşi
     protected Node parent;
     protected List<Node> children = new ObservableList<>();
-    private transient Map<String, List<LuaValue>> eventMap = new HashMap<>();
     protected UUID netId = UUID.randomUUID();
     
     // Temel Özellikler
@@ -54,8 +71,8 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     	((ObservableList<Node>) children).setListAdapter(l);
     }
 
-    public void addChild(Node child) {
-    	triggerEvent("OnAddChild", child); // 3. Lifecycle Event
+    public void addChild(Node child) {    	
+    	OnAddChild.FireEvent(child);
     	
         if (child.parent != null) {
             child.parent.removeChild(child); // Eski ailesinden kopar
@@ -64,12 +81,12 @@ public abstract class Node implements java.io.Serializable, Cloneable {
         children.add(child);
         child.onAdded(); // 3. Lifecycle Event
         
-        notifyAncestors("OnAddDescendant", child);
+        notifyAncestors(OnAddDescendant, child);
     }
     
     public void insertChild(int index, Node child) {
-    	triggerEvent("OnInsertChild", child, index); // 3. Lifecycle Event
-    	notifyAncestors("OnInsertDescendant", child, index);
+    	OnInsertChild.FireEvent(child, index); // 3. Lifecycle Event
+    	notifyAncestors(OnInsertDescendant, child, index);
     	
     	if (child == null || child == this || this.isDescendantOf(child)) {
     		return;
@@ -122,27 +139,27 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     }
 
     public void removeChild(Node child) {
-    	triggerEvent("OnRemoveChild", child); // 3. Lifecycle Event
+    	OnRemoveChild.FireEvent(child); // 3. Lifecycle Event
     	
         if (children.remove(child)) {
             child.onRemoved(); // 3. Lifecycle Event
             child.parent = null;
         }
         
-        notifyAncestors("OnRemoveDescendant", child);
+        notifyAncestors(OnRemoveDescendant, child);
     }
     
-    private void notifyAncestors(String eventName, Object... datas) {
+    private void notifyAncestors(Event eventName, Object... datas) {
         var current = this;
         while (current != null) {
-        	current.triggerEvent(eventName, datas);
+        	eventName.FireEvent(datas);
         	current = current.parent;
         }
     }
     
     public void replaceChild(Node oldChild, Node newChild) {
-    	triggerEvent("OnReplaceChild", oldChild, newChild); // 3. Lifecycle Event
-    	notifyAncestors("OnReplaceDescendant", oldChild, newChild);
+    	OnReplaceChild.FireEvent(oldChild, newChild); // 3. Lifecycle Event
+    	notifyAncestors(OnReplaceDescendant, oldChild, newChild);
     	
         int index = children.indexOf(oldChild);
         if (index < 0) {
@@ -175,7 +192,16 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     	
     	return true;
     }
-
+    
+    public void draw(Bitmap btp, Hitbox viewport) {
+		for (int i = 0; i < children.size(); i++) {
+            Node child = children.get(i);
+            child.draw(btp, viewport);
+        }
+		
+		OnPostRender.FireEvent();
+	}
+    
     protected int getRenderX() {
     	return getGlobalX();
     }
@@ -192,7 +218,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
     public void update(World world, DikenEngine engine) {
         // Override edilebilir logic
-    	triggerEvent("OnUpdate");
+    	OnUpdate.FireEvent();
         
     	// Çocukları güncelle
         for (int i = 0; i < this.children.size(); i++) {
@@ -207,14 +233,14 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     }
 
     // Global pozisyonu bulmak için parent zincirini takip et
-    protected int getGlobalX() {
+    public int getGlobalX() {
         if (parent instanceof Instance parentInstance) {
             return parentInstance.getGlobalX();
         }
         return 0;
     }
 
-    protected int getGlobalY() {
+    public int getGlobalY() {
         if (parent instanceof Instance parentInstance) {
             return parentInstance.getGlobalY();
         }
@@ -341,68 +367,11 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	    return descendants;
 	}
 	
-	public void registerLuaEvent(String eventName, LuaValue luaFunction) {
-        if (luaFunction == null || !luaFunction.isfunction()) return;
-        
-        if (eventMap == null) eventMap = new HashMap<>();
-
-        eventMap.computeIfAbsent(eventName, _ -> new ArrayList<>()).add(luaFunction);
-    }
-	
-	public void triggerEvent(String eventName, Object... args) {
-		if (eventMap == null) eventMap = new HashMap<>();
-		
-        List<LuaValue> listeners = eventMap.get(eventName);
-        
-        if (listeners == null || listeners.isEmpty()) return;
-
-        LuaValue[] luaArgs = new LuaValue[args.length];
-        for (int i = 0; i < args.length; i++) {
-            luaArgs[i] = org.luaj.vm2.lib.jse.CoerceJavaToLua.coerce(args[i]);
-        }
-
-        for (LuaValue listener : listeners) {
-            try {
-                listener.invoke(LuaValue.varargsOf(luaArgs));
-            } catch (Exception e) {
-                DikenEngine.errorLog("Lua Event Error [" + eventName + "]: " + e.getMessage());
-            }
-        }
-    }
-	
-	public void addLuaEventListener(String eventName, LuaEventListenerJava javaListener) {
-	    if (javaListener == null) return;
-
-	    LuaValue luaFunctionWrapper = new VarArgFunction() {
-	        @Override
-	        public Varargs invoke(Varargs luaArgs) {
-	            int count = luaArgs.narg();
-	            Object[] javaArgs = new Object[count];
-	            
-	            for (int i = 1; i <= count; i++) {
-	                LuaValue arg = luaArgs.arg(i);
-	                
-	                if (arg.isuserdata()) {
-	                    javaArgs[i - 1] = arg.checkuserdata();
-	                } else {
-	                    javaArgs[i - 1] = arg.isnil() ? null : arg.tojstring();
-	                }
-	            }
-	            
-	            javaListener.onEvent(javaArgs);
-	            
-	            return LuaValue.NIL; 
-	        }
-	    };
-
-	    registerLuaEvent(eventName, luaFunctionWrapper);
-	}
-	
 	public void sendDisposeAllNodes(Node parent) {
 	    for (Node child : parent.children) {
 	        sendDisposeAllNodes(child);
 	    }
-	    parent.triggerEvent("OnDispose");
+	    parent.OnDispose.FireEvent();
 	    parent.dispose();
 	}
 	
@@ -410,7 +379,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	    for (Node child : parent.children) {
 	    	sendReloadAllNodes(child);
 	    }
-	    parent.triggerEvent("OnReload");
+	    parent.OnReload.FireEvent();
 	    parent.reloadNode();
 	}
 	
@@ -510,7 +479,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	public void removeNode() {
 		this.removed = true;
-		triggerEvent("OnDestroy");
+		OnDestroy.FireEvent();
 	}
 	
 	public boolean isRemoved() {
@@ -568,9 +537,5 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	@Override
 	public String toString() {
 		return "[" + this.getName() + "]";
-	}
-	
-	public static interface LuaEventListenerJava {
-		void onEvent(Object... args);
 	}
 }

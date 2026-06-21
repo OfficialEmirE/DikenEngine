@@ -13,7 +13,6 @@ import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
 import me.ramazanenescik04.diken.game.nodes.Tool;
-import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -24,7 +23,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public class Humanoid extends Part {
 	private static final long serialVersionUID = 2113495473844070076L;
 	
-	public transient boolean followCamera = true;
 	public boolean canMove = true;
 	public float speed = 4.0f;
 	
@@ -57,9 +55,7 @@ public class Humanoid extends Part {
 
 	@Override
 	public Bitmap render() {
-		Bitmap bitmap = FrameBitmapPool.newBitmap(this.aabb.getWidth(), this.aabb.getHeight());
-		bitmap.clear(color);
-		return bitmap;
+		return super.render();
 	}
 
 	@Override
@@ -78,6 +74,7 @@ public class Humanoid extends Part {
 		} else {
 			killTime = 0;
 		}
+		
 		super.update(world, engine);
 	}
 	
@@ -123,14 +120,6 @@ public class Humanoid extends Part {
 	
 	public void setWalkAnimation(Animation animation) {
 		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
-	public boolean isFollowCamera() {
-		return followCamera;
-	}
-
-	public void setFollowCamera(boolean followCamera) {
-		this.followCamera = followCamera;
 	}
 
 	public boolean isCanMove() {
@@ -188,7 +177,6 @@ public class Humanoid extends Part {
 		var key = new SettingCategory.SettingKey("humanoid", "Humanoid", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 1));
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<Boolean>("Follow Camera", followCamera, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setFollowCamera))
 				.addSetting(new Setting<Boolean>("Can Move", canMove, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setCanMove))
 				.addSetting(new Setting<Float>("Speed", speed, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setSpeed))
 				.addSetting(new Setting<Integer>("Health", health, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setHealth))

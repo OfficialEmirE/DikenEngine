@@ -2,15 +2,16 @@ package me.ramazanenescik04.diken.game.services;
 
 import java.util.List;
 
-import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
-import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
-public class Service extends Node {
+public class Service extends AbstractService {
 	private static final long serialVersionUID = 1L;
+	
+	public final Event OnPreRender = new Event();
+    public final Event OnPostRender = new Event();
 	
 	public Service() {
 		this("Service");
@@ -19,17 +20,10 @@ public class Service extends Node {
 	public Service(String name) {
 		super(name);
 	}
-	
-	@Override
-	public void setName(String name) {
-		throw new IllegalAccessError("Servislere isim koyulamaz");
-	}
-	
-	public void draw(Bitmap sceneBitmap, Hitbox viewport) {}
 
 	@Override
 	public List<SettingCategory> getNodeSettings() {
-		var key = new SettingCategory.SettingKey("service", "Service", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(8, 1));
+		var key = new SettingCategory.SettingKey("service", "Service", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 3));
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key);

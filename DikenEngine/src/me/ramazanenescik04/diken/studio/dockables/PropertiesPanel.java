@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.studio;
+package me.ramazanenescik04.diken.studio.dockables;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
@@ -183,7 +183,6 @@ public class PropertiesPanel extends DockablePanel {
 						Node currentSelected = explorerPanel.getSelectedNode();
 						javax.swing.SwingUtilities.invokeLater(() -> {
 							explorerPanel.rebuildExplorer();
-							// rebuild sonrası seçimi geri yükle
 							explorerPanel.selectNode(currentSelected);
 						});
 					}
@@ -193,9 +192,17 @@ public class PropertiesPanel extends DockablePanel {
         		return textField;
         	}
         	case RESOURCE_SELECT -> {
-        		var textField = buildTextField(setting);
+        		Setting<String> stringSetting = (Setting<String>) setting;
+        		var world = explorerPanel.theWorld;
         		
-        		return textField;
+        		var comboBox = new JComboBox<String>(world.resources.keySet().toArray(new String[0]));
+            	comboBox.setSelectedItem(setting.getValue());
+            	comboBox.setEditable(true);
+            	comboBox.addActionListener(_ -> {
+            		applySettingValue(stringSetting, comboBox.getSelectedItem());
+            	});
+            	
+            	return comboBox;
         	}
         	case OBJECT_SELECT -> {
         	    JPanel panel = new JPanel(new BorderLayout(4, 0));

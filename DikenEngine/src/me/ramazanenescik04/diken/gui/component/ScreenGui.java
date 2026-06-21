@@ -26,7 +26,7 @@ public class ScreenGui extends Node {
 	}
 	
 	public void drawScreen(Bitmap sceneBitmap, Hitbox viewport) {
-		triggerEvent("OnPreRender");
+		OnPreRender.FireEvent();
         if (!enabled) return;
         
         for (int i = 0; i < children.size(); i++) {
@@ -36,7 +36,7 @@ public class ScreenGui extends Node {
 			}
         }
         
-        triggerEvent("OnPostRender");
+        OnPostRender.FireEvent();
 	}
 	
 	public void keyHandled(int inputMode, int key, char character) {

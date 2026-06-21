@@ -3,6 +3,7 @@ package me.ramazanenescik04.diken.game;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -10,6 +11,10 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public abstract class Instance extends Node {
     private static final long serialVersionUID = 1L;
+
+    public final Event OnCollision = new Event();
+    public final Event OnPreRender = new Event();
+    public final Event OnPostRender = new Event();
 
     public int x;
     public int y;
@@ -41,12 +46,13 @@ public abstract class Instance extends Node {
 
     public abstract Bitmap render();
     
-    public final void draw(Bitmap btp) {
+    public void draw(Bitmap btp) {
         draw(btp, null);
     }
 
-    public final void draw(Bitmap btp, Hitbox viewport) {
-    	triggerEvent("OnPreRender");
+    @Override
+    public void draw(Bitmap btp, Hitbox viewport) {
+    	OnPreRender.FireEvent();
     	
     	if (aabb != null && aabb.getRotation() != this.rotation) {
     		this.aabb.setRotation(rotation);
@@ -86,14 +92,7 @@ public abstract class Instance extends Node {
             }
         }
 
-        for (int i = 0; i < children.size(); i++) {
-            Node child = children.get(i);
-            if (child instanceof Instance childInstance) {
-				childInstance.draw(btp, viewport);
-			}
-        }
-        
-        triggerEvent("OnPostRender");
+        super.draw(btp, viewport);
     }
 
     @Override

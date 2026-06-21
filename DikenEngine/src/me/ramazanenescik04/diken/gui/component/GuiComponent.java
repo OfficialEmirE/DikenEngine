@@ -10,6 +10,7 @@ import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
@@ -23,6 +24,9 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public abstract class GuiComponent extends Node {
 	private static final long serialVersionUID = 1L;
+	
+	public final Event OnPreRender = new Event();
+    public final Event OnPostRender = new Event();
 
 	private UDim2 position;
 	private UDim2 size;
@@ -251,6 +255,8 @@ public abstract class GuiComponent extends Node {
         while (eslesme.find()) {
         	numberList.add(Double.parseDouble(eslesme.group()));
         }
+        
+        if (numberList.size() < 4) return UDim2.defaultV;
 
         return new UDim2(
         		numberList.get(0),
@@ -261,7 +267,7 @@ public abstract class GuiComponent extends Node {
     }
 
 	public void drawComponent(Bitmap sceneBitmap, Hitbox viewport) {
-		triggerEvent("OnPreRender");
+		OnPreRender.FireEvent();
         if (!visible) return;
 
         if (shouldRenderSelf(viewport)) {
@@ -289,6 +295,6 @@ public abstract class GuiComponent extends Node {
 			}
         }
         
-        triggerEvent("OnPostRender");
+        OnPostRender.FireEvent();
 	}
 }

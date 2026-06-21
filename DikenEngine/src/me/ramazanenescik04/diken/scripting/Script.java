@@ -1,11 +1,7 @@
 package me.ramazanenescik04.diken.scripting;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -15,7 +11,6 @@ import org.luaj.vm2.lib.jse.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.InstanceList;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
@@ -48,13 +43,16 @@ public class Script extends Node {
         this.globals = JsePlatform.standardGlobals();
         
         LuaValue rootNode = CoerceJavaToLua.coerce(theWorld);
-        LuaValue brige = CoerceJavaToLua.coerce(bridge);
+        LuaValue brige = CoerceJavaToLua.coerce(new LuaBridge(this));
 
         try {
 			globals.load(Files.readString(Paths.get(Script.class.getResource("/scripts/init.lua").toURI()))).call(rootNode, brige);
 		} catch (IOException | URISyntaxException e) {
 			DikenEngine.errorLog("Script init.lua Error: " + e.getMessage());
 		}
+        
+        LuaInit.initClasses(globals);
+        LuaInit.initEnums(globals);
 
         try {
             LuaValue chunk = globals.load(source);
@@ -75,10 +73,7 @@ public class Script extends Node {
 	public void update(World world, DikenEngine engine) {		
 		if (luaUpdateFunction != null && isInitialized) {
             try {
-                luaUpdateFunction.call(
-                    CoerceJavaToLua.coerce(engine), 
-                    CoerceJavaToLua.coerce(world)
-                );
+                luaUpdateFunction.call();
             } catch (LuaError e) {
                 DikenEngine.errorLog("Lua Update Error [" + getName() + "]: " + e.getMessage());
             } catch (Exception e) {
@@ -110,7 +105,6 @@ public class Script extends Node {
 		var key = new SettingCategory.SettingKey("server_script", "Script", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(12, 1));
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Source", source, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setSource))
 				.addSetting(new Setting<Boolean>("Enabled", enabled, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setEnabled));
 		
 		var list = super.getNodeSettings();
@@ -125,70 +119,4 @@ public class Script extends Node {
         cloned.setEnabled(this.enabled);
         return cloned;
     }
-	
-	private Object bridge = new Object() {
-        @SuppressWarnings("unused")
-		public Object create(String className) {
-            for (Node node : InstanceList.getNodeList()) {
-                if (node.getClass().getSimpleName().equalsIgnoreCase(className)) {
-                    return node.copy();
-                }
-            }
-            DikenEngine.errorLog("Instance.new Error: '" + className + "' adında bir Node bulunamadı!");
-            return null;
-        }
-        
-        @SuppressWarnings("unused")
-		public Object clone(Object object) {
-        	if (object == null) {
-        		DikenEngine.errorLog("Instance.clone Error: Object Null Olamaz!");
-        		return null;
-        	}
-        	
-        	if (object instanceof Node node) {
-        		var copyNode = node.copy();
-        		if (copyNode != null) {
-        			return copyNode;
-        		}
-        		
-        		DikenEngine.errorLog("Instance.clone Error: '" + object.getClass().getSimpleName() + ", Archiveable true değil.");
-        		return null;
-        	} else if (object instanceof Cloneable c) {
-        		return c;
-        	}
-        	
-        	DikenEngine.errorLog("Instance.clone Error: '" + object.getClass().getSimpleName() + ", Klonlamayı desteklemiyor.");
-            return null;
-        }
-        
-        @SuppressWarnings("unused")
-		public Object httpGet(String url) {
-			try {
-				var httpClient = HttpClient.newHttpClient();
-            	var httpRequest = HttpRequest.newBuilder(URI.create(url))
-            			.GET()
-            			.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0")
-            			.build();
-            	
-				var response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-				
-				return response.body();
-			} catch (Exception e) {
-				DikenEngine.errorLog("HttpGet Error: " + e.getMessage());
-			}
-			
-			return null;
-        }
-        
-        @SuppressWarnings("unused")
-		public Object getCurrentScript() {
-        	return Script.this;
-        }
-        
-        @SuppressWarnings("unused")
-		public void log(String message) {
-            DikenEngine.log(message);
-        }
-    };
-
 }

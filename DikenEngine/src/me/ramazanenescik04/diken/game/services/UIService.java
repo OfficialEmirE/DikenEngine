@@ -33,8 +33,9 @@ public class UIService extends Service {
 		return list;
 	}
 
+	@Override
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
-		triggerEvent("OnPreRender");
+		OnPreRender.FireEvent();
 
         for (int i = 0; i < children.size(); i++) {
             Node child = children.get(i);
@@ -43,7 +44,7 @@ public class UIService extends Service {
 			}
         }
         
-        triggerEvent("OnPostRender");
+        OnPostRender.FireEvent();
 	}
 
 	public void keyHandled(int inputMode, int key, char character) {

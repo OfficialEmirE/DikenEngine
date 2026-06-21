@@ -1,10 +1,12 @@
-package me.ramazanenescik04.diken.studio;
+package me.ramazanenescik04.diken.studio.dockables;
 
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -62,6 +64,12 @@ public class ResourcesPanel extends DockablePanel {
 
         rebuildList();
     }
+    
+    public void reloadWorld(World newWorld) {
+		this.theWorld = newWorld;
+		
+		this.rebuildList();
+	}
 
     private void rebuildList() {
         listPanel.removeAll();
@@ -94,15 +102,28 @@ public class ResourcesPanel extends DockablePanel {
         JLabel iconLabel = new JLabel();
         iconLabel.setPreferredSize(new Dimension(28, 28));
         iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        
+        var resourceType = resource.getResourceType();
 
-        if (resource instanceof Bitmap bitmap) {
-            try {
-                Image img = bitmap.toImage();
-                Image scaled = img.getScaledInstance(28, 28, Image.SCALE_SMOOTH);
-                iconLabel.setIcon(new ImageIcon(scaled));
-            } catch (Exception e) {
-                iconLabel.setText("?");
+        if (resourceType == EnumResource.IMAGE || resourceType == EnumResource.CURSOR) {
+        	if (resource instanceof Bitmap bitmap) {
+                var icon = getIcon(bitmap);
+                
+                if (icon == null) {
+                	iconLabel.setText("?");
+                    iconLabel.setForeground(Color.GRAY);
+                } else {
+                	iconLabel.setIcon(icon);
+                }
+            }
+        } else if (resourceType == EnumResource.SOUND) {
+        	var icon = getIcon(((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(11, 1));
+            
+            if (icon == null) {
+            	iconLabel.setText("?");
                 iconLabel.setForeground(Color.GRAY);
+            } else {
+            	iconLabel.setIcon(icon);
             }
         } else {
             // Diğer tipler için tip baş harfi göster
@@ -110,6 +131,7 @@ public class ResourcesPanel extends DockablePanel {
             iconLabel.setForeground(new Color(180, 180, 180));
             iconLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
         }
+        
         item.add(iconLabel, BorderLayout.WEST);
 
         // İsim + tip
@@ -243,6 +265,16 @@ public class ResourcesPanel extends DockablePanel {
         theWorld.removeResource(selectedKey);
         selectedKey = null;
         rebuildList();
+    }
+    
+    private ImageIcon getIcon(Bitmap icon) {
+    	try {
+            Image img = icon.toImage();
+            Image scaled = img.getScaledInstance(28, 28, Image.SCALE_SMOOTH);
+            return new ImageIcon(scaled);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public String getSelectedResourceKey() {

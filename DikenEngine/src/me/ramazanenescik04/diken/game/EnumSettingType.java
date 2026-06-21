@@ -12,7 +12,7 @@ public enum EnumSettingType {
     COLOR_PICKER(Integer.class),
     KEY_BIND(Character.class, Integer.class),
 	RESOURCE_SELECT(String.class),
-	LIST_SELECT(String.class, Integer.class),
+	LIST_SELECT(Enum.class, String.class, Integer.class),
 	OBJECT_SELECT(Node.class),
 	UNKNOWN(Object.class);
 	

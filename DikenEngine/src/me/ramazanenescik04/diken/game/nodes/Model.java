@@ -28,16 +28,16 @@ public class Model extends Instance {
 		super(name, x, y);
 		
 		// Child'e birşeyler olmuşsa, aabb'yi yeniden hesapla
-		this.addLuaEventListener("OnAddDescendant", (_) -> {
+		OnAddDescendant.Connect((_) -> {
 			this.recalculateAABB();
 		});
-		this.addLuaEventListener("OnInsertDescendant", (_) -> {
+		OnInsertDescendant.Connect((_) -> {
 			this.recalculateAABB();
 		});
-		this.addLuaEventListener("OnRemoveDescendant", (_) -> {
+		OnRemoveDescendant.Connect((_) -> {
 			this.recalculateAABB();
 		});
-		this.addLuaEventListener("OnReplaceDescendant", (_) -> {
+		OnReplaceDescendant.Connect((_) -> {
 			this.recalculateAABB();
 		});
 		

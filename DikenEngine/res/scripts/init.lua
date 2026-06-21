@@ -53,36 +53,30 @@ local function modifyMetatable(javaObj)
     mt.__index = function(self, key)
         local rawJava = self._javaRef
         
-        -- 1. Event Kontrolü
-        if type(key) == "string" and string.sub(key, 1, 2) == 'On' then
-            return {
-                Connect = function(selfOrFunc, func)
-                    local actualFunc = func or selfOrFunc
-                    rawJava:registerLuaEvent(key, actualFunc)
-                end
-            }
-        end
-        
         local success, val = pcall(function() return rawJava[key] end)
         if success and val ~= nil then 
             if type(val) == "number" or type(val) == "string" or type(val) == "boolean" then
                 return val
             end
             
-            if type(val) == "userdata" or type(val) == "function" then
-                return function(p1, p2, p3) 
-                    local target = p1
-                    if type(p1) == "table" and p1._javaRef ~= nil then target = p1._javaRef end
-                    
-                    if p2 and type(p2) == "table" and p2._javaRef ~= nil then p2 = p2._javaRef end
-                    if p3 and type(p3) == "table" and p3._javaRef ~= nil then p3 = p3._javaRef end
-                    
-                    local mSuccess, mRes = pcall(val, target, p2, p3)
-                    if mSuccess then return modifyMetatable(mRes) end
-                end
-            end
-            
-            return modifyMetatable(val) 
+			if type(val) == "function" then    -- "userdata" kaldırıldı
+			    return function(p1, p2, p3) 
+			        local target = p1
+			        if type(p1) == "table" and p1._javaRef ~= nil then target = p1._javaRef end
+			        if p2 and type(p2) == "table" and p2._javaRef ~= nil then p2 = p2._javaRef end
+			        if p3 and type(p3) == "table" and p3._javaRef ~= nil then p3 = p3._javaRef end
+
+			        local mSuccess, mRes = pcall(val, target, p2, p3)
+			        if mSuccess then
+			            if type(mRes) == "number" or type(mRes) == "string" or type(mRes) == "boolean" or mRes == nil then
+			                return mRes
+			            end
+			            return modifyMetatable(mRes)
+			        end
+			    end
+			end
+
+			return modifyMetatable(val)
         end
         
         -- 3. Alt Nesne Arama (game.Workspace.Player gibi)

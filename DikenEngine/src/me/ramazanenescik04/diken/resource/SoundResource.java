@@ -18,11 +18,14 @@ public class SoundResource implements IResource {
     private byte[] wavBytes;
 
     private float volume = 1.0f;   // 0..1
+    private float pitch = 1.0f; // default
+    private long maxPosition;
     private boolean loop = false;
 
     // runtime (serialize edilmez)
     private transient Clip clip;
     private transient boolean loaded;
+    private transient Float originalSampleRate = null;
 
     public SoundResource() {
         // reflection için zorunlu
@@ -51,7 +54,6 @@ public class SoundResource implements IResource {
         return fromWav(wavFile.toPath(), id);
     }
 
-    // İstersen byte[] ile de oluştur
     public static SoundResource fromWavBytes(byte[] wavBytes, String id) {
         ensureLooksLikeWav(wavBytes, "byte[]");
         return new SoundResource(id, wavBytes);
@@ -62,7 +64,6 @@ public class SoundResource implements IResource {
 			throw new IllegalArgumentException("InputStream is null");
 		}
 
-		// Stream'i tamamen byte[]'e oku
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		byte[] data = new byte[8192];
 		int nRead;
@@ -90,7 +91,10 @@ public class SoundResource implements IResource {
             clip.stop();
         }
         clip.setFramePosition(0);
+        this.maxPosition = clip.getFrameLength();
+        this.originalSampleRate = null;
         applyVolume(volume);
+        applyPitch(pitch);
 
         if (loop) {
             clip.loop(Clip.LOOP_CONTINUOUSLY);
@@ -170,10 +174,12 @@ public class SoundResource implements IResource {
             this.clip = newClip;
             this.loaded = true;
 
+            this.maxPosition = clip.getMicrosecondLength();
+            this.originalSampleRate = null;
             applyVolume(volume);
-
+            applyPitch(pitch);
+            
         } catch (Exception e) {
-            // İstersen burada kendi logger'ına bas
             this.clip = null;
             this.loaded = false;
             throw new RuntimeException("SoundResource reload failed (id=" + id + "): " + e.getMessage(), e);
@@ -209,7 +215,6 @@ public class SoundResource implements IResource {
         if (clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
             FloatControl gain = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
 
-            // 0..1 -> dB (basit yaklaşım). 0 = min, 1 = 0dB
             if (v == 0f) {
                 gain.setValue(gain.getMinimum());
             } else {
@@ -217,6 +222,38 @@ public class SoundResource implements IResource {
                 dB = Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), dB));
                 gain.setValue(dB);
             }
+        }
+    }
+    
+    // ---------------------------
+    // Position helper
+    // ---------------------------
+    private void applyPosition(long position) {
+        if (clip == null) return;
+
+        position = Math.max(0, Math.min(clip.getMicrosecondLength(), position));
+        
+        clip.setMicrosecondPosition(position);
+    }
+    
+	// ---------------------------
+    // Volume helper
+    // ---------------------------
+    
+    private void applyPitch(float v01) {
+        if (clip == null) return;
+
+        float v = Math.max(0f, v01);
+
+        if (clip.isControlSupported(FloatControl.Type.SAMPLE_RATE)) {
+            FloatControl gain = (FloatControl) clip.getControl(FloatControl.Type.SAMPLE_RATE);
+            if (originalSampleRate == null) {
+            	originalSampleRate = gain.getValue();
+            }
+
+            float dB = (float) originalSampleRate * v;
+            dB = Math.max(gain.getMinimum(), Math.min(gain.getMaximum(), dB));
+            gain.setValue(dB);
         }
     }
 
@@ -291,6 +328,25 @@ public class SoundResource implements IResource {
         this.volume = volume;
         applyVolume(volume);
     }
+    
+    public synchronized long getPosition() {
+    	if (clip != null) {
+    		return clip.getMicrosecondPosition();
+    	}
+    	
+    	return 0;
+    }
+    public void setPosition(long position) {
+        applyPosition(position);
+    }
+    
+    public float getPitch() { return pitch; }
+    public void setPitch(float pitch) {
+        this.pitch = pitch;
+        applyPitch(pitch);
+    }
+    
+    public long getMaxPosition() { return this.maxPosition; }
 
     public boolean isLoop() { return loop; }
     public void setLoop(boolean loop) { this.loop = loop; }

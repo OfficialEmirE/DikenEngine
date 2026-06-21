@@ -75,8 +75,6 @@ public class AboutWindow extends JDialog {
 		buttons.add(btnNewButton);
 		buttons.add(okButton);
 		
-		
-		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		getContentPane().add(tabbedPane, BorderLayout.CENTER);
 		
@@ -124,6 +122,11 @@ public class AboutWindow extends JDialog {
 		lblDockingFrames.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		lblDockingFrames.setAlignmentX(0.5f);
 		aboutPage.add(lblDockingFrames);
+		
+		JLabel lblRTextArea = new JLabel("RSyntaxTextArea - https://github.com/bobbylight/RSyntaxTextArea");
+		lblRTextArea.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		lblRTextArea.setAlignmentX(0.5f);
+		aboutPage.add(lblRTextArea);
 		
 		JScrollPane scrollPane = new JScrollPane(licenseText);
 		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);

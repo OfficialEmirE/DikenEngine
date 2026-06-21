@@ -23,16 +23,14 @@ public class Workspace extends Service {
 	}
 	
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
-		triggerEvent("OnPreRender");
+		OnPreRender.FireEvent();
 
         for (int i = 0; i < children.size(); i++) {
             Node child = children.get(i);
-            if (child instanceof Instance childInstance && childInstance.isVisible()) {
-				childInstance.draw(sceneBitmap, viewport);
-			}
+			child.draw(sceneBitmap, viewport);
         }
         
-        triggerEvent("OnPostRender");
+        OnPostRender.FireEvent();
 	}
 
 	@Override
@@ -56,7 +54,6 @@ public class Workspace extends Service {
 			}
 	    }
 	    
-	    // Eğer çocuklarda yoksa, derinlemesine (recursive) ara
 	    for (Node child : getChildren()) {
 	    	if (child instanceof Instance instance) {
 	    		List<Instance> childResult = instance.findInArea(area);

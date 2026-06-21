@@ -19,6 +19,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.nodes.Camera;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.services.UIService;
 import me.ramazanenescik04.diken.game.services.InputService;
@@ -27,10 +28,10 @@ import me.ramazanenescik04.diken.game.services.Service;
 import me.ramazanenescik04.diken.game.services.Workspace;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
+import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
-import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 
 /**
@@ -54,8 +55,8 @@ public class World implements Cloneable {
     public World(String gameName, Node rootNode) {
     	this.gameName = gameName;
     	this.resources = new ConcurrentHashMap<>();
-    	this.resources.put("empty", Bitmap.empty);
-        // Root isimsiz ve render edilmeyen bir container'dır
+    	this.loadResources();
+
     	if (rootNode == null) {
     		this.root = new Folder(gameName);
     		initServices(this.root);
@@ -68,8 +69,15 @@ public class World implements Cloneable {
     	this(gameName, null);
     }
     
+    private void loadResources() {
+    	this.resources.put("empty", Bitmap.empty);
+    	this.resources.put("sky", IOResource.loadResource(DikenEngine.class.getResourceAsStream("/sky.png"), EnumResource.IMAGE));
+    }
+    
     private void initServices(Node root) {
-    	root.addChild(new Workspace());
+    	var workspace = new Workspace();
+    	workspace.addChild(new Camera());
+    	root.addChild(workspace);
     	root.addChild(new Lighting());
     	root.addChild(new UIService());
     	root.addChild(new InputService());
@@ -163,42 +171,42 @@ public class World implements Cloneable {
     	checkCollisions(engine);
     }
 
-    private void checkCollisions(DikenEngine engine) {
-        List<Instance> collidables = new ArrayList<>();
-        collectCollidableNodes(this.getWorkspace(), collidables);
-        
-        for (int pass = 0; pass < MAX_COLLISION_PASSES; pass++) {
-        	boolean hadIntersection = false;
-        	
-	        for (int i = 0; i < collidables.size(); i++) {
-            Instance a = collidables.get(i);
-            
-            for (int j = i + 1; j < collidables.size(); j++) {
-                Instance b = collidables.get(j);
-	                IHitbox boxA = a.getGlobalAABB();
-	                Hitbox boxB = b.getGlobalAABB();
+	private void checkCollisions(DikenEngine engine) {
+		List<Instance> collidables = new ArrayList<>();
+		collectCollidableNodes(this.getWorkspace(), collidables);
 
-	                if (boxA != null && boxB != null && boxA.intersects(boxB)) {
-	                	hadIntersection = true;
-	                    
-	                    a.onCollision(b);
-	                    b.onCollision(a);
-	                    
-	                    a.triggerEvent("OnCollision", b);
-	                    b.triggerEvent("OnCollision", a);
+		for (int pass = 0; pass < MAX_COLLISION_PASSES; pass++) {
+			boolean hadIntersection = false;
 
-	                    if (a.isSolid() && b.isSolid()) {
-	                    	Node.resolveCollision(a, b);
-	                    }
-	                }
-	            }
-	        }
-	        
-	        if (!hadIntersection) {
-	        	break;
-	        }
-        }
-    }
+			for (int i = 0; i < collidables.size(); i++) {
+				Instance a = collidables.get(i);
+
+				for (int j = i + 1; j < collidables.size(); j++) {
+					Instance b = collidables.get(j);
+					Hitbox boxA = a.getGlobalAABB();
+					Hitbox boxB = b.getGlobalAABB();
+
+					if (boxA != null && boxB != null && boxA.intersects(boxB)) {
+						hadIntersection = true;
+
+						a.onCollision(b);
+						b.onCollision(a);
+
+						a.OnCollision.FireEvent(b);
+						b.OnCollision.FireEvent(a);
+
+						if (a.isSolid() && b.isSolid()) {
+							Node.resolveCollision(a, b);
+						}
+					}
+				}
+			}
+
+			if (!hadIntersection) {
+				break;
+			}
+		}
+	}
 
     // Yardımcı metod: Ağacı gezip hitbox'ı olanları bulur
     private void collectCollidableNodes(Node current, List<Instance> list) {
@@ -223,8 +231,23 @@ public class World implements Cloneable {
         this.camera = camera;
     }
 
+    /**
+     * @deprecated
+     * use {@link World.getCameraPoint}
+     * 
+     * @return Camera Position
+     */
+    @Deprecated
     public Point getCamera() {
         return camera;
+    }
+    
+    public Point getCameraPoint() {
+        return camera;
+    }
+    
+    public Camera getCameraNode() {
+        return this.getWorkspace().findFirstChildOfClass(Camera.class);
     }
     
     public float getZoom() {
@@ -291,7 +314,7 @@ public class World implements Cloneable {
     private static World readWorld(ObjectInputStream outStream) throws IOException, ReflectiveOperationException {
         String signature = outStream.readUTF();
         if (!signature.equals("DikenEngine-WorldFile")) {
-            throw new IOException("DikenENngine World Dosyası Değil!");
+            throw new IOException("DikenEngine World Dosyası Değil!");
         }
         
         int worldVersion = outStream.readInt();
@@ -336,6 +359,10 @@ public class World implements Cloneable {
     
 	@SuppressWarnings("unchecked")
 	public <T extends IResource> T getResource(String key, EnumResource expectedType) {
+		if (key == null || expectedType == null) {
+            throw new IllegalArgumentException("Key veya EnumResource null olamaz!");
+        }
+		
         IResource res = resources.get(key);
 
         // Kaynak var mı ve tipi bizim beklediğimiz tip mi?

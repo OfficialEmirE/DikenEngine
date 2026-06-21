@@ -65,11 +65,11 @@ public class ArrayBitmap implements IResource {
 
 	@Override
 	public void loadResource(DataInputStream in) throws IOException {
-	    int rows = in.readInt();           // satır sayısı
+	    int rows = in.readInt();
 	    bitmap = new Bitmap[rows][];
 
 	    for (int i = 0; i < rows; i++) {
-	        int cols = in.readInt();       // sütun sayısı
+	        int cols = in.readInt();
 
 	        if (cols == -1) {
 	            bitmap[i] = null;
@@ -79,7 +79,7 @@ public class ArrayBitmap implements IResource {
 	        bitmap[i] = new Bitmap[cols];
 
 	        for (int j = 0; j < cols; j++) {
-	            int len = in.readInt();    // byte uzunluğu
+	            int len = in.readInt();
 
 	            if (len == -1) {
 	                bitmap[i][j] = null;
@@ -87,7 +87,7 @@ public class ArrayBitmap implements IResource {
 	            }
 
 	            byte[] data = new byte[len];
-	            in.readFully(data);        // ⚠️ readFully şart
+	            in.readFully(data);
 
 	            bitmap[i][j] = Bitmap.fromBytes(data);
 	        }
