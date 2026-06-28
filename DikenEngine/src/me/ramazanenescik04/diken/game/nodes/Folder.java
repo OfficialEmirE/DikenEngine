@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Node;
@@ -11,14 +13,17 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Folder` type within the DikenEngine `game.nodes` package.
  */
 public class Folder extends Node {
-	private static final long serialVersionUID = -1974610025825096210L;
-	
 	public Folder() {
 		this("Folder");
 	}
 
 	public Folder(String name) {
 		super(name);
+	}
+
+	public Folder(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	@Override

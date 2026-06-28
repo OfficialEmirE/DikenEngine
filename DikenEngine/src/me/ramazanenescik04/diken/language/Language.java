@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.language;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,8 @@ public final class Language {
 		
 		this.locale = locale;
 		this.translations = Translation.load(translationsFilePath);
+		
+		languages[id] = this;				
 	}
 	
 	private Language(int id, Locale locale, List<Translation> translations) {
@@ -37,16 +40,30 @@ public final class Language {
 		
 		this.locale = locale;
 		this.translations = translations;
+		
+		languages[id] = this;
 	}
 	
+	/**
+	 * 
+	 * @return Dil'in ID'si
+	 */
 	public int getId() {
 		return this.id;
 	}
 	
+	/**
+	 * 
+	 * @return Dil'in Konumu
+	 */
 	public Locale getLocale() {
 		return this.locale;
 	}
 	
+	/**
+	 * 
+	 * @return Dil'in anahtarlara göre çevirilerin listesi.
+	 */
 	public List<Translation> getTranslations() {
 		return this.translations;
 	}
@@ -82,21 +99,18 @@ public final class Language {
 		
 		return null; // Return null if no matching language is found
 	}
-
-	public static int[] getLanguageListId() {
-		int[] languageIds = new int[languages.length];
-		for (int i = 0; i < languages.length; i++) {
-			languageIds[i] = languages[i] != null ? languages[i].id : -1;
-		}
-		return languageIds;
-	}
 	
-	public static Integer[] getLanguageListIdBoxed() {
-		Integer[] languageIds = new Integer[languages.length];
+	public static Integer[] getLanguageListId() {
+		List<Integer> languageIds = new ArrayList<>();
 		for (int i = 0; i < languages.length; i++) {
-			languageIds[i] = languages[i] != null ? languages[i].id : null;
+			var language = languages[i];
+			
+			if (language == null)
+				continue;
+			
+			languageIds.add(languages[i].id);
 		}
-		return languageIds;
+		return languageIds.toArray(new Integer[0]);
 	}
 	
 	public static Language[] getLanguages() {

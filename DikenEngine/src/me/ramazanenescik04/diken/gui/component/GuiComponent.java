@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,8 +26,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `GuiComponent` type within the DikenEngine `gui.component` package.
  */
 public abstract class GuiComponent extends Node {
-	private static final long serialVersionUID = 1L;
-	
 	public final Event OnPreRender = new Event();
     public final Event OnPostRender = new Event();
 
@@ -56,6 +57,10 @@ public abstract class GuiComponent extends Node {
 
 	public GuiComponent(UDim2 position, UDim2 size) {
 		this("GuiComponent", position, size);
+	}
+
+	public GuiComponent(DataInputStream in) throws IOException {
+		super(in);
 	}
 
 	public Bitmap render() {
@@ -296,5 +301,36 @@ public abstract class GuiComponent extends Node {
         }
         
         OnPostRender.FireEvent();
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		writeUDim2(out, position);
+		writeUDim2(out, size);
+		out.writeBoolean(visible);
+		out.writeBoolean(active);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.position = readUDim2(in);
+		this.size = readUDim2(in);
+		this.visible = in.readBoolean();
+		this.active = in.readBoolean();
+		this.listeners = new ArrayList<>();
+		this.prevBounds = getAbsoluteBounds();
+	}
+
+	private static void writeUDim2(DataOutputStream out, UDim2 value) throws IOException {
+		out.writeDouble(value.x.scale);
+		out.writeInt(value.x.offset);
+		out.writeDouble(value.y.scale);
+		out.writeInt(value.y.offset);
+	}
+
+	private static UDim2 readUDim2(DataInputStream in) throws IOException {
+		return new UDim2(in.readDouble(), in.readInt(), in.readDouble(), in.readInt());
 	}
 }

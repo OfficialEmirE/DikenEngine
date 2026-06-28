@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
@@ -13,8 +16,6 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class ScreenGui extends Node {
-	private static final long serialVersionUID = -2143812617894766479L;
-	
 	private boolean enabled = true;
 	
 	public ScreenGui() {
@@ -23,6 +24,11 @@ public class ScreenGui extends Node {
 	
 	public ScreenGui(String name) {
 		super(name);
+	}
+
+	public ScreenGui(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public void drawScreen(Bitmap sceneBitmap, Hitbox viewport) {
@@ -103,5 +109,17 @@ public class ScreenGui extends Node {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeBoolean(enabled);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.enabled = in.readBoolean();
 	}
 }

@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
@@ -16,8 +19,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * rengi ve yarıçapı okunur.
  */
 public class Light extends Instance {
-    private static final long serialVersionUID = 1L;
-
     public enum LightType {
         POINT,
         SPOT,
@@ -46,6 +47,11 @@ public class Light extends Instance {
         this(name);
         this.x = x;
         this.y = y;
+    }
+
+    public Light(DataInputStream in) throws IOException {
+        super(in);
+        loadNodeData(in);
     }
     
 	@Override
@@ -146,5 +152,27 @@ public class Light extends Instance {
         copy.type = this.type;
         copy.coneAngle = this.coneAngle;
         return copy;
+    }
+
+    @Override
+    public void saveNodeData(DataOutputStream out) throws IOException {
+        super.saveNodeData(out);
+        out.writeBoolean(shadows);
+        out.writeInt(lightColor);
+        out.writeInt(radius);
+        out.writeFloat(intensity);
+        out.writeUTF(type.name());
+        out.writeFloat(coneAngle);
+    }
+
+    @Override
+    public void loadNodeData(DataInputStream in) throws IOException {
+        super.loadNodeData(in);
+        this.shadows = in.readBoolean();
+        this.lightColor = in.readInt();
+        this.radius = in.readInt();
+        this.intensity = in.readFloat();
+        this.type = LightType.valueOf(in.readUTF());
+        this.coneAngle = in.readFloat();
     }
 }

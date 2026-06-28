@@ -1,6 +1,5 @@
 package me.ramazanenescik04.diken.game;
 
-import java.awt.Color;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -23,15 +22,11 @@ public class Config {
 	public Config() {		
 		defaultConfig.put("sync", new Setting<Boolean>("V-Sync", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("debug", new Setting<Boolean>("Hata Ayıklama", false, Boolean.class, EnumSettingType.CHECK_BOX));
-		defaultConfig.put("useOldScaleCode", new Setting<Boolean>("Eski Boyutlandırma Sistemi Kullan", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Sabit İc Cozünürlük", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
-		defaultConfig.put("lang", new Setting<Integer>("Dil", 0, Language.getLanguageListIdBoxed(), Integer.class, EnumSettingType.LIST_SELECT).addChangeListener((value -> {
+		defaultConfig.put("lang", new Setting<>("Dil", Language.TURKISH.getId(), Language.getLanguageListId(), Integer.class, EnumSettingType.LIST_SELECT).addChangeListener((value -> {
 			DikenEngine.getEngine().defaultLanguage = Language.getLanguageById(value);
 		})));
-		
-		defaultConfig.put("activeWindowColor", new Setting<Integer>("Aktif Pencere Rengi", 0xff000080, Integer.class, EnumSettingType.COLOR_PICKER));
-		defaultConfig.put("windowColor", new Setting<Integer>("Aktif Olmayan Pencere Rengi", Color.GRAY.getRGB(), Integer.class, EnumSettingType.COLOR_PICKER));
 		
 		defaultConfig.put("guiScale", new Setting<Integer>("GUI Ölceği", 1, 1, 3, Integer.class, EnumSettingType.SLIDER));
 		defaultConfig.put("screenshotPath", new Setting<String>("Ekran Görüntüsü Kaydetme Konumu", "./", String.class, EnumSettingType.TEXT_FIELD));

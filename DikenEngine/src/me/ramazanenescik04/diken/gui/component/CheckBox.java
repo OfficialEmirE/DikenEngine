@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,9 +20,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 /**
  * Represents the `CheckBox` type within the DikenEngine `gui.compoment` package.
  */
-public class CheckBox extends GuiComponent {
-	private static final long serialVersionUID = 1L;
-	
+public class CheckBox extends GuiComponent {	
 	private Consumer<CheckBox> checkBoxClicked;
 	private boolean touching;
 	private boolean checked = false;
@@ -31,6 +32,11 @@ public class CheckBox extends GuiComponent {
 		
 		// TODO test edilmeli!
 		this.text = new Text(text, UDim2.zero, UDim2.zero, 0xFFFFFFFF, UniFont.getFont("default_font"));
+	}
+
+	public CheckBox(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public CheckBox setConsumer(Consumer<CheckBox> r) {
@@ -107,5 +113,21 @@ public class CheckBox extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeBoolean(touching);
+		out.writeBoolean(checked);
+		out.writeUTF(text != null ? text.text : "");
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.touching = in.readBoolean();
+		this.checked = in.readBoolean();
+		this.text = new Text(in.readUTF(), UDim2.zero, UDim2.zero, 0xFFFFFFFF, UniFont.getFont("default_font"));
 	}
 }

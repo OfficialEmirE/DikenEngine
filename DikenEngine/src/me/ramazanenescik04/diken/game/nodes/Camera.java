@@ -1,11 +1,16 @@
 package me.ramazanenescik04.diken.game.nodes;
 
 import java.awt.event.KeyEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
+import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
@@ -14,8 +19,6 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Camera extends AbstractService {
-	private static final long serialVersionUID = 1L;
-	
 	public enum CameraType {
 		NONE,
 		FOLLOW,
@@ -34,11 +37,14 @@ public class Camera extends AbstractService {
 	public Camera(String name) {
 		super(name);
 	}
+
+	public Camera(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
+	}
 	
 	@Override
 	public void update(World world, DikenEngine engine) {
-		super.update(world, engine);
-		
 		if (cameraType == CameraType.FOLLOW && followingInstance != null) {
 			world.camera.x = (followingInstance.x + followingInstance.getAABBWidth() / 2)
 					- (engine.getScaledWidth() / 2);
@@ -64,6 +70,8 @@ public class Camera extends AbstractService {
 			world.camera.x = cameraPos.x;
 			world.camera.y = cameraPos.y;
 		}
+
+		super.update(world, engine);
 	}
 	
 	// API's
@@ -91,6 +99,10 @@ public class Camera extends AbstractService {
 	public void setCameraPos(java.awt.Point cameraPos) {
 		this.cameraPos = cameraPos;
 	}
+	
+	public void setCameraPos(int x, int y) {
+		this.cameraPos = new java.awt.Point(x, y);
+	}
 
 	@Override
     public List<SettingCategory> getNodeSettings() {
@@ -108,4 +120,40 @@ public class Camera extends AbstractService {
         list.add(settingCategory);
         return list;
     }
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		
+		out.writeUTF(cameraType.name());
+		out.writeUTF(followingInstance != null ? followingInstance.getNetId().toString() : "");
+		out.writeBoolean(cameraPos != null);
+		if (cameraPos != null) {
+			out.writeInt(cameraPos.x);
+			out.writeInt(cameraPos.y);
+		}
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		
+		this.cameraType = CameraType.valueOf(in.readUTF());
+		String uuidStr = in.readUTF();
+		if (in.readBoolean()) {
+			int x = in.readInt();
+			int y = in.readInt();
+			this.cameraPos = new java.awt.Point(x, y);
+		} else {
+			this.cameraPos = null;
+		}
+		
+        if (!uuidStr.isEmpty()) {
+            OnReload.Connect(_ -> {
+                UUID target = UUID.fromString(uuidStr);
+                List<Node> results = getRootNode().findByNetId(target);
+                this.followingInstance = (Instance) (results.isEmpty() ? null : results.get(0));
+            });
+        }
+	}
 }

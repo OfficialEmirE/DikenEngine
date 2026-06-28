@@ -9,8 +9,7 @@ import org.luaj.vm2.lib.VarArgFunction;
 
 import me.ramazanenescik04.diken.DikenEngine;
 
-public class Event implements java.io.Serializable {
-	private static final long serialVersionUID = -1262017616575327916L;
+public class Event {
 	private List<LuaValue> listeners = new ArrayList<>();
 	
 	public void FireEvent(Object... args) {

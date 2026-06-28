@@ -82,8 +82,9 @@ public class Setting<T> {
 		return changeable;
 	}
     
-    public void setChangeable(boolean changeable) {
+    public Setting<T> setChangeable(boolean changeable) {
     	this.changeable = changeable;
+    	return this;
     }
     
     public boolean isDefault() {

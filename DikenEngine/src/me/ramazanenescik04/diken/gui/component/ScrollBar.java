@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,9 +20,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `ScrollBar` type within the DikenEngine `gui.component` package.
  */
 public class ScrollBar extends GuiComponent {
-
-	private static final long serialVersionUID = 9174661067316376835L;
-
 	public static final int VERTICAL = 0;
 	public static final int HORIZONTAL = 1;
 
@@ -51,6 +51,12 @@ public class ScrollBar extends GuiComponent {
 
 	public ScrollBar(UDim2 position, UDim2 size) {
 		this(position, size, VERTICAL);
+	}
+
+	public ScrollBar(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
+		regenerateButtons();
 	}
 	
 	private void regenerateButtons() {
@@ -353,5 +359,29 @@ public class ScrollBar extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeFloat(scrollValue);
+		out.writeInt(handleHeight);
+		out.writeBoolean(isDragging);
+		out.writeInt(dragOffsetY);
+		out.writeInt(dragOffsetX);
+		out.writeInt(type);
+		out.writeBoolean(prevMouseDown);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.scrollValue = in.readFloat();
+		this.handleHeight = in.readInt();
+		this.isDragging = in.readBoolean();
+		this.dragOffsetY = in.readInt();
+		this.dragOffsetX = in.readInt();
+		this.type = in.readInt();
+		this.prevMouseDown = in.readBoolean();
 	}
 }

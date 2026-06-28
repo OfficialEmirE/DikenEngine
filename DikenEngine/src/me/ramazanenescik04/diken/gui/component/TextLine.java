@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -17,7 +20,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public class TextLine extends GuiComponent {
 	
-	private static final long serialVersionUID = 1L;
 	private boolean isFocused = false;
 	private boolean editable = true;
 	
@@ -27,6 +29,11 @@ public class TextLine extends GuiComponent {
 
 	public TextLine(UDim2 position, UDim2 size) {
 		super("TextLine", position, size);
+	}
+
+	public TextLine(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	//API START
@@ -214,5 +221,33 @@ public class TextLine extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeBoolean(isFocused);
+		out.writeBoolean(editable);
+		out.writeInt(color);
+		out.writeInt(bgColor);
+		out.writeInt(textLines.size());
+		for (String line : textLines) {
+			out.writeUTF(line);
+		}
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.isFocused = in.readBoolean();
+		this.editable = in.readBoolean();
+		this.color = in.readInt();
+		this.bgColor = in.readInt();
+		int lineCount = in.readInt();
+		this.textLines = new ArrayList<>();
+		for (int i = 0; i < lineCount; i++) {
+			this.textLines.add(in.readUTF());
+		}
+		this.font = DikenEngine.getEngine() != null ? DikenEngine.getEngine().defaultFont : UniFont.getFont("default_font");
 	}
 }

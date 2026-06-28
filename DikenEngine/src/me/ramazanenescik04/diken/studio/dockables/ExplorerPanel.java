@@ -9,10 +9,11 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.AbstractService;
-import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.studio.StudioTreeRenderer;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -104,7 +105,7 @@ public class ExplorerPanel extends DockablePanel {
 		            ignoreNextSelectionEvent = true;
 		            callback.onPicked(selected);
 		        }
-		        return; // PropertiesPanel'i şimdilik güncelleme
+		        return;
 		    }
 		    
 		    if (ignoreNextSelectionEvent) {
@@ -245,9 +246,9 @@ public class ExplorerPanel extends DockablePanel {
 
 	                DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) path.getLastPathComponent();
 	                if (treeNode.isRoot()) return;
-
-	                if (treeNode.getUserObject() instanceof Script script) {
-	                    fireScriptOpenRequested(script);
+	                
+	                if (treeNode.getUserObject() instanceof Node node) {
+	                	fireNodeOpenRequested(node);
 	                }
 	            }
 	        }
@@ -667,19 +668,26 @@ public class ExplorerPanel extends DockablePanel {
 	    });
 	}
 	
-	public interface ScriptOpenListener {
-	    void onScriptOpenRequested(Script script);
+	public interface NodeOpenListener {
+	    void onNodeOpenRequested(Node script);
 	}
 
-	private List<ScriptOpenListener> scriptOpenListeners = new ArrayList<>();
+	private List<NodeOpenListener> scriptOpenListeners = new ArrayList<>();
 
-	public void addScriptOpenListener(ScriptOpenListener listener) {
+	public void addNodeOpenListener(NodeOpenListener listener) {
 	    scriptOpenListeners.add(listener);
 	}
 
-	private void fireScriptOpenRequested(Script script) {
-	    for (ScriptOpenListener listener : scriptOpenListeners) {
-	        listener.onScriptOpenRequested(script);
+	private void fireNodeOpenRequested(Node script) {
+	    for (NodeOpenListener listener : scriptOpenListeners) {
+	        listener.onNodeOpenRequested(script);
 	    }
+	}
+
+	@Override
+	public List<Setting<?>> getDockableSettings() {
+		List<Setting<?>> list = super.getDockableSettings();
+		list.add(new Setting<>("Root'u göster.", this.tree.isRootVisible(), Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this.tree::setRootVisible));
+		return list;
 	}
 }

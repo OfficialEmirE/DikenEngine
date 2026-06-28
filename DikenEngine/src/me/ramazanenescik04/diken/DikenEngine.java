@@ -12,9 +12,10 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFrame;
+import javax.swing.UIManager;
 
 import org.lwjgl.LWJGLException;
-import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.*;
 
 import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.World;
@@ -45,6 +46,8 @@ import me.ramazanenescik04.diken.tools.Utils;
 public class DikenEngine implements Runnable, IInputListener {
 	public static final String VERSION = "3.0.0";
 	public static final int protocolVersion = VERSION.hashCode();
+	private static final boolean IS_DEV_MODE = 
+	        "development".equals(System.getProperty("dikeneditor.mode"));
 
 	private static DikenEngine instance;
 
@@ -106,7 +109,8 @@ public class DikenEngine implements Runnable, IInputListener {
 			System.exit(1);
 		}
 
-		this.engineWindow = new JFrame("DikenEngine" + (openStudio ? " Studio" : ""));
+		this.engineWindow = new JFrame("DikenEngine" + (openStudio ? " Studio" : "") + (IS_DEV_MODE ? " [Development Version]" : ""));
+		this.engineWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		this.engineWindow.setIconImage(new javax.swing.ImageIcon(DikenEngine.class.getResource("/icon-x16.png")).getImage());
 		
 		if (openStudio) {
@@ -137,7 +141,9 @@ public class DikenEngine implements Runnable, IInputListener {
 		running = true;
 		this.engineWindow.setVisible(true);
 		this.rendererPanel.requestFocusInWindow();
-		this.loadingDialog.dispose();
+		if (this.loadingDialog != null)
+			this.loadingDialog.dispose();
+		
 		new Thread(this, "DikenEngine Thread").start();
 	}
 
@@ -236,7 +242,8 @@ public class DikenEngine implements Runnable, IInputListener {
 	@Override
 	public void run() {
 		try {			
-			log("Starting DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ")");
+			log("DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ") Başlatılıyor");
+			log("Başlatma Türü: " + (IS_DEV_MODE ? "Development Sürümü, Hatalar Olabilir!" : "Release Sürümü"));
 
 			defaultFont = UniFont.getFont("default_font");
 
@@ -509,6 +516,9 @@ public class DikenEngine implements Runnable, IInputListener {
 
 	public static void main(String[] args) {
 		FlatDarkLaf.setup();
+		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Light", FlatLightLaf.class.getName()));
+		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Dark", FlatDarkLaf.class.getName()));
+		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf IntelliJ", FlatIntelliJLaf.class.getName()));
 		
 		DikenEngine engine = new DikenEngine(800, 600, 2, true);
 		engine.start();

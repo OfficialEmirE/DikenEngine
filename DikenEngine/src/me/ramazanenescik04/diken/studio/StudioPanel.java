@@ -12,6 +12,7 @@ import java.util.Objects;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JToolBar;
@@ -20,7 +21,10 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 import bibliothek.gui.dock.common.CControl;
 import bibliothek.gui.dock.common.CGrid;
+import bibliothek.gui.dock.common.event.CDockableStateListener;
+import bibliothek.gui.dock.common.intern.CDockable;
 import bibliothek.gui.dock.common.intern.DefaultCDockable;
+import bibliothek.gui.dock.common.mode.ExtendedMode;
 import bibliothek.gui.dock.common.theme.ThemeMap;
 import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.DikenEngine;
@@ -31,6 +35,7 @@ import me.ramazanenescik04.diken.game.nodes.Sky;
 import me.ramazanenescik04.diken.game.services.Lighting;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.scripting.Script;
+import me.ramazanenescik04.diken.studio.dockables.AIAssistantPanel;
 import me.ramazanenescik04.diken.studio.dockables.BasicObjectsPanel;
 import me.ramazanenescik04.diken.studio.dockables.ConsolePanel;
 import me.ramazanenescik04.diken.studio.dockables.ExplorerPanel;
@@ -58,6 +63,7 @@ public class StudioPanel extends JPanel {
 	private ConsolePanel consolePanel;
 	private BasicObjectsPanel objectsPanel;
 	private ResourcesPanel resourcesPanel;
+	private AIAssistantPanel assistantPanel;
 
 	public StudioPanel(JFrame window, RendererPanel gamePanel, DikenEngine engine) {
 		super(new BorderLayout());
@@ -90,13 +96,18 @@ public class StudioPanel extends JPanel {
 		control = new CControl();
 		control.setTheme(ThemeMap.KEY_ECLIPSE_THEME);
 
-		scriptTabPanel = new ScriptTabPanel(gamePanel);
 		explorerPanel = new ExplorerPanel(editWorld);
 		propertiesPanel = new PropertiesPanel(explorerPanel, engineWindow);
 		consolePanel = new ConsolePanel();
 		objectsPanel = new BasicObjectsPanel(node -> explorerPanel.addNodeToSelected(node));
 		resourcesPanel = new ResourcesPanel(editWorld, engineWindow);
-		explorerPanel.addScriptOpenListener(script -> scriptTabPanel.openScript(script));
+		assistantPanel = new AIAssistantPanel();
+		scriptTabPanel = new ScriptTabPanel(gamePanel, editWorld);
+		explorerPanel.addNodeOpenListener(node -> {
+			if (node instanceof Script script) {
+				scriptTabPanel.openScript(script);
+			}
+		});
 			
 		this.add(control.getContentArea(), BorderLayout.CENTER);
 		
@@ -106,7 +117,7 @@ public class StudioPanel extends JPanel {
 
         grid.add(1, 0, 3, 3, scriptTabPanel.getDockable());
         grid.add(1, 3, 3, 1, consolePanel.getDockable());
-        grid.add(4, 0, 1, 2, explorerPanel.getDockable());
+        grid.add(4, 0, 1, 2, explorerPanel.getDockable(), assistantPanel.getDockable());
         grid.add(4, 2, 1, 2, propertiesPanel.getDockable());
         grid.add(0, 0, 1, 4, objectsPanel.getDockable());
         grid.add(0, 4, 1, 2, resourcesPanel.getDockable());
@@ -138,27 +149,44 @@ public class StudioPanel extends JPanel {
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
+		this.scriptTabPanel.reloadWorld(world);
 	}
 	
 	public void startPlayTest() {
 		var world = this.editWorld.copy();
-		world.startScripts();
+		world.getRunService().run();
 		this.engine.setWorld(world);
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
+		this.scriptTabPanel.reloadWorld(world);
 	}
 	
 	public void stopPlayTest() {
+		this.engine.getWorld().getRunService().stop();
 		var world = this.editWorld;
 		world.getCameraNode().setCameraType(CameraType.NONE);
 		this.engine.setWorld(world);
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
+		this.scriptTabPanel.reloadWorld(world);
 	}
 
 	public void stop() {
+		String worldName = this.editWorld.gameName;
+		if (selectedWorldFile == null) {
+			worldName = "*" + worldName;
+		}
+		
+		int saveWorld = JOptionPane.showConfirmDialog(engineWindow, worldName + "'u Kaydetmek İster Misin?");
+		
+		if (saveWorld == JOptionPane.YES_OPTION) {
+			saveWorld();
+		} else if (saveWorld == JOptionPane.CANCEL_OPTION) {
+			return;
+		}
+		
 		try {
 			control.write(layoutFile);
 		} catch (IOException e) {
@@ -275,10 +303,13 @@ public class StudioPanel extends JPanel {
 		menubarBuilder.addMenuItem(fileMenu, "Dünya Yükle", 9, 0, this::loadWorld);
 		menubarBuilder.addMenuItem(fileMenu, "Dünyayı Kaydet", 8, 0, this::saveWorld);
 		menubarBuilder.addMenuSeparator(fileMenu);
+		menubarBuilder.addMenuItem(fileMenu, "Dışarıya Çıkar", 11, 0, this::exportProject);
+		menubarBuilder.addMenuSeparator(fileMenu);
 		menubarBuilder.addMenuItem(fileMenu, "Uygulamayı Kapat", 0, 0, this::stop);
 		
 		var editMenu = menubarBuilder.newMenu("editMenu", "Düzenle");
-		menubarBuilder.addMenuItem(editMenu, "Seçenekler", 1, 3, () -> {});
+		menubarBuilder.addMenuItem(editMenu, "Oyun Ayarları", 1, 3, () -> StudioUtils.openGameSettingsDialog(editWorld, engineWindow));
+		menubarBuilder.addMenuItem(editMenu, "Seçenekler", 1, 3, () -> StudioUtils.openSettingsDialog(control, engine, engineWindow));
 		
 		var windowsMenu = menubarBuilder.newMenu("windowsMenu", "Pencereler");
 		for (int i = 0; i < control.getCDockableCount(); i++) {
@@ -291,6 +322,16 @@ public class StudioPanel extends JPanel {
 				
 				c.setVisible(bool);
 				menubarBuilder.setButtonChecked(windowsMenu, c.getTitleText() + "_ID", bool);
+			});
+			
+			c.addCDockableStateListener(new CDockableStateListener() {
+				@Override
+				public void extendedModeChanged(CDockable c, ExtendedMode e) {}
+
+				@Override
+				public void visibilityChanged(CDockable arg0) {
+					menubarBuilder.setButtonChecked(windowsMenu, id, c.isVisible());
+				}
 			});
 			
 			menubarBuilder.setButtonChecked(windowsMenu, id, c.isVisible());
@@ -317,7 +358,7 @@ public class StudioPanel extends JPanel {
 			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
 		);
 		menubarBuilder.addMenuItem(helpMenu, "Javadoc", -1, -1, () -> 
-			scriptTabPanel.openWebSite(new File("C:\\Users\\Ramazanenescik04\\Desktop\\DikenEngine-Javadoc\\index.html").toURI())
+		Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine/Javadoc"))
 		);
 		menubarBuilder.addMenuItem(helpMenu, "Dokümantasyon", -1, -1, () -> 
 			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
@@ -328,5 +369,9 @@ public class StudioPanel extends JPanel {
 		);
 		
 		return menubarBuilder.getJMenuBar();
+	}
+	
+	private void exportProject() {
+		//var exportProject = new ExportProject(engineWindow);
 	}
 }

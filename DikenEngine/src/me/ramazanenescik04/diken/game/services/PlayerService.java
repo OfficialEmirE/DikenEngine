@@ -1,0 +1,89 @@
+package me.ramazanenescik04.diken.game.services;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.UUID;
+
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.entity.Humanoid;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
+
+public class PlayerService extends Service {
+	private Humanoid character;
+	private String username;
+
+	public PlayerService() {
+		this("Player");
+	}
+
+	public PlayerService(String name) {
+		super(name);
+	}
+
+	public PlayerService(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
+	}
+	
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public Humanoid getCharacter() {
+		return character;
+	}
+
+	public void setCharacter(Humanoid character) {
+		this.character = character;
+	}
+
+	@Override
+	public List<SettingCategory> getNodeSettings() {
+		var key = new SettingCategory.SettingKey("playerService", "PlayerService", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 1));
+		
+		var settingCategory = SettingCategory
+				.createSettingCategory(key)
+				.addSetting(new Setting<>("Username", username, String.class, EnumSettingType.TEXT_FIELD)
+						.addChangeListener(this::setUsername))
+				.addSetting(new Setting<>("Character", character, Humanoid.class, EnumSettingType.OBJECT_SELECT)
+						.addChangeListener(this::setCharacter));
+		
+		var list = super.getNodeSettings();
+		list.add(settingCategory);
+		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeBoolean(username != null);
+		if (username != null) {
+			out.writeUTF(username);
+		}
+		out.writeUTF(character != null ? character.getNetId().toString() : "");
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.username = in.readBoolean() ? in.readUTF() : null;
+		String characterId = in.readUTF();
+		if (!characterId.isEmpty()) {
+			OnReload.Connect(_ -> {
+				UUID target = UUID.fromString(characterId);
+				List<Node> results = getRootNode().findByNetId(target);
+				this.character = (Humanoid) (results.isEmpty() ? null : results.get(0));
+			});
+		}
+	}
+}

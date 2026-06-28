@@ -1,6 +1,7 @@
 package me.ramazanenescik04.diken.game;
 
 import java.awt.Point;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -9,8 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +20,12 @@ import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.nodes.Camera;
-import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.services.UIService;
+import me.ramazanenescik04.diken.game.services.Game;
 import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.game.services.Lighting;
+import me.ramazanenescik04.diken.game.services.PlayerService;
+import me.ramazanenescik04.diken.game.services.RunService;
 import me.ramazanenescik04.diken.game.services.Service;
 import me.ramazanenescik04.diken.game.services.Workspace;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -58,7 +60,7 @@ public class World implements Cloneable {
     	this.loadResources();
 
     	if (rootNode == null) {
-    		this.root = new Folder(gameName);
+    		this.root = new Game("game");
     		initServices(this.root);
     	} else {
     		this.root = rootNode;
@@ -78,9 +80,11 @@ public class World implements Cloneable {
     	var workspace = new Workspace();
     	workspace.addChild(new Camera());
     	root.addChild(workspace);
+    	root.addChild(new PlayerService());
     	root.addChild(new Lighting());
     	root.addChild(new UIService());
     	root.addChild(new InputService());
+    	root.addChild(new RunService(this));
     }
 
     // --- Node Yönetimi ---
@@ -167,8 +171,12 @@ public class World implements Cloneable {
     		this.engine = engine;
     	
         root.update(this, engine);
+        
+        RunService service = this.getRunService();
 
-    	checkCollisions(engine);
+        if (service != null && service.isRunning()) {
+        	checkCollisions(engine);
+        } 	
     }
 
 	private void checkCollisions(DikenEngine engine) {
@@ -232,11 +240,12 @@ public class World implements Cloneable {
     }
 
     /**
-     * @deprecated
-     * use {@link World.getCameraPoint}
-     * 
-     * @return Camera Position
-     */
+	 * @deprecated getCamera kullanım dışı. {@link World#getCameraPoint()} kullanın.
+	 *             eğerki Camera node'a ihtiyacınız varsa
+	 *             {@link World#getCameraNode()} kullanın!
+	 * 
+	 * @return Camera Position
+	 */
     @Deprecated
     public Point getCamera() {
         return camera;
@@ -262,33 +271,68 @@ public class World implements Cloneable {
 		return this.root.findFirstChildOfClass(Workspace.class);
 	}
     
+    public RunService getRunService() {
+    	return this.root.findFirstChildOfClass(RunService.class);
+	}
+    
     public static void saveWorld(World theWorld, File outputFile) throws IOException {
-    	try (ObjectOutputStream outStream = new ObjectOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)))) {
+    	try (DataOutputStream outStream = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)))) {
     		writeWorld(theWorld, outStream);
 		}
     }
     
     public static byte[] saveWorldToBytes(World theWorld) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        try (ObjectOutputStream outStream = new ObjectOutputStream(new GZIPOutputStream(stream))) {
+        try (DataOutputStream outStream = new DataOutputStream(new GZIPOutputStream(stream))) {
             writeWorld(theWorld, outStream);
         }
         return stream.toByteArray();
     }
     
     public static World loadWorld(File outputFile) throws IOException, ReflectiveOperationException {
-    	try (ObjectInputStream outStream = new ObjectInputStream(new GZIPInputStream(new FileInputStream(outputFile)))) {
+    	try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(new FileInputStream(outputFile)))) {
     		return readWorld(outStream);
 		}
     }
     
     public static World loadWorldFromBytes(byte[] data) throws IOException, ReflectiveOperationException {
-        try (ObjectInputStream outStream = new ObjectInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
+        try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
             return readWorld(outStream);
         }
     }
     
-    private static void writeWorld(World theWorld, ObjectOutputStream outStream) throws IOException {
+    private static void saveNode(Node current, DataOutputStream outStream) throws IOException {
+    	outStream.writeUTF(current.getClass().getName());
+    	outStream.writeInt(current.children.size());
+    	current.saveNodeData(outStream);
+    	
+    	for (Node node : current.children) {
+    		saveNode(node, outStream);
+    	}
+    }
+    
+    private static Node loadNode(DataInputStream inStream) throws IOException {
+        String className = inStream.readUTF();
+        int childCount = inStream.readInt();
+        
+        Node node;
+        try {
+            Class<?> clazz = Class.forName(className);
+            node = (Node) clazz.getConstructor(DataInputStream.class).newInstance(inStream);
+        } catch (Exception e) {
+            throw new IOException("Node sınıfı yüklenemedi: " + className, e);
+        }
+        
+        // Çocukları recursive yükle
+        for (int i = 0; i < childCount; i++) {
+            Node child = loadNode(inStream);
+            node.addChild(child); // ya da node.children.add(child)
+        }
+        
+        return node;
+    }
+    
+    private static void writeWorld(World theWorld, DataOutputStream outStream) throws IOException {
         outStream.writeUTF("DikenEngine-WorldFile");
         outStream.writeInt(WORLD_IO_VERSION);
         
@@ -308,10 +352,11 @@ public class World implements Cloneable {
         }
         
         theWorld.root.sendDisposeAllNodes(theWorld.root);
-        outStream.writeObject(theWorld.root);
+        
+        saveNode(theWorld.root, outStream);
     }
     
-    private static World readWorld(ObjectInputStream outStream) throws IOException, ReflectiveOperationException {
+    private static World readWorld(DataInputStream outStream) throws IOException, ReflectiveOperationException {
         String signature = outStream.readUTF();
         if (!signature.equals("DikenEngine-WorldFile")) {
             throw new IOException("DikenEngine World Dosyası Değil!");
@@ -341,21 +386,45 @@ public class World implements Cloneable {
             resources.put(key, resource);
         }
         
-        try {
-        	Node rootNode = (Node) outStream.readObject();
-            rootNode.sendReloadAllNodes(rootNode);
-            
-            World world = new World(gameName, rootNode);
-            world.lastUpdateTime = lastUpdateTime;
-            
-            resources.values().forEach(IResource::reload);
-            
-            world.resources = resources;
-            return world;
-        } catch (ClassNotFoundException e) {
-            throw new ReflectiveOperationException(e);
-        }
+        Node rootNode = loadNode(outStream);
+		rootNode.sendReloadAllNodes(rootNode);
+		
+		World world = new World(gameName, rootNode);
+		world.lastUpdateTime = lastUpdateTime;
+		
+		resources.values().forEach(IResource::reload);
+		
+		world.resources = resources;
+		return world;
     }
+    
+    public IResource[] getResources(EnumResource animation) {
+    	List<IResource> values = new ArrayList<>();
+    	
+    	for (var entry : resources.entrySet()) {
+    		EnumResource entryResource = entry.getValue().getResourceType();
+    		
+    		if (animation == null || animation.equals(entryResource)) {
+    			values.add(entry.getValue());
+    		}
+    	}
+    	
+		return values.toArray(IResource[]::new);
+	}
+    
+    public String[] getResourceKeys(EnumResource animation) {
+    	List<String> keys = new ArrayList<>();
+    	
+    	for (var entry : resources.entrySet()) {
+    		EnumResource entryResource = entry.getValue().getResourceType();
+    		
+    		if (animation == null || animation.equals(entryResource)) {
+    			keys.add(entry.getKey());
+    		}
+    	}
+    	
+		return keys.toArray(new String[keys.size()]);
+	}
     
 	@SuppressWarnings("unchecked")
 	public <T extends IResource> T getResource(String key, EnumResource expectedType) {
@@ -365,7 +434,6 @@ public class World implements Cloneable {
 		
         IResource res = resources.get(key);
 
-        // Kaynak var mı ve tipi bizim beklediğimiz tip mi?
         if (res != null && res.resourceIs(expectedType)) {
             return (T) res;
         }
@@ -378,7 +446,6 @@ public class World implements Cloneable {
             throw new IllegalArgumentException("Key veya Resource null olamaz!");
         }
 
-        // Eğer aynı isimde başka bir şey varsa uyarabilir veya üzerine yazabilirsin
         if (resources.containsKey(key)) {
             System.out.println("Uyarı: " + key + " zaten kayıtlı, üzerine yazılıyor...");
         }
@@ -410,7 +477,7 @@ public class World implements Cloneable {
     public World copy() {
     	Node copyRoot;
     	if (root == null) {
-    		copyRoot = new Folder(new String(this.gameName));
+    		copyRoot = new Game(new String(this.gameName));
     		this.initServices(copyRoot);
     	} else
     		copyRoot = this.root.copy();

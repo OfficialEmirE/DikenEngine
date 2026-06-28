@@ -4,7 +4,6 @@ import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
-import me.ramazanenescik04.diken.game.services.Service;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 import javax.swing.*;
@@ -48,7 +47,6 @@ public class PropertiesPanel extends DockablePanel {
 
 		    @Override
 		    public void onSelectedNodes(List<Node> nodes) {
-		        // çoklu seçimde ilk node'u göster, ya da boşalt
 		        if (nodes.size() == 1) {
 		            inspect(nodes.get(0));
 		        } else {
@@ -95,7 +93,6 @@ public class PropertiesPanel extends DockablePanel {
         for (int i = (categories.size() - 1); i >= 0; i--) {
         	var category = categories.get(i);
         	
-            // Kategori başlığı
             JPanel headerPanel = new JPanel(new BorderLayout());
             headerPanel.setBackground(new Color(60, 60, 60));
             headerPanel.setBorder(new EmptyBorder(4, 8, 4, 8));
@@ -141,7 +138,7 @@ public class PropertiesPanel extends DockablePanel {
         
         JPanel inputWrapper = new JPanel(new BorderLayout());
         inputWrapper.setOpaque(false);
-        inputWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 2)); // sağdan 5px
+        inputWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 2));
         inputWrapper.add(inputComponent, BorderLayout.CENTER);
         
         row.add(inputWrapper);
@@ -155,9 +152,9 @@ public class PropertiesPanel extends DockablePanel {
         	case TEXT_FIELD -> {
         		var textField = buildTextField(setting);
 
-        		if (node instanceof Service) {
+        		/*if (node instanceof Service) {
         			textField.setEnabled(false);
-        		}
+        		}*/
         		
         		return textField;
         	}
@@ -242,6 +239,12 @@ public class PropertiesPanel extends DockablePanel {
 
         	    panel.add(valueLabel, BorderLayout.CENTER);
         	    panel.add(buttonsPanel, BorderLayout.EAST);
+        	    
+        	    if (!setting.isChangeable()) {
+        	    	selectButton.setEnabled(false);
+        	    	clearButton.setEnabled(false);
+        	    	valueLabel.setEnabled(false);
+        		}
 
         	    return panel;
         	}

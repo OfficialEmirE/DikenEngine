@@ -1,14 +1,17 @@
 package me.ramazanenescik04.diken.resource;
 
+import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
-import java.awt.Image;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.Point;
+import java.awt.RenderingHints;
+import java.awt.Transparency;
 import java.awt.image.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.ref.Cleaner.Cleanable;
 import java.util.*;
 
 import javax.imageio.ImageIO;
@@ -20,7 +23,7 @@ import me.ramazanenescik04.diken.renderer.ArrayBuffer;
 /**
  * Represents the `Bitmap` type within the DikenEngine `resource` package.
  */
-public class Bitmap implements IResource, Cleanable {
+public class Bitmap implements IResource {
 	private static final long serialVersionUID = 1L;
 	
 	private static final ArrayBuffer empty_pixels = new ArrayBuffer(1);
@@ -95,19 +98,40 @@ public class Bitmap implements IResource, Cleanable {
 	    return new BufferedImage(new DirectColorModel(32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000), raster, false, null);
 	}
 	
+	private VolatileImage volatileResizedImg = null;
+
 	public Bitmap resize(int newWidth, int newHeight) {
-		Bitmap resizedBitmap;
-		BufferedImage bitmapImg, resizedBitmapImg;
-		bitmapImg = toImage();
-		resizedBitmapImg = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_ARGB);
+		var bitmapImg = toImage();
 		
-		Graphics2D g = resizedBitmapImg.createGraphics();
-		g.drawImage(bitmapImg.getScaledInstance(newWidth, newHeight, Image.SCALE_FAST), 0, 0, null);
-		g.dispose();
-		
-		resizedBitmap = toBitmap(resizedBitmapImg);
-		
-		return resizedBitmap;
+	    GraphicsConfiguration config = GraphicsEnvironment.getLocalGraphicsEnvironment()
+	                                    .getDefaultScreenDevice().getDefaultConfiguration();
+
+	    if (volatileResizedImg == null || volatileResizedImg.getWidth() != newWidth || volatileResizedImg.getHeight() != newHeight) {
+	        volatileResizedImg = config.createCompatibleVolatileImage(newWidth, newHeight, Transparency.TRANSLUCENT);
+	    }
+
+	    do {
+	        // VRAM içeriği kaybolduysa yeniden doğrula
+	        if (volatileResizedImg.validate(config) == VolatileImage.IMAGE_INCOMPATIBLE) {
+	            volatileResizedImg = config.createCompatibleVolatileImage(newWidth, newHeight, Transparency.TRANSLUCENT);
+	        }
+
+	        Graphics2D g = volatileResizedImg.createGraphics();
+	        
+	        g.setComposite(AlphaComposite.Src);
+	        g.setColor(new java.awt.Color(0, 0, 0, 0)); 
+	        g.fillRect(0, 0, newWidth, newHeight);
+	        g.setComposite(AlphaComposite.SrcOver);
+	        
+	        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+	        
+	        // Çizim işlemi doğrudan GPU'da yapılır
+	        g.drawImage(bitmapImg, 0, 0, newWidth, newHeight, null);
+	        g.dispose();
+	        
+	    } while (volatileResizedImg.contentsLost());
+
+	    return toBitmap(volatileResizedImg.getSnapshot());
 	}
 	
 	public Bitmap resize(int scale) {
@@ -882,10 +906,6 @@ public class Bitmap implements IResource, Cleanable {
 	        return null;
 	    }
 	}
-
-	@Override
-	@Deprecated
-	public void clean() {}
 	
 	public Bitmap replaceColor(int targetColor, int replaceColor) {
 		Bitmap cloned = this.clone();

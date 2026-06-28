@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -16,14 +19,17 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `ProgressBar` type within the DikenEngine `gui.compoment` package.
  */
 public class ProgressBar extends GuiComponent {
-	private static final long serialVersionUID = 1L;
-
 	private int value = 100, maxValue = 100;
 	private int color = 0xff00ff00, color2 = 0xff00ff00, bgColor = 0xff000000;
 	private String text = "";
 	
 	public ProgressBar(UDim2 position, UDim2 size) {
 		super("ProgressBar", position, size);
+	}
+
+	public ProgressBar(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 
 	@Override
@@ -118,6 +124,28 @@ public class ProgressBar extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeInt(value);
+		out.writeInt(maxValue);
+		out.writeInt(color);
+		out.writeInt(color2);
+		out.writeInt(bgColor);
+		out.writeUTF(text);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.value = in.readInt();
+		this.maxValue = in.readInt();
+		this.color = in.readInt();
+		this.color2 = in.readInt();
+		this.bgColor = in.readInt();
+		this.text = in.readUTF();
 	}
 
 }

@@ -4,8 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -100,10 +100,7 @@ public class ConsoleLog {
 	
 	public record LogText(LogType type, String log) {
 		public String toString() {
-			var date = Calendar.getInstance();
-			
-			return "[%d:%d:%d] [%s] %s".formatted(date.get(Calendar.HOUR_OF_DAY), date.get(Calendar.MINUTE),
-					date.get(Calendar.SECOND), type.name(), log);
+			return "[%s] [%s] %s".formatted(new SimpleDateFormat("HH:mm:ss").format(new Date()), type.name(), log);
 		}
 	}
 	

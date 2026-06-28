@@ -91,6 +91,7 @@ public final class InstanceList {
 		NODE_LIST = new ArrayList<>();
 		
 		// me.ramazanenescik04.diken.game.nodes
+		NODE_LIST.add(new SpriteSheet());
 		NODE_LIST.add(new Decal());
 		NODE_LIST.add(new Folder());
 		NODE_LIST.add(new Model());

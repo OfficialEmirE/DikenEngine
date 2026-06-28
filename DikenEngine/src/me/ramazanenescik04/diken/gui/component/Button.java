@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -19,7 +22,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Button` type within the DikenEngine `gui.compoment` package.
  */
 public class Button extends GuiComponent {
-	private static final long serialVersionUID = 1L;
 	private String text = "";
 	private int tColor = 0xff000000, bColor = 0xffffffff;
 	
@@ -39,6 +41,13 @@ public class Button extends GuiComponent {
 	public Button(String text, UDim2 position, UDim2 size) {
 		super("Button", position, size);
 		this.text = text;	
+	}
+
+	public Button(DataInputStream in) throws IOException {
+		super(in);
+		if (getClass() == Button.class) {
+			loadNodeData(in);
+		}
 	}
 	
 	public Button setTextColor(int color) {
@@ -246,5 +255,40 @@ public class Button extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+	
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		
+		out.writeUTF(text);
+		out.writeInt(tColor);
+		out.writeInt(bColor);
+		
+		out.writeInt(textOffset);
+		out.writeBoolean(movingRight);
+		out.writeDouble(textOffsetLong);
+		
+		out.writeUTF(iconID);
+		out.writeBoolean(isTouching);
+		out.writeBoolean(isIconLeft);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		
+		this.text = in.readUTF();
+		this.tColor = in.readInt();
+		this.bColor = in.readInt();
+		
+		this.textOffset = in.readInt();
+		this.movingRight = in.readBoolean();
+		this.textOffsetLong = in.readDouble();
+		
+		this.iconID = in.readUTF();
+		this.isTouching = in.readBoolean();
+		this.isIconLeft = in.readBoolean();
+		this.iconLoaded = false;
 	}
 }

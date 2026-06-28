@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component.color;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.tools.PixelToColor;
  * Saydamlık (Alpha) seçimi için özel bar bileşeni.
  */
 public class AlphaPickBar extends GuiComponent {
-    private static final long serialVersionUID = 1L;
-    
     private int selectedAlpha = 255;
     private int baseColor = 0xffffff; // Alpha'nın uygulanacağı ana renk (genelde beyaz veya seçili renk)
     private Consumer<Integer> consumer;
@@ -27,6 +28,11 @@ public class AlphaPickBar extends GuiComponent {
 
     public AlphaPickBar(UDim2 position, UDim2 size) {
         super("AlphaPickBar", position, size);
+    }
+
+    public AlphaPickBar(DataInputStream in) throws IOException {
+    	super(in);
+    	loadNodeData(in);
     }
     
     public AlphaPickBar setConsumer(Consumer<Integer> consumer) {
@@ -94,5 +100,23 @@ public class AlphaPickBar extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		
+		out.writeInt(selectedAlpha);
+		out.writeInt(baseColor);
+		out.writeInt(cursorX);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		
+		this.selectedAlpha = in.readInt();
+		this.baseColor = in.readInt();
+		this.cursorX = in.readInt();
 	}
 }

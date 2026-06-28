@@ -1,14 +1,17 @@
 package me.ramazanenescik04.diken.game.entity;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
@@ -21,8 +24,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Humanoid` type within the DikenEngine `game.entity` package.
  */
 public class Humanoid extends Part {
-	private static final long serialVersionUID = 2113495473844070076L;
-	
 	public boolean canMove = true;
 	public float speed = 4.0f;
 	
@@ -45,6 +46,11 @@ public class Humanoid extends Part {
 	public Humanoid(int width, int height) {
 		super(0, 0, width, height);
 		this.init();
+	}
+
+	public Humanoid(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	private void init() {
@@ -185,5 +191,25 @@ public class Humanoid extends Part {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeBoolean(canMove);
+		out.writeFloat(speed);
+		out.writeInt(health);
+		out.writeInt(maxHealth);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.canMove = in.readBoolean();
+		this.speed = in.readFloat();
+		this.health = in.readInt();
+		this.maxHealth = in.readInt();
+		this.killTime = 0;
+		this.selectedTool = null;
 	}
 }

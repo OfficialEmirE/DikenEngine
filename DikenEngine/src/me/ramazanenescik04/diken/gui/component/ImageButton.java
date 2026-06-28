@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `ImageButton` type within the DikenEngine `gui.compoment` package.
  */
 public class ImageButton extends Button {
-	private static final long serialVersionUID = 1L;
-	
 	private transient Bitmap bitmap;
 	private transient boolean textureLoaded = false;
 	private String textureID = "empty";
@@ -28,6 +29,11 @@ public class ImageButton extends Button {
 		this.setName("ImageButton");
 		
 		this.setIcon(btpTexture);
+	}
+
+	public ImageButton(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public String getIcon() {
@@ -80,6 +86,19 @@ public class ImageButton extends Button {
 	@Override
 	protected void reloadNode() {
 		textureLoaded = false;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(textureID);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.textureID = in.readUTF();
+		this.textureLoaded = false;
 	}
 	
 }

@@ -2,13 +2,16 @@ package me.ramazanenescik04.diken.studio.dockables;
 
 import java.awt.Component;
 import java.awt.Graphics;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.Icon;
 import javax.swing.JPanel;
 
 import bibliothek.gui.dock.common.DefaultSingleCDockable;
+import me.ramazanenescik04.diken.game.Setting;
 
 public class DockablePanel extends JPanel {
 	private static final long serialVersionUID = -5075070012793078559L;
@@ -41,6 +44,10 @@ public class DockablePanel extends JPanel {
 
 	public void setTitle(String title) {
 		this.dock.setTitleText(title);
+	}
+	
+	public List<Setting<?>> getDockableSettings() {
+		return new ArrayList<>();
 	}
 
 	public DefaultSingleCDockable getDockable() {

@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.resource.SoundResource;
  * Represents the `ImageNode` type within the DikenEngine `game.nodes` package.
  */
 public class Audio extends Node {
-	private static final long serialVersionUID = -5489915245652040387L;
-	
 	protected transient SoundResource texture = new SoundResource();
 	private transient boolean textureLoaded = false;
 	private String resourceID = "empty";
@@ -29,6 +30,11 @@ public class Audio extends Node {
 
 	public Audio(String name) {
 		super(name);
+	}
+
+	public Audio(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public String getSound() {
@@ -137,5 +143,20 @@ public class Audio extends Node {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+	
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		
+		out.writeUTF(resourceID);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		
+		this.resourceID = in.readUTF();
+		this.textureLoaded = false;
 	}
 }

@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component.color;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.tools.PixelToColor;
  * Optimized and modernized ColorPickBar for DikenEngine.
  */
 public class ColorPickBar extends GuiComponent {
-    private static final long serialVersionUID = 2L;
-    
     private int selectedColor;
     private int selectorX = 1; // Seçicinin yatay pozisyonu
     private Consumer<Integer> consumer;
@@ -26,6 +27,11 @@ public class ColorPickBar extends GuiComponent {
 
     public ColorPickBar(UDim2 position, UDim2 size) {
         super("ColorPickBar", position, size);
+    }
+
+    public ColorPickBar(DataInputStream in) throws IOException {
+    	super(in);
+    	loadNodeData(in);
     }
     
     public ColorPickBar setConsumer(Consumer<Integer> consumer) {
@@ -115,5 +121,20 @@ public class ColorPickBar extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeInt(selectedColor);
+		out.writeInt(selectorX);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.selectedColor = in.readInt();
+		this.selectorX = in.readInt();
+		this.cachedHueMap = null;
 	}
 }

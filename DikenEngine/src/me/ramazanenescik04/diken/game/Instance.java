@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,8 +13,6 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public abstract class Instance extends Node {
-    private static final long serialVersionUID = 1L;
-
     public final Event OnCollision = new Event();
     public final Event OnPreRender = new Event();
     public final Event OnPostRender = new Event();
@@ -42,6 +43,10 @@ public abstract class Instance extends Node {
         super(name);
         this.x = x;
         this.y = y;
+    }
+
+    public Instance(DataInputStream in) throws IOException {
+        super(in);
     }
 
     public abstract Bitmap render();
@@ -220,16 +225,16 @@ public abstract class Instance extends Node {
 				.addSetting(new Setting<Integer>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(val -> this.color = val));
         
         if (this.aabb != null) {
-			settingCategory.addSetting(new Setting<Integer>("Hitbox Width", aabb.getWidth(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+			settingCategory.addSetting(new Setting<Integer>("Width", aabb.getWidth(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setWidth(val);
 			}))
-			.addSetting(new Setting<Integer>("Hitbox Height", aabb.getHeight(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+			.addSetting(new Setting<Integer>("Height", aabb.getHeight(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setHeight(val);
 			}))
-			.addSetting(new Setting<Integer>("Hitbox Offset X", aabb.getX(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+			.addSetting(new Setting<Integer>("Offset X", aabb.getX(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setX(val);
 			}))
-			.addSetting(new Setting<Integer>("Hitbox Offset Y", aabb.getY(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+			.addSetting(new Setting<Integer>("Offset Y", aabb.getY(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setY(val);
 			}));
 		}
@@ -257,6 +262,48 @@ public abstract class Instance extends Node {
     	}
 		
 		return copy;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+
+		out.writeInt(x);
+		out.writeInt(y);
+		out.writeFloat(scaleX);
+		out.writeFloat(scaleY);
+		out.writeFloat(rotation);
+		out.writeBoolean(aabb != null);
+		if (aabb != null) {
+			out.writeInt(aabb.getX());
+			out.writeInt(aabb.getY());
+			out.writeInt(aabb.getWidth());
+			out.writeInt(aabb.getHeight());
+		}
+		out.writeInt(color);
+		out.writeBoolean(solid);
+		out.writeBoolean(anchored);
+		out.writeBoolean(visible);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+
+		this.x = in.readInt();
+		this.y = in.readInt();
+		this.scaleX = in.readFloat();
+		this.scaleY = in.readFloat();
+		this.rotation = in.readFloat();
+		if (in.readBoolean()) {
+			this.aabb = new Hitbox(in.readInt(), in.readInt(), in.readInt(), in.readInt()).setRotation(rotation);
+		} else {
+			this.aabb = null;
+		}
+		this.color = in.readInt();
+		this.solid = in.readBoolean();
+		this.anchored = in.readBoolean();
+		this.visible = in.readBoolean();
 	}
 
 }

@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
@@ -14,8 +16,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Model` type within the DikenEngine `game.nodes` package.
  */
 public class Model extends Instance {
-	private static final long serialVersionUID = 1L;
-
 	public Model() {
 		this("Model", 0, 0);
 	}
@@ -26,6 +26,16 @@ public class Model extends Instance {
 
 	public Model(String name, int x, int y) {
 		super(name, x, y);
+		init();
+	}
+
+	public Model(DataInputStream in) throws IOException {
+		super(in);
+		init();
+		loadNodeData(in);
+	}
+
+	private void init() {
 		
 		// Child'e birşeyler olmuşsa, aabb'yi yeniden hesapla
 		OnAddDescendant.Connect((_) -> {

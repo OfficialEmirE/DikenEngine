@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component.color;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.tools.PixelToColor;
  * Represents the `ColorPickBox` type within the DikenEngine `gui.compoment` package.
  */
 public class ColorPickBox extends GuiComponent {
-	private static final long serialVersionUID = 1L;
-
 	private int selectedColor;
 	private float hueColor = PixelToColor.rgbToHsv(0xffff0000)[0];
 	private Consumer<Integer> consumer;
@@ -29,6 +30,11 @@ public class ColorPickBox extends GuiComponent {
 
 	public ColorPickBox(UDim2 position, UDim2 size) {
 		super("ColorPickBox", position, size);
+	}
+
+	public ColorPickBox(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 
 	public ColorPickBox setConsumer(Consumer<Integer> consumer) {
@@ -131,5 +137,24 @@ public class ColorPickBox extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeInt(selectedColor);
+		out.writeFloat(hueColor);
+		out.writeInt(selectedX);
+		out.writeInt(selectedY);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.selectedColor = in.readInt();
+		this.hueColor = in.readFloat();
+		this.selectedX = in.readInt();
+		this.selectedY = in.readInt();
+		this.cachedMap = PixelToColor.createHSVRect(Math.max(1, getWidth() - 2), Math.max(1, getHeight() - 2), hueColor);
 	}
 }

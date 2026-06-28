@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.game.services;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,14 +14,17 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Workspace extends Service {
-	private static final long serialVersionUID = 1L;
-
 	public Workspace() {
 		this("Workspace");
 	}
 
 	public Workspace(String name) {
 		super(name);
+	}
+
+	public Workspace(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {

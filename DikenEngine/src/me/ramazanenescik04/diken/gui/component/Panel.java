@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
@@ -16,23 +19,37 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Panel` type within the DikenEngine `gui.compoment` package.
  */
 
-// TODO: en baştan kodlanacak. inş gold gibi bir sınıf olacak
 public class Panel extends GuiComponent {
-	private static final long serialVersionUID = 1L;
-	
 	public enum BorderStyle {
-		
+		Classic,
+		Fill
 	}
 	
+	private BorderStyle panelBorder = BorderStyle.Fill;
+	private int backgroundColor = 0xffaaaaaa, borderColor = 0xff000000;
 	private boolean clipsDescendants;
-	private BorderStyle panelBorder;
+	private int borderSize = 1;
 
 	public Panel(UDim2 position, UDim2 size) {
 		super("Panel", position, size);
 	}
 
+	public Panel(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
+	}
+
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
+		bitmap.clear(this.backgroundColor);
+		
+		int x = 0, y = 0, w = this.getWidth() - 1, h = this.getHeight() - 1;
+		for (int i = 0; i < borderSize; i++) {
+			bitmap.box(x, y, w, h, borderColor);
+			
+			x += 1; y += 1;
+			w -= 1; h -= 1;
+		}
 		
 		if (isDebugRenderer()) {
 			bitmap.box(0, 0, bitmap.w - 1, bitmap.h - 1, 0xffffffff);
@@ -62,7 +79,7 @@ public class Panel extends GuiComponent {
                 	screenY -= viewport.getY();
                 }
                 
-                sceneBitmap.draw(myTexture, screenX, screenY);
+                sceneBitmap.blend(myTexture, screenX, screenY);
             }
         }
         
@@ -92,6 +109,38 @@ public class Panel extends GuiComponent {
 		this.clipsDescendants = clipsDescendants;
 	}
 
+	public BorderStyle getBorderStyle() {
+		return panelBorder;
+	}
+
+	public void setBorderStyle(BorderStyle panelBorder) {
+		this.panelBorder = panelBorder;
+	}
+
+	public int getBackgroundColor() {
+		return backgroundColor;
+	}
+
+	public void setBackgroundColor(int backgroundColor) {
+		this.backgroundColor = backgroundColor;
+	}
+
+	public int getBorderColor() {
+		return borderColor;
+	}
+
+	public void setBorderColor(int borderColor) {
+		this.borderColor = borderColor;
+	}
+
+	public int getBorderSize() {
+		return borderSize;
+	}
+
+	public void setBorderSize(int borderSize) {
+		this.borderSize = borderSize;
+	}
+
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("panel", "Panel", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(4, 2));
@@ -100,17 +149,37 @@ public class Panel extends GuiComponent {
 				.createSettingCategory(key)
 				.addSetting(new Setting<Boolean>("Clips Descendants", this.clipsDescendants, Boolean.class,
 						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
-				.addSetting(new Setting<Boolean>("Border Style", this.clipsDescendants, Boolean.class,
-						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
-				.addSetting(new Setting<Boolean>("Background Color", this.clipsDescendants, Boolean.class,
-						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
-				.addSetting(new Setting<Boolean>("Border Color", this.clipsDescendants, Boolean.class,
-						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants))
-				.addSetting(new Setting<Boolean>("Border Size", this.clipsDescendants, Boolean.class,
-						EnumSettingType.CHECK_BOX).addChangeListener(this::setClipsDescendants));
+				.addSetting(new Setting<BorderStyle>("Border Style", this.panelBorder, BorderStyle.values(), BorderStyle.class,
+						EnumSettingType.LIST_SELECT).addChangeListener(this::setBorderStyle))
+				.addSetting(new Setting<Integer>("Background Color", this.backgroundColor, Integer.class,
+						EnumSettingType.COLOR_PICKER).addChangeListener(this::setBackgroundColor))
+				.addSetting(new Setting<Integer>("Border Color", this.borderColor, Integer.class,
+						EnumSettingType.COLOR_PICKER).addChangeListener(this::setBorderColor))
+				.addSetting(new Setting<Integer>("Border Size", this.borderSize, Integer.class,
+						EnumSettingType.TEXT_FIELD).addChangeListener(this::setBorderSize));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(panelBorder.name());
+		out.writeInt(backgroundColor);
+		out.writeInt(borderColor);
+		out.writeBoolean(clipsDescendants);
+		out.writeInt(borderSize);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.panelBorder = BorderStyle.valueOf(in.readUTF());
+		this.backgroundColor = in.readInt();
+		this.borderColor = in.readInt();
+		this.clipsDescendants = in.readBoolean();
+		this.borderSize = in.readInt();
 	}
 }

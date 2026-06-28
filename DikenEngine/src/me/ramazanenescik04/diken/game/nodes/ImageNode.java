@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `ImageNode` type within the DikenEngine `game.nodes` package.
  */
 public abstract class ImageNode extends Instance {
-	private static final long serialVersionUID = -5489915245652040387L;
-	
 	protected transient Bitmap texture = new Bitmap(16, 16);
 	private transient boolean textureLoaded = false;
 	private String resourceID = "empty";
@@ -30,6 +31,10 @@ public abstract class ImageNode extends Instance {
 	public ImageNode(String name) {
 		super(name);
 		this.setSolid(false);
+	}
+
+	public ImageNode(DataInputStream in) throws IOException {
+		super(in);
 	}
 	
 	public String getTexture() {
@@ -75,6 +80,19 @@ public abstract class ImageNode extends Instance {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(resourceID);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.resourceID = in.readUTF();
+		this.textureLoaded = false;
 	}
 }
 

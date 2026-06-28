@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -17,7 +20,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Text` type within the DikenEngine `gui.compoment` package.
  */
 public class Text extends GuiComponent {
-	private static final long serialVersionUID = 1L;
 	private static final char COLOR_CODE_MARKER = '\u00A7';
 	private static final int RGB_HEX_LENGTH = 6;
 	private static final int ARGB_HEX_LENGTH = 8;
@@ -50,6 +52,11 @@ public class Text extends GuiComponent {
 	
 	public Text(String text, UDim2 position, int color) {
 		this(text, position, UDim2.zero, color, DikenEngine.getEngine().defaultFont);
+	}
+
+	public Text(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public Bitmap render() {
@@ -335,5 +342,25 @@ public class Text extends GuiComponent {
 		}
 		
 		return wrappedText.toString().trim();
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(text);
+		out.writeInt(color);
+		out.writeDouble(offsetPosition.x.scale);
+		out.writeInt(offsetPosition.x.offset);
+		out.writeDouble(offsetPosition.y.scale);
+		out.writeInt(offsetPosition.y.offset);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.text = in.readUTF();
+		this.color = in.readInt();
+		this.offsetPosition = new UDim2(in.readDouble(), in.readInt(), in.readDouble(), in.readInt());
+		this.font = DikenEngine.getEngine() != null ? DikenEngine.getEngine().defaultFont : UniFont.getFont("default_font");
 	}
 }

@@ -102,7 +102,7 @@ local function modifyMetatable(javaObj)
 
         if key == 'Parent' then
             if actualValue ~= nil then 
-                actualValue:addChild(rawJava) 
+				rawJava:setParent(actualChild)
             end
         else
             -- Java nesnesindeki değeri doğrudan güvenle güncelle
@@ -128,10 +128,6 @@ game = modifyMetatable(world:getRoot())
 
 rawset(game, "GetService", function(self, service) 
     return modifyMetatable(world:getService(service))
-end)
-
-rawset(game, "HttpGet", function(self, url)
-    return DikenBridge:httpGet(url)
 end)
 
 script = modifyMetatable(DikenBridge:getCurrentScript())

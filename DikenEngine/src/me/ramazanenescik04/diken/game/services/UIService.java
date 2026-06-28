@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.game.services;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Node;
@@ -11,14 +13,17 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class UIService extends Service {
-	private static final long serialVersionUID = 1L;
-
 	public UIService() {
 		this("UI");
 	}
 
 	public UIService(String name) {
 		super(name);
+	}
+
+	public UIService(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 
 	@Override

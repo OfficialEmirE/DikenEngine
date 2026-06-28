@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -18,7 +21,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Sky` type within the DikenEngine `game.nodes` package.
  */
 public class Sky extends Instance {
-	private static final long serialVersionUID = 9068692202217556542L;
 	private transient Bitmap skyBitmap;
 	private transient int width = 1, height = 1;
 	
@@ -37,6 +39,11 @@ public class Sky extends Instance {
 	public Sky(String skyBitmap) {
 		super("Sky");
 		this.resourceID = skyBitmap;
+	}
+
+	public Sky(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public String getTexture() {
@@ -121,5 +128,18 @@ public class Sky extends Instance {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(resourceID);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.resourceID = in.readUTF();
+		this.resourceLoaded = false;
 	}
 }

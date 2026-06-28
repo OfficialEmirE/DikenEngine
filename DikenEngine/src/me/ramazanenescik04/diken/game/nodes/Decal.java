@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
@@ -12,14 +14,17 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Decal` type within the DikenEngine `game.nodes` package.
  */
 public class Decal extends ImageNode {
-	private static final long serialVersionUID = 1L;
-
 	public Decal() {
 		super("Decal");
 	}
 	
 	public Decal(String name) {
 		super(name);
+	}
+
+	public Decal(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 
 	@Override

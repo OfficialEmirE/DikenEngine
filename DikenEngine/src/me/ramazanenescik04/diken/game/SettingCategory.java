@@ -36,6 +36,15 @@ public class SettingCategory {
 		return createSettingCategory(new SettingKey(id, category, image));
 	}
 	
+	public static SettingCategory createSettingCategory(String id, String category, int x, int y) {
+		return createSettingCategory(id, category, ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(x, y));
+	}
+	
+	public static List<SettingCategory> addList(List<SettingCategory> list, SettingCategory category) {
+		list.add(category);
+		return list;
+	}
+	
 	public List<Setting<?>> getSettings() {
 		return new java.util.ArrayList<>(settings); // Kopya liste döndürerek dış müdahaleyi engelle
 	}

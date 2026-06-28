@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -21,8 +24,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Tool` type within the DikenEngine `game.nodes` package.
  */
 public class Tool extends Instance {
-	private static final long serialVersionUID = -3315727912522278757L;
-	
 	private transient Bitmap icon = new Bitmap(16, 16);
 	private String resourceID = "empty";
 	private boolean resourceLoaded = false;
@@ -55,6 +56,11 @@ public class Tool extends Instance {
 	public Tool(String name, int x, int y) {
 		super(name, x, y);
 		init();
+	}
+
+	public Tool(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	private void init() {
@@ -109,6 +115,22 @@ public class Tool extends Instance {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(resourceID);
+		out.writeBoolean(isEquipped);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.resourceID = in.readUTF();
+		this.isEquipped = in.readBoolean();
+		this.resourceLoaded = false;
+		this.icon = new Bitmap(16, 16);
 	}
 }
 

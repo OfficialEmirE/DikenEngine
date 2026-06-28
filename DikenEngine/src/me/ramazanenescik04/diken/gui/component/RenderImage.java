@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -17,8 +20,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `RenderImage` type within the DikenEngine `gui.compoment` package.
  */
 public class RenderImage extends GuiComponent {
-	private static final long serialVersionUID = 1L;
-	
 	protected transient Bitmap bitmap = new Bitmap(16, 16);
 	private transient boolean textureLoaded = false;
 	private String resourceID = "empty";
@@ -27,6 +28,11 @@ public class RenderImage extends GuiComponent {
 		super("RenderImage", position, size);
 		
 		setTexture(resourceID);
+	}
+
+	public RenderImage(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 	
 	public String getTexture() {
@@ -72,5 +78,19 @@ public class RenderImage extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(resourceID);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.resourceID = in.readUTF();
+		this.textureLoaded = false;
+		this.bitmap = new Bitmap(16, 16);
 	}
 }

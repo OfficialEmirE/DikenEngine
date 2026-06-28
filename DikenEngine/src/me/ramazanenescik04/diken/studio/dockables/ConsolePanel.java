@@ -4,6 +4,7 @@ import javax.swing.JPanel;
 import java.awt.Color;
 import java.awt.BorderLayout;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.log.ConsoleLog;
@@ -107,13 +108,15 @@ public class ConsolePanel extends DockablePanel {
 		ConsoleLog.setListAdapter(new ListAdapter<LogText>() {
 			@Override
 			public void onAdd(LogText item) {
-				if (item.type() == LogType.C_ERR || item.type() == LogType.S_ERR) {
-					printText(logArea, item.toString(), Color.RED);
-				} else if(item.type() == LogType.C_WARN || item.type() == LogType.S_WARN) {
-					printText(logArea, item.toString(), Color.YELLOW);
-				} else {
-					printText(logArea, item.toString(), Color.WHITE);
-				}
+				SwingUtilities.invokeLater(() -> {
+					if (item.type() == LogType.C_ERR || item.type() == LogType.S_ERR) {
+						printText(logArea, item.toString(), Color.RED);
+					} else if(item.type() == LogType.C_WARN || item.type() == LogType.S_WARN) {
+						printText(logArea, item.toString(), Color.YELLOW);
+					} else {
+						printText(logArea, item.toString(), Color.WHITE);
+					}
+			    });
 			}
 
 			@Override

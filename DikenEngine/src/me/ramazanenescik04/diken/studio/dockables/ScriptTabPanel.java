@@ -1,11 +1,16 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
+import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.nodes.SpriteSheet;
+import me.ramazanenescik04.diken.gui.AnimationEditor;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
+import me.ramazanenescik04.diken.scripting.AutoCompleteHelper;
 import me.ramazanenescik04.diken.scripting.Script;
 
 import javax.swing.*;
@@ -25,12 +30,18 @@ import java.util.Map;
 public class ScriptTabPanel extends DockablePanel {
 	private static final long serialVersionUID = -8433100060634996548L;
 	
+	@SuppressWarnings("unused")
+	private World theWorld;
+	
 	private JTabbedPane tabbedPane;
 	private Map<Script, RTextScrollPane> openScripts = new HashMap<>();
+	private Map<SpriteSheet, AnimationEditor> openAnims = new HashMap<>();
     private Map<Script, RSyntaxTextArea> textAreas = new HashMap<>();
 
-	public ScriptTabPanel(RendererPanel gamePanel) {
+	public ScriptTabPanel(RendererPanel gamePanel, World theWorld) {
 		super("script_tab_id", "Script Editörleri");
+		this.theWorld = theWorld;
+		
 		setBorder(new LineBorder(new Color(0, 0, 0)));
 		
 		dock.setTitleShown(false);
@@ -41,6 +52,10 @@ public class ScriptTabPanel extends DockablePanel {
 		add(tabbedPane, BorderLayout.CENTER);
 		
 		tabbedPane.addTab("Oyun Önizleme", null, gamePanel, null);
+	}
+	
+	public void reloadWorld(World theWorld) {
+		this.theWorld = theWorld;
 	}
 	
 	private JPanel getTabHeader(Object c, String text) {
@@ -77,6 +92,14 @@ public class ScriptTabPanel extends DockablePanel {
         textArea.setTabSize(4);
         textArea.setFont(new Font("Consolas", Font.PLAIN, 14));
         textArea.setText(script.getSource());
+        textArea.setAutoIndentEnabled(true);
+        
+        var provider = AutoCompleteHelper.createLuaProvider(org.luaj.vm2.lib.jse.JsePlatform.standardGlobals());
+        AutoCompletion ac = new AutoCompletion(provider);
+        ac.setAutoActivationEnabled(true);
+        ac.setAutoActivationDelay(150);
+        
+        ac.install(textArea);
 
         try {
             Theme theme = Theme.load(getClass().getResourceAsStream(
@@ -103,6 +126,8 @@ public class ScriptTabPanel extends DockablePanel {
         int index = tabbedPane.indexOfComponent(scrollPane);
         tabbedPane.setTabComponentAt(index, getTabHeader(script, script.getName()));
         tabbedPane.setSelectedComponent(scrollPane);
+        
+        script.OnDestroy.Connect(_ -> close(script));
     }
 	
 	public void openWebSite(URI uri) {
@@ -138,13 +163,30 @@ public class ScriptTabPanel extends DockablePanel {
         tabbedPane.setTabComponentAt(index, getTabHeader(scrollPane, "Web Page"));
         tabbedPane.setSelectedComponent(scrollPane);
 	}
+	
+	public void openAnimation(SpriteSheet anim) {
+		/*AnimationEditor editor = new AnimationEditor(anim);
+		
+		openAnims.put(anim, editor);
+		
+		tabbedPane.addTab(null, editor);
+        int index = tabbedPane.indexOfComponent(editor);
+        tabbedPane.setTabComponentAt(index, getTabHeader(anim, anim.getName()));
+        tabbedPane.setSelectedComponent(editor);
+        
+        anim.OnDestroy.Connect(_ -> close(anim));*/
+	}
     
     private void close(Object obj) {
     	Component c = null;
     	if (obj instanceof Script script) {
-    		RTextScrollPane scrollPane = openScripts.remove(script);
+    		var scrollPane = openScripts.remove(script);
     		textAreas.remove(script);
-            c  = scrollPane;
+            c = scrollPane;
+    	} else if (obj instanceof SpriteSheet anim) {
+    		var editor = openAnims.remove(anim);
+    		//editor.saveAnimation(anim);
+    		c = editor;
     	} else if (obj instanceof Component) {
     		c = (Component) obj;
     	}

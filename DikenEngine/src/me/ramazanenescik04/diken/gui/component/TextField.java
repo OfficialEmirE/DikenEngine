@@ -3,6 +3,9 @@ package me.ramazanenescik04.diken.gui.component;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.event.KeyEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -25,7 +28,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public class TextField extends GuiComponent {
 	
-	public static final long serialVersionUID = 1L;	
 	private String text = "";
 	
 	private int counter;
@@ -41,6 +43,13 @@ public class TextField extends GuiComponent {
 	public TextField(String text, UDim2 position, UDim2 size) {
 		super("TextField", position, size);
 		this.text = text;
+	}
+
+	public TextField(DataInputStream in) throws IOException {
+		super(in);
+		if (getClass() == TextField.class) {
+			loadNodeData(in);
+		}
 	}
 	
 	public TextField setTextChanged(Consumer<String> consumer) {
@@ -193,5 +202,24 @@ public class TextField extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(text);
+		out.writeInt(counter);
+		out.writeBoolean(isFocused);
+		out.writeBoolean(isNumberField);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.text = in.readUTF();
+		this.counter = in.readInt();
+		this.isFocused = in.readBoolean();
+		this.isNumberField = in.readBoolean();
+		this.isPressingControl = false;
 	}
 }

@@ -1,15 +1,12 @@
 package me.ramazanenescik04.diken.scripting;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.InstanceList;
 import me.ramazanenescik04.diken.game.Node;
 
 public class LuaBridge {
+	private long lastLogTime = 0;
+	
 	private Script script;
 	
 	public LuaBridge(Script script) {
@@ -50,27 +47,15 @@ public class LuaBridge {
 		return null;
 	}
 
-	public Object httpGet(String url) {
-		try {
-			var httpClient = HttpClient.newHttpClient();
-			var httpRequest = HttpRequest.newBuilder(URI.create(url)).GET().header("User-Agent",
-					"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0").build();
-
-			var response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
-
-			return response.body();
-		} catch (Exception e) {
-			DikenEngine.errorLog("HttpGet Error: " + e.getMessage());
-		}
-
-		return null;
-	}
-
 	public Object getCurrentScript() {
 		return this.script;
 	}
 
 	public void log(String message) {
-		DikenEngine.log(message);
+		long now = System.currentTimeMillis();
+	    if (now - lastLogTime < 100) return; // 100ms'de bir log bas
+	    lastLogTime = now;
+	    
+	    DikenEngine.log(message);
 	}
 }

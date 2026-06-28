@@ -37,9 +37,12 @@ public class BasicObjectsPanel extends DockablePanel {
         	
         	list.sort(Comparator.comparing(node -> node.getClass().getSimpleName()));
         	
+        	int i = 0;
             for (Node obj : list) {
-                JPanel item = createItem(obj, onDoubleClick);
+                JPanel item = createItem(obj, onDoubleClick, i);
                 listPanel.add(item);
+                
+                i++;
             }
         }
         
@@ -54,7 +57,7 @@ public class BasicObjectsPanel extends DockablePanel {
 
     private JPanel createBorder(InstanceList.CategoryKey key) {
     	JPanel item = new JPanel(new BorderLayout(8, 0));
-        item.setBackground(new Color(65, 65, 65));
+        item.setBackground(new Color(70, 70, 70));
         item.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(35, 35, 35)),
             new EmptyBorder(6, 10, 6, 10)
@@ -77,9 +80,13 @@ public class BasicObjectsPanel extends DockablePanel {
         return item;
 	}
 
-	private JPanel createItem(Node node, Consumer<Node> onDoubleClick) {
+	private JPanel createItem(Node node, Consumer<Node> onDoubleClick, int i) {
         JPanel item = new JPanel(new BorderLayout(8, 0));
-        item.setBackground(new Color(45, 45, 45));
+        if (i % 2 == 0) {
+        	item.setBackground(new Color(45, 45, 45));
+        } else {
+        	item.setBackground(new Color(50, 50, 50));
+        }
         item.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(35, 35, 35)),
             new EmptyBorder(6, 10, 6, 10)
@@ -115,7 +122,11 @@ public class BasicObjectsPanel extends DockablePanel {
 
             @Override
             public void mouseExited(MouseEvent e) {
-                item.setBackground(new Color(45, 45, 45));
+            	if (i % 2 == 0) {
+                	item.setBackground(new Color(45, 45, 45));
+                } else {
+                	item.setBackground(new Color(50, 50, 50));
+                }
             }
         });
         

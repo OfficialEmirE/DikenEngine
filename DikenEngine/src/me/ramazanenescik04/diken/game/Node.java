@@ -1,6 +1,9 @@
 package me.ramazanenescik04.diken.game;
 
 import java.awt.Point;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -19,9 +22,7 @@ import me.ramazanenescik04.diken.tools.ObservableList;
 /**
  * Represents the `Node` type within the DikenEngine `game` package.
  */
-public abstract class Node implements java.io.Serializable, Cloneable {
-	private static final long serialVersionUID = -4123363831057244200L;
-	
+public abstract class Node implements Cloneable {
 	// Child listeners
 	public final Event OnAddChild = new Event();
 	public final Event OnRemoveChild = new Event();
@@ -33,12 +34,14 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	public final Event OnRemoveDescendant = new Event();
 	public final Event OnInsertDescendant = new Event();
 	public final Event OnReplaceDescendant = new Event();
+	public final Event OnParentChangedDescendant = new Event();
 	
 	// Default listeners
 	public final Event OnUpdate = new Event();
 	public final Event OnDispose = new Event();
 	public final Event OnReload = new Event();
 	public final Event OnDestroy = new Event();
+	public final Event OnParentChanged = new Event();
 	
 	// Render listeners
 	public final Event OnPreRender = new Event();
@@ -47,7 +50,7 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	// Hiyerarşi
     protected Node parent;
     protected List<Node> children = new ObservableList<>();
-    protected UUID netId = UUID.randomUUID();
+    protected final UUID netId;
     
     // Temel Özellikler
     protected String name;
@@ -58,11 +61,16 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 
     // Constructor
     public Node() {
-    	this.name = "BaseNode";
+    	this("BaseNode");
     }
     
     public Node(String name) {
         this.name = name;
+        this.netId = UUID.randomUUID();
+    }
+    
+    public Node(DataInputStream in) throws IOException {
+        this.netId = UUID.fromString(in.readUTF());
     }
 
     // --- Hiyerarşi Yönetimi ---
@@ -176,6 +184,14 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public Node getParent() {
     	return parent;
     }
+    
+    public void setParent(Node newParent) {
+    	if (newParent == null) {
+    		this.parent.removeChild(this);
+    	} else {
+    		newParent.addChild(this);
+    	}
+    }
 
     protected boolean shouldRenderSelf(Hitbox viewport) {
     	if (isCameraIndependent() || viewport == null) {
@@ -255,6 +271,21 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 		return new ArrayList<>(children); // Kopya döndür
 	}
     
+    public String getFullName() {
+    	String fullName = "";
+    	var current = this;
+        while (current != null) {
+        	if (fullName.isEmpty()) {
+        		fullName = current.getName();
+        	} else {
+        		fullName = current.getName() + "." + fullName;
+        	}
+        	current = current.parent;
+        }
+        
+        return fullName;
+	}
+    
     public StringBuilder printTree(boolean printConsole) {
         StringBuilder builder = new StringBuilder();
         generateTreeString(this, "", true, builder);
@@ -309,6 +340,10 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 		List<T> found = (List<T>) find(clazz::isInstance);
         return found;
     }
+	
+	public List<Node> findByNetId(UUID target) {
+		return find(n -> n.getNetId().equals(target));
+	}
 	
 	/**
 	 * İsme göre ilk bulduğu düğümü döndürür. Hiç bulamazsa null döner.
@@ -391,10 +426,6 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 		return this.netId;
 	}
 	
-	public void setNetId(UUID netId) {
-		this.netId = netId != null ? netId : UUID.randomUUID();
-	}
-	
 	public void setName(String name) {
 		this.name = name;
 	}
@@ -402,61 +433,97 @@ public abstract class Node implements java.io.Serializable, Cloneable {
     public void onCollision(Node other) {
     }
     
+    public Node getRootNode() {
+        Node current = this;
+        while (current.getParent() != null) {
+            current = current.getParent();
+        }
+        return current;
+    }
+    
     public static void resolveCollision(Instance a, Instance b) {
         Hitbox boxA = a.getGlobalAABB();
         Hitbox boxB = b.getGlobalAABB();
         if (boxA == null || boxB == null) return;
 
-        int overlapX = Math.min(boxA.getX() + boxA.getX(), boxB.getX() + boxB.getWidth()) - Math.max(boxA.getX(), boxB.getX());
-        int overlapY = Math.min(boxA.getY() + boxA.getY(), boxB.getY() + boxB.getHeight()) - Math.max(boxA.getY(), boxB.getY());
+        // Overlap hesapla
+        int aL = boxA.getX(), aR = aL + boxA.getWidth();
+        int aT = boxA.getY(), aB = aT + boxA.getHeight();
+        int bL = boxB.getX(), bR = bL + boxB.getWidth();
+        int bT = boxB.getY(), bB = bT + boxB.getHeight();
+
+        int overlapX = Math.min(aR, bR) - Math.max(aL, bL);
+        int overlapY = Math.min(aB, bB) - Math.max(aT, bT);
 
         if (overlapX <= 0 || overlapY <= 0) return;
 
         boolean aAnchored = a.isAnchored();
         boolean bAnchored = b.isAnchored();
-
         if (aAnchored && bAnchored) return;
 
-        float centerAx = boxA.getX() + (boxA.getWidth() / 2.0f);
-        float centerBx = boxB.getX() + (boxB.getWidth() / 2.0f);
-        float centerAy = boxA.getY() + (boxA.getHeight() / 2.0f);
-        float centerBy = boxB.getY() + (boxB.getHeight() / 2.0f);
+        // SAT: en küçük overlap ekseninde resolve et
+        // Eşit durumda X tercih edilir (arbitrary ama tutarlı)
+        if (overlapX <= overlapY) {
+            // X ekseninde resolve
+            // A'nın sağ kenarı mı B'nin sol kenarına daha yakın?
+            int fromLeft  = aR - bL; // A sağdan B'ye girmiş
+            int fromRight = bR - aL; // A soldan B'ye girmiş
 
-        if (overlapX < overlapY) {
-            if (!aAnchored && !bAnchored) {
-                int moveA = overlapX / 2;
-                int moveB = overlapX - moveA;
-                if (centerAx < centerBx) {
-                    a.x -= moveA;
-                    b.x += moveB;
-                } else {
-                    a.x += moveB;
-                    b.x -= moveA;
-                }
-            } else if (!aAnchored) {
-                if (centerAx < centerBx) a.x -= overlapX;
-                else a.x += overlapX;
-            } else if (!bAnchored) {
-                if (centerBx < centerAx) b.x -= overlapX;
-                else b.x += overlapX;
+            int pushX;
+            int dirA, dirB; // +1 veya -1
+
+            if (fromLeft < fromRight) {
+                // A sağdan çarpmış → A'yı sola, B'yi sağa
+                pushX = fromLeft;
+                dirA = -1;
+                dirB = +1;
+            } else {
+                // A soldan çarpmış → A'yı sağa, B'yi sola
+                pushX = fromRight;
+                dirA = +1;
+                dirB = -1;
             }
-        } else {
+
             if (!aAnchored && !bAnchored) {
-                int moveA = overlapY / 2;
-                int moveB = overlapY - moveA;
-                if (centerAy < centerBy) {
-                    a.y -= moveA;
-                    b.y += moveB;
-                } else {
-                    a.y += moveB;
-                    b.y -= moveA;
-                }
+                int halfA = pushX / 2;
+                int halfB = pushX - halfA;
+                a.x += dirA * halfA;
+                b.x += dirB * halfB;
             } else if (!aAnchored) {
-                if (centerAy < centerBy) a.y -= overlapY;
-                else a.y += overlapY;
-            } else if (!bAnchored) {
-                if (centerBy < centerAy) b.y -= overlapY;
-                else b.y += overlapY;
+                a.x += dirA * pushX;
+            } else {
+                b.x += dirB * pushX;
+            }
+
+        } else {
+            // Y ekseninde resolve
+            int fromTop    = aB - bT; // A yukarıdan girmiş
+            int fromBottom = bB - aT; // A aşağıdan girmiş
+
+            int pushY;
+            int dirA, dirB;
+
+            if (fromTop < fromBottom) {
+                // A yukarıdan çarpmış → A'yı yukarı, B'yi aşağı
+                pushY = fromTop;
+                dirA = -1;
+                dirB = +1;
+            } else {
+                // A aşağıdan çarpmış → A'yı aşağı, B'yi yukarı
+                pushY = fromBottom;
+                dirA = +1;
+                dirB = -1;
+            }
+
+            if (!aAnchored && !bAnchored) {
+                int halfA = pushY / 2;
+                int halfB = pushY - halfA;
+                a.y += dirA * halfA;
+                b.y += dirB * halfB;
+            } else if (!aAnchored) {
+                a.y += dirA * pushY;
+            } else {
+                b.y += dirB * pushY;
             }
         }
     }
@@ -496,10 +563,27 @@ public abstract class Node implements java.io.Serializable, Cloneable {
 	
 	private SettingCategory generateDefaultSettings(SettingCategory.SettingKey key) {
 		var s = SettingCategory.createSettingCategory(key)
-				.addSetting(new Setting<String>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setName))
-				.addSetting(new Setting<Boolean>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setDebugRenderer))
-				.addSetting(new Setting<Boolean>("Archiveable", archiveable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(val -> this.archiveable = val));
+				.addSetting(new Setting<>("ClassName", getClass().getSimpleName(), String.class, EnumSettingType.UNKNOWN).setChangeable(false))
+				.addSetting(new Setting<>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setName))
+				.addSetting(new Setting<>("Parent", parent, Node.class, EnumSettingType.OBJECT_SELECT).addChangeListener(this::setParent))
+				.addSetting(new Setting<>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setDebugRenderer))
+				.addSetting(new Setting<>("Archiveable", archiveable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setArchiveable));
 		return s;
+	}
+	
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		out.writeUTF(netId.toString());
+		out.writeUTF(name);
+		out.writeBoolean(debug);
+		out.writeBoolean(archiveable);
+		out.writeBoolean(removed);
+	}
+	
+	public void loadNodeData(DataInputStream in) throws IOException {
+		this.name = in.readUTF();
+		this.debug = in.readBoolean();
+		this.archiveable = in.readBoolean();
+		this.removed = in.readBoolean();
 	}
 
 	// --- Lifecycle Hooks (3. Madde) ---

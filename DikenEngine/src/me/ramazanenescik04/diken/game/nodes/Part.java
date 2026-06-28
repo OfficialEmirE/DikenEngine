@@ -1,5 +1,8 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
@@ -15,7 +18,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Part` type within the DikenEngine `game.nodes` package.
  */
 public class Part extends Instance {
-	private static final long serialVersionUID = 4072578864221886901L;
 	private transient Bitmap cachedBitmap;
 	private transient int cachedWidth = -1;
 	private transient int cachedHeight = -1;
@@ -55,6 +57,13 @@ public class Part extends Instance {
 		super("Part", x, y);
 		this.aabb = new Hitbox(0, 0, 16, 16);
 		this.setAnchored(true);
+	}
+
+	public Part(DataInputStream in) throws IOException {
+		super(in);
+		if (getClass() == Part.class) {
+			loadNodeData(in);
+		}
 	}
 	
 	public Bitmap render() {
@@ -116,6 +125,21 @@ public class Part extends Instance {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(surface.name());
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		this.surface = Surface.valueOf(in.readUTF());
+		this.cachedBitmap = null;
+		this.cachedWidth = -1;
+		this.cachedHeight = -1;
 	}
 }
 

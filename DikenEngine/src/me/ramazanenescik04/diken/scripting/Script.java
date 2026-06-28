@@ -1,7 +1,8 @@
 package me.ramazanenescik04.diken.scripting;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
@@ -19,14 +20,14 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Script extends Node {
-	private static final long serialVersionUID = -7142348037284380694L;
-	
 	public String source = "";
 	public boolean enabled = true;
 	
+	private transient volatile boolean stopRequested = false;
+	private transient Thread virtualThread = null;
 	private transient Globals globals;
-	private transient LuaValue luaUpdateFunction = null;
-	private transient boolean isInitialized = false;
+	private transient volatile boolean isInitialized = false;
+	private transient volatile LuaValue luaUpdateFunction = null;
 	
 	public Script() {
 		this("Script");
@@ -36,53 +37,92 @@ public class Script extends Node {
 		super(name);
 	}
 
-    public void initialize(World theWorld) {
-        if (!enabled || theWorld == null || source == null || source.isEmpty()) return;
+	public Script(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
+	}
+	
+	public void initialize(World theWorld) {
+	    stop();
 
-        this.luaUpdateFunction = null;
-        this.globals = JsePlatform.standardGlobals();
-        
-        LuaValue rootNode = CoerceJavaToLua.coerce(theWorld);
-        LuaValue brige = CoerceJavaToLua.coerce(new LuaBridge(this));
+	    if (!enabled || theWorld == null || source == null || source.isEmpty()) return;
 
-        try {
-			globals.load(Files.readString(Paths.get(Script.class.getResource("/scripts/init.lua").toURI()))).call(rootNode, brige);
-		} catch (IOException | URISyntaxException e) {
-			DikenEngine.errorLog("Script init.lua Error: " + e.getMessage());
-		}
-        
-        LuaInit.initClasses(globals);
-        LuaInit.initEnums(globals);
+	    stopRequested = false;
+	    this.globals = JsePlatform.debugGlobals();
 
-        try {
-            LuaValue chunk = globals.load(source);
-            chunk.call(); 
-            
-            luaUpdateFunction = globals.get("update");
-            if (luaUpdateFunction.isnil()) {
-                luaUpdateFunction = null; 
+	    globals.load(new org.luaj.vm2.lib.DebugLib() {
+            private int counter = 0;
+
+            @Override
+            public void onInstruction(int pc, Varargs v, int top) {
+                if (stopRequested || Thread.currentThread().isInterrupted()) {
+                    throw new LuaError("Script durduruldu: " + getName());
+                }
+                if ((++counter & 511) == 0) Thread.yield();
+                super.onInstruction(pc, v, top);
             }
-        } catch (Exception e) {
-        	DikenEngine.errorLog("Script Initialiaze Error: " + e.getMessage());
+        });
+
+	    // Bunları da virtual thread'e al
+	    virtualThread = Thread.ofVirtual()
+	        .name("lua-script-" + getName())
+	        .start(() -> {
+	            try {
+	                LuaValue rootNode = CoerceJavaToLua.coerce(theWorld);
+	                LuaValue bridge = CoerceJavaToLua.coerce(new LuaBridge(this));
+
+	                globals.load(Files.readString(
+	                    Paths.get(Script.class.getResource("/scripts/init.lua").toURI())
+	                )).call(rootNode, bridge);
+
+	                LuaInit.initClasses(globals);
+	                LuaInit.initEnums(globals);
+
+	                globals.load(source).call();
+
+	                LuaValue fn = globals.get("update");
+	                luaUpdateFunction = fn.isnil() ? null : fn;
+	                isInitialized = true;
+
+	            } catch (LuaError e) {
+	                if (!stopRequested) {
+	                    DikenEngine.errorLog("Script Error [" + getName() + "]: " + e.getMessage());
+	                }
+	            } catch (Exception e) {
+	                DikenEngine.errorLog("Script Error [" + getName() + "]: " + e.getMessage());
+	            }
+	        });
+	}
+
+    public void stop() {
+        stopRequested = true;
+        isInitialized = false;
+        luaUpdateFunction = null;
+
+        if (virtualThread != null) {
+            virtualThread.interrupt();
+            virtualThread = null;
         }
-        
-        this.isInitialized = true;
+
+        globals = null;
     }
 
-	@Override
-	public void update(World world, DikenEngine engine) {		
-		if (luaUpdateFunction != null && isInitialized) {
+    @Override
+    public void update(World world, DikenEngine engine) {
+        if (luaUpdateFunction != null && isInitialized) {
             try {
                 luaUpdateFunction.call();
             } catch (LuaError e) {
-                DikenEngine.errorLog("Lua Update Error [" + getName() + "]: " + e.getMessage());
+                if (!stopRequested) {
+                    DikenEngine.errorLog("Lua Update Error [" + getName() + "]: " + e.getMessage());
+                }
             } catch (Exception e) {
                 DikenEngine.errorLog("Script Update Error [" + getName() + "]: " + e.getMessage());
             }
         }
-		
-		super.update(world, engine);
-	}
+
+        super.update(world, engine);
+    }
 
 	public String getSource() {
 		return source;
@@ -99,6 +139,14 @@ public class Script extends Node {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
+	
+	/**
+	 * Bu Method SADECE Kod tamamlama gibi yerlerde kullanılmalıdır!
+	 * @return
+	 */
+	public Globals getGlobals() {
+		return globals;
+	}
 
 	@Override
 	public List<SettingCategory> getNodeSettings() {
@@ -112,6 +160,22 @@ public class Script extends Node {
 		return list;
 	}
 	
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		
+		out.writeUTF(source);
+		out.writeBoolean(enabled);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		
+		this.source = in.readUTF();
+		this.enabled = in.readBoolean();
+	}
+
 	@Override
     public Node copy() {
         Script cloned = (Script) super.copy();

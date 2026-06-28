@@ -1,10 +1,15 @@
 package me.ramazanenescik04.diken.game.services;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
+import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.nodes.Light;
@@ -16,8 +21,6 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Lighting extends Service {
-	private static final long serialVersionUID = 1L;
-
 	private Sky sky;
 	public int ambientColor = 0xFF3C3C3C;
 	public boolean lightingEnabled = true;
@@ -28,6 +31,11 @@ public class Lighting extends Service {
 
 	public Lighting(String name) {
 		super(name);
+	}
+
+	public Lighting(DataInputStream in) throws IOException {
+		super(in);
+		loadNodeData(in);
 	}
 
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
@@ -310,6 +318,29 @@ public class Lighting extends Service {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		out.writeUTF(sky != null ? sky.getNetId().toString() : "");
+		out.writeInt(ambientColor);
+		out.writeBoolean(lightingEnabled);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		String skyId = in.readUTF();
+		this.ambientColor = in.readInt();
+		this.lightingEnabled = in.readBoolean();
+		if (!skyId.isEmpty()) {
+			OnReload.Connect(_ -> {
+				UUID target = UUID.fromString(skyId);
+				List<Node> results = getRootNode().findByNetId(target);
+				this.sky = (Sky) (results.isEmpty() ? null : results.get(0));
+			});
+		}
 	}
 
 }

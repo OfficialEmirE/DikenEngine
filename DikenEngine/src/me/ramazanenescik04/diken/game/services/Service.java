@@ -1,5 +1,7 @@
 package me.ramazanenescik04.diken.game.services;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.SettingCategory;
@@ -8,8 +10,6 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Service extends AbstractService {
-	private static final long serialVersionUID = 1L;
-	
 	public final Event OnPreRender = new Event();
     public final Event OnPostRender = new Event();
 	
@@ -19,6 +19,13 @@ public class Service extends AbstractService {
 	
 	public Service(String name) {
 		super(name);
+	}
+
+	public Service(DataInputStream in) throws IOException {
+		super(in);
+		if (getClass() == Service.class) {
+			loadNodeData(in);
+		}
 	}
 
 	@Override
