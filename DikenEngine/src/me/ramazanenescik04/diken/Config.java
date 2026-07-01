@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.game;
+package me.ramazanenescik04.diken;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -7,7 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.*;
 
-import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.language.Language;
 
 /**
@@ -17,11 +18,12 @@ public class Config {
 	
 	private volatile Map<String, Setting<?>> config = new HashMap<>();
 	public static final Map<String, Setting<?>> defaultConfig = new HashMap<>();
-	public static File defaultConfigFile = new File("./config.dat");
+	public static File defaultConfigFile = new File("./config/engine.dat");
 
 	public Config() {		
 		defaultConfig.put("sync", new Setting<Boolean>("V-Sync", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("debug", new Setting<Boolean>("Hata Ayıklama", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("maxFPS", new Setting<>("Hata Ayıklama", 120, Integer.class, EnumSettingType.TEXT_FIELD));
 		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Sabit İc Cozünürlük", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		defaultConfig.put("lang", new Setting<>("Dil", Language.TURKISH.getId(), Language.getLanguageListId(), Integer.class, EnumSettingType.LIST_SELECT).addChangeListener((value -> {

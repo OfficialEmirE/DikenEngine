@@ -11,10 +11,10 @@ import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.gui.TextRenderer;
 import me.ramazanenescik04.diken.gui.UDim2;
-import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -64,7 +64,7 @@ public class TextField extends GuiComponent {
 		Bitmap bitmap = super.render();
 		bitmap.fill(0, 0, width, height, 0xff484848);
 		bitmap.box(0, 0, width - 1, height - 1, isFocused() ? 0xffffff00 : 0xffffffff);
-		Text.render(getRenderedText(), bitmap, 2, 2);
+		TextRenderer.render(getRenderedText(), bitmap, 2, 2);
 		return bitmap;
 	}
 	
@@ -102,7 +102,6 @@ public class TextField extends GuiComponent {
 	}
 
 	public void keyPressed(char var1, int var2) {
-		UniFont defaultFont = DikenEngine.getEngine().defaultFont;
 		if (isFocused) {
 			if (isPressingControl && var2 == KeyEvent.VK_V) {
 				String clipboardText = "";
@@ -145,7 +144,7 @@ public class TextField extends GuiComponent {
 				if (textChanced != null) {
 					textChanced.accept(text);
 				}
-			} else if (!isNumberField && defaultFont.charTypes.indexOf(var1) >= 0) {
+			} else if (!isNumberField) {
 				text += var1;
 				if (textChanced != null) {
 					textChanced.accept(text);

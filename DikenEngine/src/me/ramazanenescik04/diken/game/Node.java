@@ -5,12 +5,15 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -58,6 +61,7 @@ public abstract class Node implements Cloneable {
     protected boolean debug = false;
     protected boolean archiveable = true; // Kaydedilebilir mi?
     protected boolean removed = false;
+    protected int zIndex = 0;
 
     // Constructor
     public Node() {
@@ -210,8 +214,11 @@ public abstract class Node implements Cloneable {
     }
     
     public void draw(Bitmap btp, Hitbox viewport) {
-		for (int i = 0; i < children.size(); i++) {
-            Node child = children.get(i);
+    	List<Node> sortedChildren = new ArrayList<>(children);
+    	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
+    	
+		for (int i = 0; i < sortedChildren.size(); i++) {
+            Node child = sortedChildren.get(i);
             child.draw(btp, viewport);
         }
 		
@@ -553,6 +560,14 @@ public abstract class Node implements Cloneable {
 		return this.removed;
 	}
 	
+    public void setZIndex(int zIndex) {
+        this.zIndex = zIndex;
+    }
+	
+	public int getZIndex() {
+        return this.zIndex;
+    }
+	
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("default", "Node", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(8, 1));
 		
@@ -567,7 +582,8 @@ public abstract class Node implements Cloneable {
 				.addSetting(new Setting<>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setName))
 				.addSetting(new Setting<>("Parent", parent, Node.class, EnumSettingType.OBJECT_SELECT).addChangeListener(this::setParent))
 				.addSetting(new Setting<>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setDebugRenderer))
-				.addSetting(new Setting<>("Archiveable", archiveable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setArchiveable));
+				.addSetting(new Setting<>("Archiveable", archiveable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setArchiveable))
+				.addSetting(new Setting<>("Z Index", zIndex, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setZIndex));
 		return s;
 	}
 	

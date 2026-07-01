@@ -103,6 +103,28 @@ public class Animation implements IResource {
         }
 	}
 
+	@Override
+	public void loadResource(DataInputStream in) throws IOException {
+		String signature = in.readUTF();
+
+    	if (!signature.startsWith("DIKEN_ANIM_")) {
+    		throw new IOException("Bu dosya DikenEngine animasyon formatında değil!");
+    	}
+        int fps = in.readInt();
+        int count = in.readInt();
+        
+        this.setFPS(fps);
+        for (int i = 0; i < count; i++) {
+            int len = in.readInt();
+            
+            byte[] data = new byte[len];
+            in.readFully(data);
+            
+            Bitmap bmp = Bitmap.fromBytes(data); // PNG'den geri yükleme
+            this.addFrame(bmp);
+        }
+	}
+
 	public void save(File file) throws IOException {
         this.saveResource(new DataOutputStream(new FileOutputStream(file)));
     }

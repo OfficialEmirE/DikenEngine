@@ -9,10 +9,10 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -30,19 +30,6 @@ public class Tool extends Instance {
 	
 	private boolean isEquipped = false;
 	
-	public Bitmap getIconBitmap() {
-		return icon;
-	}
-	
-	public String getIcon() {
-		return resourceID;
-	}
-	
-	public void setIcon(String icon) {
-		this.resourceID = icon;
-		this.reloadNode();
-	}
-
 	public Tool() {
 		super("Tool");
 		init();
@@ -61,6 +48,19 @@ public class Tool extends Instance {
 	public Tool(DataInputStream in) throws IOException {
 		super(in);
 		loadNodeData(in);
+	}
+	
+	public Bitmap getIconBitmap() {
+		return icon;
+	}
+	
+	public String getIcon() {
+		return resourceID;
+	}
+	
+	public void setIcon(String icon) {
+		this.resourceID = icon;
+		this.reloadNode();
 	}
 	
 	private void init() {

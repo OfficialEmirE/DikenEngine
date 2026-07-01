@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 

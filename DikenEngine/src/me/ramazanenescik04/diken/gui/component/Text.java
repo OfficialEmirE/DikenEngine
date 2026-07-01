@@ -1,57 +1,65 @@
 package me.ramazanenescik04.diken.gui.component;
 
+import java.awt.Point;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Stream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.NodeResource;
+import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.gui.TextRenderer;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Represents the `Text` type within the DikenEngine `gui.compoment` package.
  */
 public class Text extends GuiComponent {
-	private static final char COLOR_CODE_MARKER = '\u00A7';
-	private static final int RGB_HEX_LENGTH = 6;
-	private static final int ARGB_HEX_LENGTH = 8;
-	public String text;
-	public int color;
-	public UniFont font;
+	private String text;
+	private int color;
+	private NodeResource<UniFont> font;
+	private TextPosition textPosition = TextPosition.Center;
 	
-	public UDim2 offsetPosition;
+	public enum TextPosition {
+		NorthWest(0, 0),
+		NorthEast(1, 0),
+		North(0.5, 0),
+		
+		SouthEast(0, 1),
+		SouthWest(1, 1),
+		South(0.5, 1),
+		
+		East(1, 0.5),
+		West(0, 0.5),
+		Center(0.5, 0.5);
+		
+		public final double x, y;
+		
+		TextPosition(double x, double y) {
+			this.x = x;
+			this.y = y;
+		}
+	}
 
 	public Text(String text, UDim2 position) {
-		this(text, position, UDim2.zero, 0xffffffff, DikenEngine.getEngine().defaultFont);
+		this(text, position, UDim2.defaultV, 0xffffffff, "default_font");
 	}
 	
-	public Text(String text, UDim2 position, UniFont font) {
-		this(text, position, UDim2.zero, 0xffffffff, font);
-	}
-	
-	public Text(String text, UDim2 position, UDim2 offsetPosition, int color, UniFont font) {
-		super("Text", position, new UDim2(0, 
-				Text.stringBitmapAverageWidth(text, font) + offsetPosition.x.offset,
-				0,
-				Text.stringBitmapAverageHeight(text, font) + offsetPosition.y.offset
-		));
+	public Text(String text, UDim2 position, UDim2 size, int color, String font) {
+		super("Text", position, size);
 		
 		this.text = text;
 		this.color = color;
-		this.font = font;
-		this.offsetPosition = offsetPosition;
-	}
-	
-	public Text(String text, UDim2 position, int color) {
-		this(text, position, UDim2.zero, color, DikenEngine.getEngine().defaultFont);
+		this.font = new NodeResource<>(font, EnumResource.FONT);
 	}
 
 	public Text(DataInputStream in) throws IOException {
@@ -60,46 +68,76 @@ public class Text extends GuiComponent {
 	}
 	
 	public Bitmap render() {
-		Bitmap bitmap = super.render();
-		Text.render(text, bitmap, offsetPosition.x.offset, offsetPosition.y.offset, color, font);
-		return bitmap;
+	    Bitmap bitmap = super.render();
+	    
+	    if (this.font.getResource() == null) {
+	    	return bitmap;
+	    }
+	    
+	    int containerWidth = this.getWidth();
+	    int containerHeight = this.getHeight();
+	    
+	    int textWidth = TextRenderer.stringBitmapWidth(text, this.font.getResource());
+	    int textHeight = TextRenderer.stringBitmapAverageHeight(text, this.font.getResource());
+	    
+	    // Ham koordinatları hesapla
+	    int x = (int) (textPosition.x * containerWidth);
+	    int y = (int) (textPosition.y * containerHeight);
+	    
+	    // Hizalamayı düzelt (Yazının kutunun dışına taşmasını engelle)
+	    if (textPosition.x == 0.5) {
+	        x -= (textWidth / 2);
+	    } else if (textPosition.x == 1.0) {
+	        x -= textWidth;
+	    }
+	    
+	    if (textPosition.y == 0.5) {
+	        y -= (textHeight / 2);
+	    } else if (textPosition.y == 1.0) {
+	        y -= textHeight;
+	    }
+	    
+	    // Doğru koordinatlarla çizdir
+	    bitmap.drawText(text, x, y, color, this.font.getResource(), false);
+	    
+	    return bitmap;
 	}
 	
 	@Override
-	public void tick(DikenEngine engine) {
-		var bounds = this.getAbsoluteBounds();
+	public void update(World world, DikenEngine engine) {
+		super.update(world, engine);
 		
-		var textWidth = Text.stringBitmapWidth(text, font) + offsetPosition.x.offset;
-		var textHeight = Text.stringBitmapAverageHeight(text, font) + offsetPosition.y.offset;
-		
-		if(bounds.getWidth() != textWidth) {
-			var oldSize = this.getSize();
-			
-			this.setSize(new UDim2(0, textWidth, oldSize.y.scale, oldSize.y.offset));
-		}
-		
-		if(bounds.getHeight() != textHeight) {
-			var oldSize = this.getSize();
-			
-			this.setSize(new UDim2(oldSize.x.scale, oldSize.x.offset, 0, textHeight));
-		}
+		font.update(world);
 	}
 	
+	public Point calculateTextCoordinates(TextPosition position, int containerWidth, int containerHeight, int textWidth, int textHeight) {
+        int rawX = (int) (position.x * containerWidth);
+        int rawY = (int) (position.y * containerHeight);
+        
+        int finalX = rawX;
+        int finalY = rawY;
+        
+        if (position.x == 0.5) {
+            finalX = rawX - (textWidth / 2);
+        } else if (position.x == 1.0) {
+            finalX = rawX - textWidth;
+        }
+        
+        if (position.y == 0.5) {
+            finalY = rawY - (textHeight / 2);
+        } else if (position.y == 1.0) {
+            finalY = rawY - textHeight;
+        }
+        
+        return new Point(finalX, finalY);
+    }
+
 	public String getText() {
 		return this.text;
 	}
 	
 	public Text setText(String text) {
 		this.text = text;
-		return this;
-	}
-	
-	public UDim2 getOffsetPosition() {
-		return this.offsetPosition;
-	}
-	
-	public Text setOffsetPosition(UDim2 location) {
-		this.offsetPosition = location;
 		return this;
 	}
 	
@@ -112,247 +150,46 @@ public class Text extends GuiComponent {
 		return null;
 	}
 	
+	public TextPosition getTextPosition() {
+		return textPosition;
+	}
+
+	public void setTextPosition(TextPosition textPostion) {
+		this.textPosition = textPostion;
+	}
+	
+	public String getFont() {
+		return font.getKey();
+	}
+
+	public void setFont(String key) {
+		font.setKey(key);
+	}
+
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("text", "Text", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(6, 2));
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Text", this.text, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText))
-				.addSetting(new Setting<String>("Offset Position", this.offsetPosition.toString(), String.class, EnumSettingType.TEXT_FIELD).addChangeListener(
-						e -> this.setOffsetPosition(toUDim2(e))
-				))
-				.addSetting(new Setting<Integer>("Color", this.color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor));
+				.addSetting(new Setting<>("Text", this.text, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setText))
+				.addSetting(new Setting<>("Text Position", this.textPosition, TextPosition.values(), TextPosition.class,
+						EnumSettingType.LIST_SELECT).addChangeListener(this::setTextPosition))
+				.addSetting(new Setting<>("Color", this.color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor))
+				.addSetting(new Setting<>("Font", this.font.getKey(), String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setFont));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
 	}
 	
-	// !STATIC FUNCTIONS!
-
-	public static void render(String text, Bitmap bitmap, int x, int y, int color, UniFont font) {
-		if (font == null) {
-			font = DikenEngine.getEngine().defaultFont;
-		}
-		
-		Stream<String> lines = text.lines();
-		String[] texts = lines.toArray(String[]::new);
-	    
-	    // Height of a single line (approximate)
-	    int lineHeight = stringBitmapAverageHeight(new String[] {text}, font) + 2; // Add a small padding
-	    
-	    int currentColor = color;
-	    for (int i = 0; i < texts.length; i++) {
-	        String lineText = texts[i];
-	        int w = 0;
-	        
-	        for (int j = 0; j < lineText.length(); j++) {
-	        	ColorCode colorCode = readColorCode(lineText, j);
-	        	if (colorCode != null) {
-	        		currentColor = colorCode.color;
-	        		j = colorCode.endIndex;
-	        		continue;
-	        	}
-	        	
-	            Bitmap btp = UniFont.getBitmapChar(lineText.charAt(j), font);
-	            
-	            // Render character
-	            bitmap.blendDraw(btp, x + w, y + (i * lineHeight), currentColor);
-	            
-	            w += ((btp.w));
-	        }
-	    }
-	}
-	
-	public static void render(String text, Bitmap bitmap, int x, int y, int color) {
-		render(text, bitmap, x, y, color, DikenEngine.getEngine().defaultFont);
-	}
-	
-	public static void render(String text, Bitmap bitmap, int x, int y, UniFont font) {
-		render(text, bitmap, x, y, 0xffffffff, font);
-	}
-	
-	public static void render(String text, Bitmap bitmap, int x, int y) {
-		render(text, bitmap, x, y, 0xffffffff, DikenEngine.getEngine().defaultFont);
-	}
-	
-	public static void renderCenter(String string, Bitmap bitmap, int x, int y) {
-		renderCenter(string, bitmap, x, y, 0xffffffff, DikenEngine.getEngine().defaultFont);
-	}
-	
-	public static void renderCenter(String string, Bitmap bitmap, int x, int y, int color) {
-		renderCenter(string, bitmap, x, y, color, DikenEngine.getEngine().defaultFont);
-	}
-	
-	public static void renderCenter(String string, Bitmap bitmap, int x, int y, UniFont font) {
-		renderCenter(string, bitmap, x, y, 0xffffffff, font);
-	}
-	
-	public static void renderCenter(String string, Bitmap bitmap, int x, int y, int color, UniFont font) {
-		int x1 = x - (stringBitmapWidth(string, font) / 2);
-		
-		render(string, bitmap,x1, y, color, font);
-	}
-	
-	public static int stringBitmapWidth(String text, UniFont font) {
-		int w = 0;
-		for (int i = 0; i < text.length(); i++) {
-			ColorCode colorCode = readColorCode(text, i);
-			if (colorCode != null) {
-				i = colorCode.endIndex;
-				continue;
-			}
-			
-			Bitmap btp = UniFont.getBitmapChar(text.charAt(i), font);
-			w += ((btp.w));
-		}
-		
-		return w;
-	}
-	
-	public static int stringBitmapAverageWidth(String[] texts, UniFont font) {
-		int maxLength = 0;
-	    for (String str : texts) {
-	    	 if (str != null) {
-	             int length = 0;
-	             for (int i = 0; i < str.length(); i++) {
-	            	ColorCode colorCode = readColorCode(str, i);
-	     			if (colorCode != null) {
-	     				i = colorCode.endIndex;
-	     				continue;
-	     			}
-	     			
-	                 Bitmap btp = UniFont.getBitmapChar(str.charAt(i), font);
-	                 length += ((btp.w));
-	             }
-	             if (length > maxLength) {
-	                 maxLength = length;
-	             }
-	         }
-	    }
-	    
-	    return maxLength;
-	}
-	
-	public static int stringBitmapAverageWidth(String text, UniFont font) {
-		Stream<String> lines = text.lines();
-		String[] texts = lines.toArray(String[]::new);
-		
-		return stringBitmapAverageWidth(texts, font);
-	}
-	
-	public static int stringBitmapAverageHeight(String text, UniFont font) {
-		Stream<String> lines = text.lines();
-		String[] texts = lines.toArray(String[]::new);
-		
-		return stringBitmapAverageHeight(texts, font);
-	}
-	
-	public static int stringBitmapAverageHeight(String[] texts, UniFont font) {
-		int maxHeight = 0;
-	    for (String str : texts) {
-	    	 if (str != null) {
-	             for (int i = 0; i < str.length(); i++) {
-	            	ColorCode colorCode = readColorCode(str, i);
-	     			if (colorCode != null) {
-	     				i = colorCode.endIndex;
-	     				continue;
-	     			}
-	     			
-	                 Bitmap btp = UniFont.getBitmapChar(str.charAt(i), font);
-	                 if (btp.h > maxHeight) {
-	                     maxHeight = btp.h;
-	                 }
-	             }
-	         }
-	    }
-	    
-		return maxHeight;
-	}
-
-	private static ColorCode readColorCode(String text, int markerIndex) {
-		if (text.charAt(markerIndex) != COLOR_CODE_MARKER) {
-			return null;
-		}
-		
-		ColorCode argbColor = readColorCode(text, markerIndex, ARGB_HEX_LENGTH);
-		if (argbColor != null) {
-			return argbColor;
-		}
-		
-		ColorCode rgbColor = readColorCode(text, markerIndex, RGB_HEX_LENGTH);
-		if (rgbColor != null) {
-			return rgbColor;
-		}
-		
-		return null;
-	}
-
-	private static ColorCode readColorCode(String text, int markerIndex, int hexLength) {
-		int hexStartIndex = markerIndex + 1;
-		int hexEndIndex = hexStartIndex + hexLength;
-		if (hexEndIndex > text.length()) {
-			return null;
-		}
-		
-		for (int i = hexStartIndex; i < hexEndIndex; i++) {
-			if (!isHexChar(text.charAt(i))) {
-				return null;
-			}
-		}
-		
-		long parsedColor = Long.parseLong(text.substring(hexStartIndex, hexEndIndex), 16);
-		if (hexLength == RGB_HEX_LENGTH) {
-			parsedColor |= 0xff000000L;
-		}
-		
-		return new ColorCode((int) parsedColor, hexEndIndex - 1);
-	}
-
-	private static boolean isHexChar(char c) {
-		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-	}
-
-	private static class ColorCode {
-		private final int color;
-		private final int endIndex;
-
-		private ColorCode(int color, int endIndex) {
-			this.color = color;
-			this.endIndex = endIndex;
-		}
-	}
-
-	public static String wordWrapString(String message, int i, UniFont defaultFont) {
-		StringBuilder wrappedText = new StringBuilder();
-		String[] words = message.split(" ");
-		int lineLength = 0;
-		
-		for (String word : words) {
-			int wordLength = stringBitmapWidth(word + " ", defaultFont);
-			
-			if (lineLength + wordLength > i) {
-				wrappedText.append("\n");
-				lineLength = 0;
-			}
-			
-			wrappedText.append(word).append(" ");
-			lineLength += wordLength;
-		}
-		
-		return wrappedText.toString().trim();
-	}
-
 	@Override
 	public void saveNodeData(DataOutputStream out) throws IOException {
 		super.saveNodeData(out);
 		out.writeUTF(text);
 		out.writeInt(color);
-		out.writeDouble(offsetPosition.x.scale);
-		out.writeInt(offsetPosition.x.offset);
-		out.writeDouble(offsetPosition.y.scale);
-		out.writeInt(offsetPosition.y.offset);
+		out.writeUTF(font.getKey());
+		out.writeUTF(textPosition.name());
 	}
 
 	@Override
@@ -360,7 +197,7 @@ public class Text extends GuiComponent {
 		super.loadNodeData(in);
 		this.text = in.readUTF();
 		this.color = in.readInt();
-		this.offsetPosition = new UDim2(in.readDouble(), in.readInt(), in.readDouble(), in.readInt());
-		this.font = DikenEngine.getEngine() != null ? DikenEngine.getEngine().defaultFont : UniFont.getFont("default_font");
+		this.font = new NodeResource<>(in.readUTF(), EnumResource.FONT);
+		this.textPosition = TextPosition.valueOf(in.readUTF());
 	}
 }

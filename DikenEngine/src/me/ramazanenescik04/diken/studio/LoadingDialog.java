@@ -34,7 +34,7 @@ public class LoadingDialog extends JDialog {
 	private final JProgressBar progressBar;
 
 	public LoadingDialog() {
-		setTitle("DikenEngine Studio Yükleniyor...");
+		setTitle("DikenEngine Yükleniyor...");
 		setUndecorated(true);
 		setSize(WIDTH, HEIGHT);
 		setLocationRelativeTo(null);

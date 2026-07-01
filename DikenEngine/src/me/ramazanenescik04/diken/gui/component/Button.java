@@ -8,9 +8,10 @@ import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.gui.TextRenderer;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -123,7 +124,7 @@ public class Button extends GuiComponent {
 		bitmap.blendDraw(createButtonTexture(width, height), 0, 0, bColor);
 		
 		// Yazı genişliğini kontrol et
-        int textWidth = Text.stringBitmapWidth(text, DikenEngine.getEngine().defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);
+        int textWidth = TextRenderer.stringBitmapWidth(text, DikenEngine.getEngine().defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);
         
         if (textWidth > width) {     
         	int spacing = 6;
@@ -133,15 +134,15 @@ public class Button extends GuiComponent {
         	    if (isIconLeft) {
         	        // İKON SOLDA: Önce ikonu çiz, sonra startPosition'ı kaydır
         	        bitmap.draw(this.icon, startPosition, (height / 2) - (this.icon.h / 2));
-        	        Text.render(text, bitmap, startPosition + this.icon.w + spacing, (height / 2) - 4, tColor);
+        	        TextRenderer.render(text, bitmap, startPosition + this.icon.w + spacing, (height / 2) - 4, tColor);
         	    } else {
         	        // İKON SAĞDA: Önce metni çiz, yanına ikonu ekle
-        	        Text.render(text, bitmap, startPosition, (height / 2) - 4, tColor);
+        	    	TextRenderer.render(text, bitmap, startPosition, (height / 2) - 4, tColor);
         	        bitmap.draw(this.icon, startPosition + textWidth + spacing, (height / 2) - (this.icon.h / 2));
         	    }
         	} else {
         	    // İkon yoksa sadece metni çiz
-        	    Text.render(text, bitmap, startPosition, (height / 2) - 4, tColor);
+        		TextRenderer.render(text, bitmap, startPosition, (height / 2) - 4, tColor);
         	}
         } else {
         	int spacing = 6;
@@ -153,15 +154,15 @@ public class Button extends GuiComponent {
         	    if (isIconLeft) {
         	        // [İKON] [METİN]
         	        bitmap.draw(this.icon, startX, (height / 2) - (this.icon.h / 2));
-        	        Text.render(text, bitmap, startX + this.icon.w + spacing, (height / 2) - 4, tColor);
+        	        TextRenderer.render(text, bitmap, startX + this.icon.w + spacing, (height / 2) - 4, tColor);
         	    } else {
         	        // [METİN] [İKON]
-        	        Text.render(text, bitmap, startX, (height / 2) - 4, tColor);
+        	    	TextRenderer.render(text, bitmap, startX, (height / 2) - 4, tColor);
         	        bitmap.draw(this.icon, startX + (textWidth - this.icon.w - spacing), (height / 2) - (this.icon.h / 2));
         	    }
         	} else {
         	    // Sadece metni ortala
-        	    Text.render(text, bitmap, startX, (height / 2) - 4, tColor);
+        		TextRenderer.render(text, bitmap, startX, (height / 2) - 4, tColor);
         	}
         }
         
@@ -190,7 +191,7 @@ public class Button extends GuiComponent {
 		var bounds = this.getAbsoluteBounds();
 		var width = bounds.getWidth();
 		
-		int textWidth = Text.stringBitmapWidth(text, engine.defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);;
+		int textWidth = TextRenderer.stringBitmapWidth(text, engine.defaultFont) + (this.icon != null ? this.icon.w + 6 : 0);;
 		if (textWidth > width) {
 			// Yazı genişlikten büyükse kaydırma işlemi yap
             if (movingRight) {

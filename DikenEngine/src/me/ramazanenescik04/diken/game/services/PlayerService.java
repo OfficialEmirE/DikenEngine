@@ -8,15 +8,15 @@ import java.util.UUID;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class PlayerService extends Service {
 	private Humanoid character;
-	private String username;
+	private String username = "Player";
 
 	public PlayerService() {
 		this("Player");
@@ -45,6 +45,11 @@ public class PlayerService extends Service {
 
 	public void setCharacter(Humanoid character) {
 		this.character = character;
+	}
+	
+	@Override
+	public boolean showStudio() {
+		return true;
 	}
 
 	@Override

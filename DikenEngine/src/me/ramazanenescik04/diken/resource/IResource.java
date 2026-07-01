@@ -19,17 +19,22 @@ public interface IResource extends java.io.Serializable, Cloneable {
 	
 	public static IResource loadResource(DataInputStream in, String clazzName)
 	        throws IOException, ReflectiveOperationException {
-
-	    Class<?> clazz = Class.forName(
-	        clazzName,
-	        true,
-	        Thread.currentThread().getContextClassLoader()
-	    );
+		Class<?> clazz = Class.forName(
+			clazzName,
+		 	true,
+		    Thread.currentThread().getContextClassLoader()
+		);
+		
+		return loadResource(in, clazz);
+	}
+	
+	public static IResource loadResource(DataInputStream in, Class<?> clazz)
+	        throws IOException, ReflectiveOperationException {
 
 	    Object obj = clazz.getDeclaredConstructor().newInstance();
 
 	    if (!(obj instanceof IResource resource)) {
-	        throw new IllegalArgumentException(clazzName + " does not implement IResource");
+	        throw new IllegalArgumentException(clazz.getName() + " does not implement IResource");
 	    }
 
 	    resource.loadResource(in);

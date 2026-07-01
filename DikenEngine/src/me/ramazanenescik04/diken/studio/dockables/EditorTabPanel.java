@@ -1,16 +1,16 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
-import org.fife.ui.autocomplete.AutoCompletion;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.nodes.SpriteSheet;
+import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.gui.AnimationEditor;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
-import me.ramazanenescik04.diken.scripting.AutoCompleteHelper;
 import me.ramazanenescik04.diken.scripting.Script;
 
 import javax.swing.*;
@@ -25,21 +25,23 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-public class ScriptTabPanel extends DockablePanel {
+public class EditorTabPanel extends DockablePanel {
 	private static final long serialVersionUID = -8433100060634996548L;
 	
 	@SuppressWarnings("unused")
 	private World theWorld;
 	
 	private JTabbedPane tabbedPane;
+	private ObjectBrowserPanel reference = new ObjectBrowserPanel();
 	private Map<Script, RTextScrollPane> openScripts = new HashMap<>();
 	private Map<SpriteSheet, AnimationEditor> openAnims = new HashMap<>();
     private Map<Script, RSyntaxTextArea> textAreas = new HashMap<>();
 
-	public ScriptTabPanel(RendererPanel gamePanel, World theWorld) {
-		super("script_tab_id", "Script Editörleri");
+	public EditorTabPanel(RendererPanel gamePanel, World theWorld) {
+		super("editor_tab_id", "Editörler");
 		this.theWorld = theWorld;
 		
 		setBorder(new LineBorder(new Color(0, 0, 0)));
@@ -54,8 +56,9 @@ public class ScriptTabPanel extends DockablePanel {
 		tabbedPane.addTab("Oyun Önizleme", null, gamePanel, null);
 	}
 	
-	public void reloadWorld(World theWorld) {
+	public void reloadWorld(World theWorld, boolean playtest) {
 		this.theWorld = theWorld;
+		setBorder(new LineBorder(playtest ? Color.green : Color.black));
 	}
 	
 	private JPanel getTabHeader(Object c, String text) {
@@ -94,12 +97,12 @@ public class ScriptTabPanel extends DockablePanel {
         textArea.setText(script.getSource());
         textArea.setAutoIndentEnabled(true);
         
-        var provider = AutoCompleteHelper.createLuaProvider(org.luaj.vm2.lib.jse.JsePlatform.standardGlobals());
+       /* var provider = AutoCompleteHelper.createLuaProvider(theWorld);
         AutoCompletion ac = new AutoCompletion(provider);
         ac.setAutoActivationEnabled(true);
         ac.setAutoActivationDelay(150);
         
-        ac.install(textArea);
+        ac.install(textArea);*/
 
         try {
             Theme theme = Theme.load(getClass().getResourceAsStream(
@@ -176,6 +179,17 @@ public class ScriptTabPanel extends DockablePanel {
         
         anim.OnDestroy.Connect(_ -> close(anim));*/
 	}
+	
+	public void openObjectReference() {
+		if (tabbedPane.indexOfTabComponent(reference) >= 0) {
+			return;
+		}
+		
+		tabbedPane.addTab(null, reference);
+        int index = tabbedPane.indexOfComponent(reference);
+        tabbedPane.setTabComponentAt(index, getTabHeader(reference, "Obje Tarayıcısı"));
+        tabbedPane.setSelectedComponent(reference);
+	}
     
     private void close(Object obj) {
     	Component c = null;
@@ -195,5 +209,13 @@ public class ScriptTabPanel extends DockablePanel {
 			int index = tabbedPane.indexOfComponent(c);
             if (index >= 0) tabbedPane.removeTabAt(index);
 		}
+	}
+
+	@Override
+	public List<Setting<?>> getDockableSettings() {
+		List<Setting<?>> list = super.getDockableSettings();
+		list.add(new Setting<>("Obje Tarayıcısı: showUnlisted", this.reference.isShowUnlisted(), Boolean.class,
+				EnumSettingType.CHECK_BOX).addChangeListener(reference::setShowUnlisted));
+		return list;
 	}
 }

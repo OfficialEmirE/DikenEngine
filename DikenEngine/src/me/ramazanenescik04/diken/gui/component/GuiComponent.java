@@ -10,10 +10,10 @@ import java.util.regex.Pattern;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
@@ -293,8 +293,11 @@ public abstract class GuiComponent extends Node {
             }
         }
         
-        for (int i = 0; i < children.size(); i++) {
-            Node child = children.get(i);
+        List<Node> sortedChildren = new ArrayList<>(children);
+    	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
+        
+        for (int i = 0; i < sortedChildren.size(); i++) {
+            Node child = sortedChildren.get(i);
             if (child instanceof GuiComponent childInstance) {
 				childInstance.drawComponent(sceneBitmap, viewport);
 			}

@@ -7,8 +7,9 @@ import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.gui.TextRenderer;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -166,10 +167,10 @@ public class TextLine extends GuiComponent {
 		//Render Text Lines
 		for (int i = 0; i < textLines.size(); i++) {
 			String line = textLines.get(i);
-			int averageHeight = Text.stringBitmapAverageHeight(line, DikenEngine.getEngine().defaultFont);
+			int averageHeight = TextRenderer.stringBitmapAverageHeight(line, DikenEngine.getEngine().defaultFont);
 			int yOffset = 2 + (i * averageHeight); // Assuming each line is 12 pixels tall
 			if (yOffset < this.getHeight() - 2) { // Ensure we don't draw outside the bounds
-				Text.render(line, bitmap, 2, yOffset, this.color);
+				TextRenderer.render(line, bitmap, 2, yOffset, this.color);
 			}
 		}
 		return bitmap;
@@ -203,8 +204,8 @@ public class TextLine extends GuiComponent {
 	public void autoSetSize() {
 		String[] array = this.textLines.toArray(new String[0]);
 		
-		int w = Text.stringBitmapAverageWidth(array, font);
-		int h = Text.stringBitmapAverageHeight(array, font) * (array.length + 2);
+		int w = TextRenderer.stringBitmapAverageWidth(array, font);
+		int h = TextRenderer.stringBitmapAverageHeight(array, font) * (array.length + 2);
 		
 		this.setSize(w, h);
 	}

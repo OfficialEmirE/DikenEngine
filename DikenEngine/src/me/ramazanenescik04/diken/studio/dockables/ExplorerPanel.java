@@ -11,9 +11,9 @@ import javax.swing.tree.TreeSelectionModel;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.AbstractService;
+import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.studio.StudioTreeRenderer;
 
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -36,7 +36,7 @@ public class ExplorerPanel extends DockablePanel {
 	private static final long serialVersionUID = 1L;
 	
 	private JTree tree;
-    private DefaultMutableTreeNode rootTreeNode = new DefaultMutableTreeNode();
+    private DefaultMutableTreeNode rootTreeNode;
     private List<SelectedNodeListener> selectedNodeListeners = new ArrayList<>();
     public World theWorld;
     
@@ -47,6 +47,8 @@ public class ExplorerPanel extends DockablePanel {
     private PickCallback pickCallback = null;
     private boolean ignoreNextSelectionEvent = false;
 
+	private boolean showHideServices;
+
 	/**
 	 * Create the panel.
 	 */
@@ -54,8 +56,11 @@ public class ExplorerPanel extends DockablePanel {
 		super("explorer_id", "Gezgin");
 		
 		this.theWorld = world;
+		var root = world.getRoot();
+		
 		setLayout(new BorderLayout(0, 0));
 		
+		this.rootTreeNode = new DefaultMutableTreeNode(root);
 		var treeModel = new DefaultTreeModel(rootTreeNode);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -74,7 +79,6 @@ public class ExplorerPanel extends DockablePanel {
 		
 		rebuildExplorer();
 		
-		var root = world.getRoot();
 		root.OnAddDescendant.Connect(_ -> {
 			rebuildExplorer();
 		});
@@ -312,7 +316,9 @@ public class ExplorerPanel extends DockablePanel {
 	    var services = theWorld.getServices().iterator();
 	    while (services.hasNext()) {
 	        var service = services.next();
-	        addExplorerNode(this.rootTreeNode, service);
+	        if (service.showStudio() || showHideServices) {
+	        	addExplorerNode(this.rootTreeNode, service);
+	        }
 	    }
 	    
 	    // Ağacı grafik olarak yenile
@@ -349,7 +355,7 @@ public class ExplorerPanel extends DockablePanel {
 	}
 
 	private void addExplorerNode(DefaultMutableTreeNode parentNode, Node node) {
-		var mutableNode =  createStudioObject(parentNode, node);
+		var mutableNode = createStudioObject(parentNode, node);
 
 		for (Node child : node.getChildren()) {
 			addExplorerNode(mutableNode, child);
@@ -687,7 +693,13 @@ public class ExplorerPanel extends DockablePanel {
 	@Override
 	public List<Setting<?>> getDockableSettings() {
 		List<Setting<?>> list = super.getDockableSettings();
-		list.add(new Setting<>("Root'u göster.", this.tree.isRootVisible(), Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this.tree::setRootVisible));
+		list.add(new Setting<>("Root'u göster.", this.tree.isRootVisible(), Boolean.class, EnumSettingType.CHECK_BOX)
+				.addChangeListener(this.tree::setRootVisible));
+		list.add(new Setting<>("Gizli Servisleri Göster.", this.showHideServices, Boolean.class,
+				EnumSettingType.CHECK_BOX).addChangeListener(e -> {
+					showHideServices = e;
+					rebuildExplorer();
+				}));
 		return list;
 	}
 }

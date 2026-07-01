@@ -4,12 +4,12 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.List;
 
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
-public class Service extends AbstractService {
+public abstract class Service extends AbstractService {
 	public final Event OnPreRender = new Event();
     public final Event OnPostRender = new Event();
 	
@@ -27,6 +27,8 @@ public class Service extends AbstractService {
 			loadNodeData(in);
 		}
 	}
+	
+	public abstract boolean showStudio();
 
 	@Override
 	public List<SettingCategory> getNodeSettings() {

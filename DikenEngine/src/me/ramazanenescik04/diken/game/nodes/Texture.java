@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;

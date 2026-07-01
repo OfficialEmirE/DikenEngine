@@ -17,7 +17,6 @@ import javax.swing.UIManager;
 import org.lwjgl.LWJGLException;
 import com.formdev.flatlaf.*;
 
-import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.gui.UniFont;
@@ -26,7 +25,7 @@ import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.language.Language;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
-import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
+import me.ramazanenescik04.diken.renderer.RenderWorker;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -46,8 +45,6 @@ import me.ramazanenescik04.diken.tools.Utils;
 public class DikenEngine implements Runnable, IInputListener {
 	public static final String VERSION = "3.0.0";
 	public static final int protocolVersion = VERSION.hashCode();
-	private static final boolean IS_DEV_MODE = 
-	        "development".equals(System.getProperty("dikeneditor.mode"));
 
 	private static DikenEngine instance;
 
@@ -58,6 +55,7 @@ public class DikenEngine implements Runnable, IInputListener {
 
 	private boolean running = false;
 	private RendererPanel rendererPanel = null;
+	private RenderWorker renderWorker;
 
 	private int width;
 	private int height;
@@ -109,7 +107,7 @@ public class DikenEngine implements Runnable, IInputListener {
 			System.exit(1);
 		}
 
-		this.engineWindow = new JFrame("DikenEngine" + (openStudio ? " Studio" : "") + (IS_DEV_MODE ? " [Development Version]" : ""));
+		this.engineWindow = new JFrame("DikenEngine");
 		this.engineWindow.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		this.engineWindow.setIconImage(new javax.swing.ImageIcon(DikenEngine.class.getResource("/icon-x16.png")).getImage());
 		
@@ -243,12 +241,14 @@ public class DikenEngine implements Runnable, IInputListener {
 	public void run() {
 		try {			
 			log("DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ") Başlatılıyor");
-			log("Başlatma Türü: " + (IS_DEV_MODE ? "Development Sürümü, Hatalar Olabilir!" : "Release Sürümü"));
 
 			defaultFont = UniFont.getFont("default_font");
 
 			input = new InputHandler(rendererPanel);
 			input.addListener(this);
+			
+			renderWorker = new RenderWorker(this, rendererPanel, scale);
+	        renderWorker.start();
 
 			rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
 
@@ -269,8 +269,7 @@ public class DikenEngine implements Runnable, IInputListener {
 				}
 
 				Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
-				FrameBitmapPool.beginFrame();
-				render(frameBitmap);
+				renderWorker.queueFrame(frameBitmap);
 				frames++;
 
 				if (System.currentTimeMillis() - lastFPSTime >= 1000) {
@@ -279,7 +278,7 @@ public class DikenEngine implements Runnable, IInputListener {
 					lastFPSTime = System.currentTimeMillis();
 				}
 
-				rendererPanel.present(scale);
+				Thread.sleep(1);
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -379,7 +378,7 @@ public class DikenEngine implements Runnable, IInputListener {
 		}
 	}
 
-	private void render(Bitmap bitmap) {
+	public void render(Bitmap bitmap) {
 		if (theWorld != null) {
 			theWorld.render(bitmap);
 		}
@@ -526,7 +525,8 @@ public class DikenEngine implements Runnable, IInputListener {
 
 	static {
 		loadLocalImages();
-		UniFont.createFont("default_font");
+		
+		UniFont.loadFromResources("default_font");
 	}
 
 	private void crash(Throwable e) {

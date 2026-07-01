@@ -8,8 +8,10 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
 
+import org.luaj.vm2.LuaValue;
+
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
@@ -75,6 +77,10 @@ public class Game extends AbstractService {
 	
 	public Object HttpPost(String url, Object data) {
 		return HttpSend(url, "POST", data);
+	}
+	
+	public Runnable toRunnable(LuaValue value) {
+		return () -> value.invoke();
 	}
 
 	@Override

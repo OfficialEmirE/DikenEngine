@@ -4,6 +4,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 
 import javax.swing.JPanel;
@@ -13,8 +14,6 @@ import java.awt.Image;
 import java.io.IOException;
 import java.net.URI;
 
-import javax.swing.SwingConstants;
-
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.IOResource;
 
@@ -22,8 +21,8 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import java.awt.Font;
 import javax.swing.JTabbedPane;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.JScrollPane;
+import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import java.awt.Component;
@@ -33,8 +32,7 @@ public class AboutWindow extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 	
-	private static JLabel licenseText;
-	private static String license;
+	private static JLabel emirElogo;
 	private static ImageIcon logo;
 	
 	static {loadJLabel();};
@@ -82,6 +80,22 @@ public class AboutWindow extends JDialog {
 		tabbedPane.addTab("Yapımcılar", null, new JScrollPane(aboutPage), null);
 		aboutPage.setLayout(new BoxLayout(aboutPage, BoxLayout.Y_AXIS));
 		
+		Component verticalStrut_1 = Box.createVerticalStrut(5);
+		aboutPage.add(verticalStrut_1);
+		
+		JLabel lblDikenengineInfo = new JLabel("DikenEngine, Oyun/Harita yapmanızı sağlayan 2B bir oyun motorudur");
+		lblDikenengineInfo.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		lblDikenengineInfo.setAlignmentX(0.5f);
+		aboutPage.add(lblDikenengineInfo);
+		
+		JLabel lblLicenseInfo = new JLabel("GNU GPL V2 Lisansını kullanmaktadır.");
+		lblLicenseInfo.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		lblLicenseInfo.setAlignmentX(0.5f);
+		aboutPage.add(lblLicenseInfo);
+		
+		Component verticalStrut = Box.createVerticalStrut(25);
+		aboutPage.add(verticalStrut);
+		
 		JLabel lblGelitiriciler = new JLabel("Geliştiriciler");
 		lblGelitiriciler.setFont(new Font("Arial", Font.PLAIN, 18));
 		lblGelitiriciler.setAlignmentX(0.5f);
@@ -128,34 +142,51 @@ public class AboutWindow extends JDialog {
 		lblRTextArea.setAlignmentX(0.5f);
 		aboutPage.add(lblRTextArea);
 		
-		JScrollPane scrollPane = new JScrollPane(licenseText);
-		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		tabbedPane.addTab("GNU GPL Lisansı", null, scrollPane, null);
+		JPanel headerPanel = new JPanel();
+		headerPanel.setOpaque(false);
+		headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.X_AXIS));
+		headerPanel.setBorder(BorderFactory.createEmptyBorder(22, 22, 22, 22));
+
+		if (logo != null) {
+			headerPanel.add(new JLabel(logo));
+			headerPanel.add(Box.createHorizontalStrut(14));
+		}
+
+		JPanel namePanel = new JPanel();
+		namePanel.setOpaque(false);
+		namePanel.setLayout(new BoxLayout(namePanel, BoxLayout.Y_AXIS));
+
+		JLabel nameLabel = new JLabel("DikenEngine");
+		nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+		nameLabel.setForeground(Color.WHITE);
+
+		JLabel versionLabel = new JLabel(DikenEngine.VERSION);
+		versionLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+		versionLabel.setForeground(new Color(225, 225, 225));
+		versionLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);
 		
-		JLabel engineText = new JLabel("<html><h2>DikenEngine</h2><h4>" + DikenEngine.VERSION + "</h4></html>");
-		engineText.setIcon(logo);
-		engineText.setHorizontalAlignment(SwingConstants.CENTER);
-		engineText.setFont(new Font("Arial", Font.PLAIN, 20));
-		getContentPane().add(engineText, BorderLayout.NORTH);
+		emirElogo.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		emirElogo.setAlignmentX(0.5f);
+
+		namePanel.add(nameLabel);
+		namePanel.add(versionLabel);
+		headerPanel.add(namePanel);
+		headerPanel.add(emirElogo);
+		
+		getContentPane().add(headerPanel, BorderLayout.NORTH);
 	}
 	
-	private static void loadJLabel() {
-		var loadLicense = license;
-		if (loadLicense == null) {
+	private static void loadJLabel() {	
+		if (emirElogo == null) {
+			Image img;
 			try {
-				var text = new String(AboutWindow.class.getResourceAsStream("/about/LICENSE").readAllBytes());
-				loadLicense = "<html><center>" + text.replaceAll("\n", "<br>") + "</center></html>";
-			} catch (IOException e) {
-				e.printStackTrace();
-				loadLicense = "Lisans Yükleme Başarısızlıkla Sonuçlandı.";
+				img = ImageIO.read(AboutWindow.class.getResource("/emire.png"));
+			} catch (Exception e1) {
+				e1.printStackTrace();
+				img = IOResource.missingTexture.toImage();
 			}
 			
-			license = loadLicense;
-		}
-		
-		if (licenseText == null) {
-			licenseText = new JLabel(loadLicense);
-			licenseText.setHorizontalAlignment(SwingConstants.CENTER);
+			emirElogo = new JLabel(new ImageIcon(img));
 		}
 		
 		if (logo == null) {

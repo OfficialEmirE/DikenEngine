@@ -13,9 +13,9 @@ import org.luaj.vm2.lib.jse.*;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
@@ -124,18 +124,22 @@ public class Script extends Node {
         super.update(world, engine);
     }
 
+    @LuaDoc
 	public String getSource() {
 		return source;
 	}
 
+	@LuaDoc
 	public void setSource(String source) {
 		this.source = source;
 	}
 
+	@LuaDoc
 	public boolean isEnabled() {
 		return enabled;
 	}
-
+	
+	@LuaDoc
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}

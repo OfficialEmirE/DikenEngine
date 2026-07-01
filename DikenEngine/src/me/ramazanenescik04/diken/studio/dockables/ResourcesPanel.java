@@ -1,6 +1,7 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
@@ -17,7 +18,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Map;
 
 public class ResourcesPanel extends DockablePanel {
 
@@ -74,11 +74,11 @@ public class ResourcesPanel extends DockablePanel {
     private void rebuildList() {
         listPanel.removeAll();
 
-        for (Map.Entry<String, IResource> entry : theWorld.resources.entrySet()) {
+        for (var entry : theWorld.resources.entrySet()) {
             String key = entry.getKey();
             IResource resource = entry.getValue();
-
-            if (key.equals("empty")) continue; // varsayılan boş resource'u gösterme
+            
+            if (key.equals("empty") || key.equals("default_font") || resource == null) continue;
 
             JPanel item = createItem(key, resource);
             listPanel.add(item);
@@ -204,6 +204,8 @@ public class ResourcesPanel extends DockablePanel {
 			fileChooser.setFileFilter(new FileNameExtensionFilter("Wave Files", "wav"));
 		} else if (selectedType == EnumResource.ANIMATION) {
 			fileChooser.setFileFilter(new FileNameExtensionFilter("Animation Files", "bin", "anim"));
+		} else if (selectedType == EnumResource.FONT) {
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Fonts", "otf", "otc", "ttf", "ttc"));
 		}
 
         int result = fileChooser.showOpenDialog(parentFrame);
@@ -216,12 +218,15 @@ public class ResourcesPanel extends DockablePanel {
         int dotIndex = defaultName.lastIndexOf('.');
         if (dotIndex > 0) defaultName = defaultName.substring(0, dotIndex);
 
-        String resourceName = JOptionPane.showInputDialog(
-            parentFrame,
-            "Kaynak adı:",
-            defaultName
-        );
-
+        String resourceName = defaultName;
+        if (selectedType != EnumResource.FONT) {
+        	resourceName = JOptionPane.showInputDialog(
+            	parentFrame,
+                "Kaynak adı:",
+                defaultName
+            );
+        }
+        
         if (resourceName == null || resourceName.trim().isEmpty()) return;
         resourceName = resourceName.trim();
 
@@ -236,8 +241,60 @@ public class ResourcesPanel extends DockablePanel {
         }
 
         try (FileInputStream fis = new FileInputStream(selectedFile)) {
-            IResource resource = IOResource.loadResource(fis, selectedType);
-            theWorld.addResource(resourceName, resource);
+        	if (selectedType == EnumResource.FONT) {
+        		Font mainFont = Font.createFont(Font.TRUETYPE_FONT, fis);
+        		Object[] stilSecenekleri = {"Düz (Plain)", "Kalın (Bold)", "İtalik (Italic)", "Kalın + İtalik"};
+                
+                int styleSelect = JOptionPane.showOptionDialog(
+                		parentFrame,
+                        "Lütfen font stilini seçiniz:",
+                        "Stil Seçimi",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.QUESTION_MESSAGE,
+                        null,
+                        stilSecenekleri,
+                        stilSecenekleri[0]
+                );
+                
+                if (styleSelect == JOptionPane.CLOSED_OPTION) {
+                	rebuildList();
+                	return;
+                }
+                
+                int selectedStyle = Font.PLAIN;
+                if (styleSelect == 1) selectedStyle = Font.BOLD;
+                else if (styleSelect == 2) selectedStyle = Font.ITALIC;
+                else if (styleSelect == 3) selectedStyle = Font.BOLD | Font.ITALIC;
+                
+                String sizeInput = JOptionPane.showInputDialog(parentFrame, "Lütfen font boyutunu giriniz (Örn: 18, 24):");
+                
+                if (sizeInput != null) {
+                    try {
+                        float selectedSize = Float.parseFloat(sizeInput);
+
+                        Font finalFont = mainFont.deriveFont(selectedStyle, selectedSize);
+                        
+                        resourceName = JOptionPane.showInputDialog(
+                            	parentFrame,
+                                "Kaynak adı:",
+                                finalFont.getFontName() + "-" + finalFont.getSize()
+                            );
+                        
+                        theWorld.addResource(resourceName, UniFont.fromAwtFont(finalFont));
+                    } catch (Exception e) {
+                    	JOptionPane.showMessageDialog(
+                        	parentFrame,
+                        	"Kaynak yüklenemedi: " + e.getMessage(),
+                            "Hata",
+                            JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+        	} else {
+        		var resource = IOResource.loadResource(fis, selectedType);
+        		theWorld.addResource(resourceName, resource);
+        	}
+            
             rebuildList();
         } catch (Exception e) {
             e.printStackTrace();

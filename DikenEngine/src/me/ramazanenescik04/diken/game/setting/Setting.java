@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.game;
+package me.ramazanenescik04.diken.game.setting;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
+
+import me.ramazanenescik04.diken.game.EnumSettingType;
 
 /**
  * DikenEngine için geliştirilmiş evrensel ayar sınıfı.

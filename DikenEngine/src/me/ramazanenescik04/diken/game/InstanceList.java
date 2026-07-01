@@ -10,6 +10,7 @@ import me.ramazanenescik04.diken.gui.component.*;
 import me.ramazanenescik04.diken.gui.component.color.*;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.game.entity.*;
+import me.ramazanenescik04.diken.game.event.BindableEvent;
 
 public final class InstanceList {
 	private static final ArrayList<Node> NODE_LIST;
@@ -19,6 +20,14 @@ public final class InstanceList {
 	
 	public synchronized static List<Node> getNodeList() {
 		return new ArrayList<>(NODE_LIST);
+	}
+	
+	public synchronized static List<Class<?>> getNodeClassList() {
+		List<Class<?>> list = new ArrayList<>();
+		for (Node node : NODE_LIST) {
+			list.add(node.getClass());
+		}
+		return list;
 	}
 	
 	public synchronized static Map<CategoryKey, List<Node>> getTypedNodes() {
@@ -63,8 +72,10 @@ public final class InstanceList {
 	        return new CategoryKey(15, 1, "Grafik Arayüz");
 	    } else if (nPackage.contains(".scripting")) {
 	        return new CategoryKey(12, 1, "Scriptler");
+	    } else if (nPackage.contains(".game.event")) {
+	        return new CategoryKey(8, 2, "Eventeler");
 	    }
-	    return new CategoryKey(12, 1, "Diğer");
+	    return new CategoryKey(12, 3, "Diğer");
 	}
 	
 	public static record CategoryKey(int iconX, int iconY, String displayName) {
@@ -89,6 +100,9 @@ public final class InstanceList {
 	
 	static {
 		NODE_LIST = new ArrayList<>();
+		
+		// me.ramazanenescik04.diken.game.event
+		NODE_LIST.add(new BindableEvent());
 		
 		// me.ramazanenescik04.diken.game.nodes
 		NODE_LIST.add(new SpriteSheet());

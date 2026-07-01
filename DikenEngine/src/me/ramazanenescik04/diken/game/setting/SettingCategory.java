@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.game;
+package me.ramazanenescik04.diken.game.setting;
 
 import java.util.List;
 

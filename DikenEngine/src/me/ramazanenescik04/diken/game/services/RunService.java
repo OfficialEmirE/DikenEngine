@@ -7,9 +7,9 @@ import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
@@ -49,6 +49,11 @@ public class RunService extends Service {
     	for (Script script : scripts) {
     		script.stop();
     	}
+	}
+	
+	@Override
+	public boolean showStudio() {
+		return false;
 	}
 
 	@Override

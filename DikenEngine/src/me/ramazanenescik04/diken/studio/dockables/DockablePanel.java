@@ -11,7 +11,7 @@ import javax.swing.Icon;
 import javax.swing.JPanel;
 
 import bibliothek.gui.dock.common.DefaultSingleCDockable;
-import me.ramazanenescik04.diken.game.Setting;
+import me.ramazanenescik04.diken.game.setting.Setting;
 
 public class DockablePanel extends JPanel {
 	private static final long serialVersionUID = -5075070012793078559L;

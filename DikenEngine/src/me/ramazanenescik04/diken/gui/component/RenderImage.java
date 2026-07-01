@@ -7,9 +7,9 @@ import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -73,7 +73,7 @@ public class RenderImage extends GuiComponent {
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Texture", this.resourceID, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setTexture));
+				.addSetting(new Setting<String>("Texture", this.resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

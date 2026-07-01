@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 
-public class AbstractService extends Node {
+public abstract class AbstractService extends Node {
 	public AbstractService() {
 		this("NoName-Service");
 	}

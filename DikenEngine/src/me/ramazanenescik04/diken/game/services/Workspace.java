@@ -7,7 +7,7 @@ import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -21,7 +21,7 @@ public class Workspace extends Service {
 	public Workspace(String name) {
 		super(name);
 	}
-
+	
 	public Workspace(DataInputStream in) throws IOException {
 		super(in);
 		loadNodeData(in);
@@ -30,12 +30,12 @@ public class Workspace extends Service {
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
 		OnPreRender.FireEvent();
 
-        for (int i = 0; i < children.size(); i++) {
-            Node child = children.get(i);
-			child.draw(sceneBitmap, viewport);
-        }
-        
-        OnPostRender.FireEvent();
+        super.draw(sceneBitmap, viewport);
+	}
+	
+	@Override
+	public boolean showStudio() {
+		return true;
 	}
 
 	@Override

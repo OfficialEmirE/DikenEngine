@@ -10,7 +10,7 @@ public class UDim2 implements java.io.Serializable, Cloneable {
 	private static final long serialVersionUID = 7092023545513922157L;
 	
 	// Hızlı kullanmak için :D
-	public static final UDim2 defaultV = new UDim2(0, 16, 0, 16);
+	public static final UDim2 defaultV = new UDim2(0, 32, 0, 16);
 	public static final UDim2 fullscreen = new UDim2(1, 0, 1, 0);
 	public static final UDim2 zero = new UDim2(0, 0, 0, 0);
 	

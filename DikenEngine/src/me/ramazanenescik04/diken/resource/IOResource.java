@@ -1,51 +1,45 @@
 package me.ramazanenescik04.diken.resource;
 
 import java.awt.image.BufferedImage;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Animation;
+import me.ramazanenescik04.diken.gui.UniFont;
 
 /**
  * Represents the `IOResource` type within the DikenEngine `resource` package.
  */
 public class IOResource {
-	
 	public static final Bitmap missingTexture = generateMissingTexture();
 	
 	public static IResource loadResource(InputStream stream, EnumResource _enum) {
-		if (_enum == EnumResource.IMAGE) {
-			BufferedImage img = null;
-			try {
-				img = ImageIO.read(stream);
-			} catch (Exception e) {
-				System.err.println("Error loading image resource: " + e.getMessage());
-			}
-			return Bitmap.toBitmap(img);
-		} else if (_enum == EnumResource.SOUND) {
-			try {
+		try {
+			if (_enum == EnumResource.IMAGE) {
+				BufferedImage img = ImageIO.read(stream);
+
+				return Bitmap.toBitmap(img);
+			} else if (_enum == EnumResource.SOUND) {
 				return SoundResource.fromWav(stream, java.util.UUID.randomUUID().toString());
-			} catch (IOException e) {
-				System.err.println("Error loading sound resource: " + e.getMessage());
-			}
-		} else if (_enum == EnumResource.CURSOR) {
-			Bitmap cursorBitmap = (Bitmap) loadResource(stream, EnumResource.IMAGE);
-			CursorResource res = new CursorResource();
-			res.cursorBitmap = cursorBitmap;
-			
-			return res;
-		} else if (_enum == EnumResource.ANIMATION) {
-			try {
+			} else if (_enum == EnumResource.CURSOR) {
+				Bitmap cursorBitmap = (Bitmap) loadResource(stream, EnumResource.IMAGE);
+				CursorResource res = new CursorResource();
+				res.cursorBitmap = cursorBitmap;
+
+				return res;
+			} else if (_enum == EnumResource.ANIMATION) {
 				return Animation.load(stream);
-			} catch (IOException e) {
-				System.err.println("Error loading animation resource: " + e.getMessage());
-				return null;
+			} else if (_enum == EnumResource.FONT) {
+				return IResource.loadResource(new DataInputStream(stream), UniFont.class);
 			}
+		} catch (Exception e) {
+			DikenEngine.errorLog("Error loading " + _enum.name() + " resource.", e);
 		}
 		return null;
 	}

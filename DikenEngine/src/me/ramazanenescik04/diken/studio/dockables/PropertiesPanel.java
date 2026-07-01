@@ -2,8 +2,8 @@ package me.ramazanenescik04.diken.studio.dockables;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 import javax.swing.*;
@@ -36,6 +36,7 @@ public class PropertiesPanel extends DockablePanel {
         
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBackground(new Color(45, 45, 45));
         add(scrollPane, BorderLayout.CENTER);
         
@@ -125,6 +126,7 @@ public class PropertiesPanel extends DockablePanel {
             BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(40, 40, 40)),
             new EmptyBorder(4, 8, 4, 8)
         ));
+        row.setPreferredSize(new Dimension(row.getPreferredSize().width, 30));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 
         JLabel label = new JLabel(setting.getName());

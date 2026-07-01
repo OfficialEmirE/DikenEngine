@@ -10,10 +10,10 @@ import java.util.UUID;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
 import me.ramazanenescik04.diken.game.nodes.Light;
 import me.ramazanenescik04.diken.game.nodes.Sky;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -303,6 +303,11 @@ public class Lighting extends Service {
 
 	public void setLightingEnabled(boolean lightingEnabled) {
 		this.lightingEnabled = lightingEnabled;
+	}
+	
+	@Override
+	public boolean showStudio() {
+		return true;
 	}
 
 	@Override

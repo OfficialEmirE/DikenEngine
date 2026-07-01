@@ -1,7 +1,7 @@
 package me.ramazanenescik04.diken.game;
 
 import java.awt.Point;
-
+import java.awt.geom.Point2D;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -12,15 +12,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.nodes.Camera;
 import me.ramazanenescik04.diken.game.services.UIService;
+import me.ramazanenescik04.diken.game.services.CoreUIService;
 import me.ramazanenescik04.diken.game.services.Game;
 import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.game.services.Lighting;
@@ -33,6 +34,7 @@ import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.scripting.Script;
+import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 
@@ -41,7 +43,7 @@ import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
  */
 public class World implements Cloneable {
     private static final int MAX_COLLISION_PASSES = 6;
-    public static final int WORLD_IO_VERSION = 1;
+    public static final int WORLD_IO_VERSION = 2;
 
     public transient DikenEngine engine;
     
@@ -49,14 +51,15 @@ public class World implements Cloneable {
     public String gameName = "Game";
     public long lastUpdateTime = System.currentTimeMillis();
     
-    public transient Map<String, IResource> resources;
+    public transient Map<String,IResource> resources;
     
     public transient Point camera = new Point(0, 0);
     private float zoom = 1.0f;
+    private Hitbox gameViewport, uiViewport;
 
     public World(String gameName, Node rootNode) {
     	this.gameName = gameName;
-    	this.resources = new ConcurrentHashMap<>();
+    	this.resources = new HashMap<>();
     	this.loadResources();
 
     	if (rootNode == null) {
@@ -72,8 +75,11 @@ public class World implements Cloneable {
     }
     
     private void loadResources() {
-    	this.resources.put("empty", Bitmap.empty);
+    	this.resources.put("empty", null);
     	this.resources.put("sky", IOResource.loadResource(DikenEngine.class.getResourceAsStream("/sky.png"), EnumResource.IMAGE));
+    	
+    	this.resources.put("default_font", UniFont.getFont("default_font"));
+    	this.resources.put("Sans-Serif", UniFont.fromAwtFont(new java.awt.Font(java.awt.Font.SANS_SERIF, 0, 12)));
     }
     
     private void initServices(Node root) {
@@ -83,6 +89,7 @@ public class World implements Cloneable {
     	root.addChild(new PlayerService());
     	root.addChild(new Lighting());
     	root.addChild(new UIService());
+    	root.addChild(new CoreUIService());
     	root.addChild(new InputService());
     	root.addChild(new RunService(this));
     }
@@ -139,19 +146,30 @@ public class World implements Cloneable {
     	var width = this.engine.getScaledWidth();
     	var height = this.engine.getScaledHeight();
     	
+    	if (this.uiViewport == null) {
+    		this.uiViewport = new Hitbox(0, 0, width, height);
+    	} else {
+    		this.uiViewport.setBounds(0, 0, width, height);
+    	}
+    	
         float activeZoom = Math.max(0.1f, this.zoom);
         int sceneWidth = Math.max(1, Math.round(width / activeZoom));
         int sceneHeight = Math.max(1, Math.round(height / activeZoom));
         Bitmap sceneBitmap = FrameBitmapPool.newBitmap(sceneWidth, sceneHeight);
-        Hitbox viewport = new Hitbox(camera.x, camera.y, sceneWidth, sceneHeight);
+        
+        if (this.gameViewport == null) {
+    		this.gameViewport = new Hitbox(camera.x, camera.y, sceneWidth, sceneHeight);
+    	} else {
+    		this.gameViewport.setBounds(camera.x, camera.y, sceneWidth, sceneHeight);
+    	}
         
         var workspace = this.getService(Workspace.class);
         var lighting = this.getService(Lighting.class);
         var ui = this.getService(UIService.class);
         
-        lighting.drawSky(sceneBitmap, viewport);
-        workspace.draw(sceneBitmap, viewport);
-        lighting.applyLightOverlay(sceneBitmap, viewport, workspace);
+        lighting.drawSky(sceneBitmap, gameViewport);
+        workspace.draw(sceneBitmap, gameViewport);
+        lighting.applyLightOverlay(sceneBitmap, gameViewport, workspace);
         
         Bitmap worldBitmap;
         if (sceneWidth == width && sceneHeight == height) {
@@ -161,7 +179,7 @@ public class World implements Cloneable {
         }
         
         mainBitmap.draw(worldBitmap, 0, 0);
-        ui.draw(mainBitmap, new Hitbox(0, 0, width, height));
+        ui.draw(mainBitmap, uiViewport);
     }
 
     // --- Update & Collision ---
@@ -231,6 +249,16 @@ public class World implements Cloneable {
     	for (Script script : scripts) {
     		script.initialize(this);
     	}
+    }
+    
+    public Point2D.Float worldToScreen(float worldX, float worldY) {
+        float activeZoom = Math.max(0.1f, this.zoom);
+        return new Point2D.Float((worldX - camera.x) * activeZoom, (worldY - camera.y) * activeZoom);
+    }
+
+    public Point2D.Float screenToWorld(float screenX, float screenY) {
+        float activeZoom = Math.max(0.1f, this.zoom);
+        return new Point2D.Float(screenX / activeZoom + camera.x, screenY / activeZoom + camera.y);
     }
 
     // --- Setter/Getter ---
@@ -339,10 +367,14 @@ public class World implements Cloneable {
         outStream.writeUTF(theWorld.gameName);
         outStream.writeLong(System.currentTimeMillis());
         
-        outStream.writeInt(theWorld.resources.size());
-        for (Map.Entry<String, IResource> entry : theWorld.resources.entrySet()) {
+        outStream.writeInt(theWorld.resources.size() - 1);
+        for (var entry : theWorld.resources.entrySet()) {
             outStream.writeUTF(entry.getKey());
             IResource resource = entry.getValue();
+            
+            if (resource == null)
+            	continue;
+            
             outStream.writeUTF(resource.getClass().getName());
             
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -371,7 +403,8 @@ public class World implements Cloneable {
         long lastUpdateTime = outStream.readLong();
         int resourceLenght = outStream.readInt();
         
-        Map<String, IResource> resources = new ConcurrentHashMap<>();
+        Map<String, IResource> resources = new HashMap<>();
+        resources.put("empty", null);
         
         for (int i = 0; i < resourceLenght; i++) {
             String key = outStream.readUTF();
@@ -392,7 +425,7 @@ public class World implements Cloneable {
 		World world = new World(gameName, rootNode);
 		world.lastUpdateTime = lastUpdateTime;
 		
-		resources.values().forEach(IResource::reload);
+		resources.values().forEach(world::reloadResources);
 		
 		world.resources = resources;
 		return world;
@@ -465,13 +498,23 @@ public class World implements Cloneable {
     }
 
     public void clearAllResources() {
-        resources.values().forEach(IResource::disponse);
+    	resources.values().forEach(this::disposeResources);
         
         resources.clear();
     }
     
     public Node getRoot() {
     	return this.root;
+    }
+    
+    private void reloadResources(IResource res) {
+    	if (res != null)
+    		res.reload();
+    }
+    
+    private void disposeResources(IResource res) {
+    	if (res != null)
+    		res.disponse();
     }
     
     public World copy() {
@@ -484,8 +527,8 @@ public class World implements Cloneable {
     		
     	copyRoot.sendReloadAllNodes(copyRoot);
     	World copyWorld = new World(new String(this.gameName), copyRoot);
-		copyWorld.resources = new ConcurrentHashMap<String, IResource>(this.resources);
-		copyWorld.resources.values().forEach(IResource::reload);
+		copyWorld.resources = new HashMap<String, IResource>(this.resources);
+		copyWorld.resources.values().forEach(this::reloadResources);
 		copyWorld.lastUpdateTime = System.currentTimeMillis();
 		copyWorld.zoom = this.zoom;
 		return copyWorld;

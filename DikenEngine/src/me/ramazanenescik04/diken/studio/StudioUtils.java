@@ -5,8 +5,8 @@ import javax.swing.UIManager;
 
 import bibliothek.gui.dock.common.CControl;
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Setting;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.studio.dockables.DockablePanel;
 
 import static me.ramazanenescik04.diken.game.EnumSettingType.*;

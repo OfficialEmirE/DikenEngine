@@ -3,12 +3,14 @@ package me.ramazanenescik04.diken.gui.component;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
-import me.ramazanenescik04.diken.game.Setting;
-import me.ramazanenescik04.diken.game.SettingCategory;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -35,8 +37,11 @@ public class ScreenGui extends Node {
 		OnPreRender.FireEvent();
         if (!enabled) return;
         
-        for (int i = 0; i < children.size(); i++) {
-            Node child = children.get(i);
+        List<Node> sortedChildren = new ArrayList<>(children);
+    	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
+        
+        for (int i = 0; i < sortedChildren.size(); i++) {
+            Node child = sortedChildren.get(i);
             if (child instanceof GuiComponent childInstance) {
 				childInstance.drawComponent(sceneBitmap, viewport);
 			}

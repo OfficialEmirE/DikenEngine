@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;

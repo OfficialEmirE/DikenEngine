@@ -16,8 +16,8 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
+import me.ramazanenescik04.diken.gui.TextRenderer;
 import me.ramazanenescik04.diken.gui.UniFont;
-import me.ramazanenescik04.diken.gui.component.Text;
 import me.ramazanenescik04.diken.renderer.ArrayBuffer;
 
 /**
@@ -101,6 +101,10 @@ public class Bitmap implements IResource {
 	private VolatileImage volatileResizedImg = null;
 
 	public Bitmap resize(int newWidth, int newHeight) {
+		if (newWidth <= 0 || newHeight <= 0) {
+			return empty;
+		}
+		
 		var bitmapImg = toImage();
 		
 	    GraphicsConfiguration config = GraphicsEnvironment.getLocalGraphicsEnvironment()
@@ -808,9 +812,9 @@ public class Bitmap implements IResource {
 		x += xOffs;
 		y += yOffs;
 		if (center) {
-			Text.renderCenter(text, this, x, y, color);
+			TextRenderer.renderCenter(text, this, x, y, color);
 		} else {
-			Text.render(text, this, x, y, color);
+			TextRenderer.render(text, this, x, y, color);
 		}
 	}
 	
@@ -818,9 +822,9 @@ public class Bitmap implements IResource {
 		x += xOffs;
 		y += yOffs;
 		if (center) {
-			Text.renderCenter(text, this, x, y);
+			TextRenderer.renderCenter(text, this, x, y);
 		} else {
-			Text.render(text, this, x, y);
+			TextRenderer.render(text, this, x, y);
 		}
 	}
 	
@@ -828,9 +832,9 @@ public class Bitmap implements IResource {
 		x += xOffs;
 		y += yOffs;
 		if (center) {
-			Text.renderCenter(text, this, x, y, font);
+			TextRenderer.renderCenter(text, this, x, y, font);
 		} else {
-			Text.render(text, this, x, y, font);
+			TextRenderer.render(text, this, x, y, font);
 		}
 	}
 	
@@ -838,9 +842,9 @@ public class Bitmap implements IResource {
 		x += xOffs;
 		y += yOffs;
 		if (center) {
-			Text.renderCenter(text, this, x, y, color, font);
+			TextRenderer.renderCenter(text, this, x, y, color, font);
 		} else {
-			Text.render(text, this, x, y, color, font);
+			TextRenderer.render(text, this, x, y, color, font);
 		}
 	}
 	

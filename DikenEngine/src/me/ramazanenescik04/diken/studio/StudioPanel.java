@@ -26,22 +26,19 @@ import bibliothek.gui.dock.common.intern.CDockable;
 import bibliothek.gui.dock.common.intern.DefaultCDockable;
 import bibliothek.gui.dock.common.mode.ExtendedMode;
 import bibliothek.gui.dock.common.theme.ThemeMap;
+
+import me.ramazanenescik04.diken.Config;
 import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.Config;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.nodes.Camera.CameraType;
 import me.ramazanenescik04.diken.game.nodes.Sky;
 import me.ramazanenescik04.diken.game.services.Lighting;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.scripting.Script;
-import me.ramazanenescik04.diken.studio.dockables.AIAssistantPanel;
-import me.ramazanenescik04.diken.studio.dockables.BasicObjectsPanel;
-import me.ramazanenescik04.diken.studio.dockables.ConsolePanel;
-import me.ramazanenescik04.diken.studio.dockables.ExplorerPanel;
-import me.ramazanenescik04.diken.studio.dockables.PropertiesPanel;
-import me.ramazanenescik04.diken.studio.dockables.ResourcesPanel;
-import me.ramazanenescik04.diken.studio.dockables.ScriptTabPanel;
+import me.ramazanenescik04.diken.studio.builders.Menubar;
+import me.ramazanenescik04.diken.studio.builders.Toolbar;
+import me.ramazanenescik04.diken.studio.dockables.*;
 import me.ramazanenescik04.diken.tools.Utils;
 
 public class StudioPanel extends JPanel {
@@ -57,7 +54,7 @@ public class StudioPanel extends JPanel {
 	
 	private World editWorld;
 	
-	private ScriptTabPanel scriptTabPanel;
+	private EditorTabPanel scriptTabPanel;
 	private ExplorerPanel explorerPanel;
 	private PropertiesPanel propertiesPanel;
 	private ConsolePanel consolePanel;
@@ -99,10 +96,10 @@ public class StudioPanel extends JPanel {
 		explorerPanel = new ExplorerPanel(editWorld);
 		propertiesPanel = new PropertiesPanel(explorerPanel, engineWindow);
 		consolePanel = new ConsolePanel();
-		objectsPanel = new BasicObjectsPanel(node -> explorerPanel.addNodeToSelected(node));
+		objectsPanel = new BasicObjectsPanel(explorerPanel::addNodeToSelected);
 		resourcesPanel = new ResourcesPanel(editWorld, engineWindow);
 		assistantPanel = new AIAssistantPanel();
-		scriptTabPanel = new ScriptTabPanel(gamePanel, editWorld);
+		scriptTabPanel = new EditorTabPanel(gamePanel, editWorld);
 		explorerPanel.addNodeOpenListener(node -> {
 			if (node instanceof Script script) {
 				scriptTabPanel.openScript(script);
@@ -122,10 +119,13 @@ public class StudioPanel extends JPanel {
         grid.add(0, 0, 1, 4, objectsPanel.getDockable());
         grid.add(0, 4, 1, 2, resourcesPanel.getDockable());
 
-        // Tasarımı ekrana uygula
         control.getContentArea().deploy(grid);
         
         try {
+        	if (!layoutFile.exists()) {
+        		layoutFile.getParentFile().mkdir();
+        	}
+        	
 			control.read(layoutFile);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -149,7 +149,9 @@ public class StudioPanel extends JPanel {
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
-		this.scriptTabPanel.reloadWorld(world);
+		this.scriptTabPanel.reloadWorld(world, false);
+		
+		System.gc();
 	}
 	
 	public void startPlayTest() {
@@ -159,7 +161,7 @@ public class StudioPanel extends JPanel {
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
-		this.scriptTabPanel.reloadWorld(world);
+		this.scriptTabPanel.reloadWorld(world, true);
 	}
 	
 	public void stopPlayTest() {
@@ -170,7 +172,7 @@ public class StudioPanel extends JPanel {
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
-		this.scriptTabPanel.reloadWorld(world);
+		this.scriptTabPanel.reloadWorld(world, false);
 	}
 
 	public void stop() {
@@ -197,9 +199,7 @@ public class StudioPanel extends JPanel {
 	}
 	
 	public void tick() {
-		var camera = editWorld.getCameraNode();
-		
-		if (camera.getCameraType() == CameraType.NONE && engine.getWorld() == editWorld) {
+		if (!editWorld.getRunService().isRunning()) {
 			if (engine.input.isKeyDown(KeyEvent.VK_W)) {
 				editWorld.camera.y -= 2;
 			}
@@ -295,7 +295,7 @@ public class StudioPanel extends JPanel {
 		return toolbarBuilder.getJToolBar();
 	}
 	
-	private JMenuBar generateMenuBar(ExplorerPanel explorerPanel, ScriptTabPanel scriptTabPanel) {
+	private JMenuBar generateMenuBar(ExplorerPanel explorerPanel, EditorTabPanel scriptTabPanel) {
 		var menubarBuilder = new Menubar.Builder();
 		
 		var fileMenu = menubarBuilder.newMenu("fileMenu", "Dosya");
@@ -336,7 +336,7 @@ public class StudioPanel extends JPanel {
 			
 			menubarBuilder.setButtonChecked(windowsMenu, id, c.isVisible());
 		}
-		
+
 		var toolsMenu = menubarBuilder.newMenu("toolsMenu", "Araçlar");
 		menubarBuilder.addMenuItem(toolsMenu, "Script Çalıştır", 12, 1, () -> {
 			explorerPanel.startPickMode(node -> {
@@ -357,12 +357,12 @@ public class StudioPanel extends JPanel {
 		menubarBuilder.addMenuItem(helpMenu, "GitHub Sayfası", -1, -1, () -> 
 			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
 		);
-		menubarBuilder.addMenuItem(helpMenu, "Javadoc", -1, -1, () -> 
-		Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine/Javadoc"))
-		);
 		menubarBuilder.addMenuItem(helpMenu, "Dokümantasyon", -1, -1, () -> 
 			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
 		);
+		menubarBuilder.addMenuItem(helpMenu, "Obje Tarayıcısı", -1, -1, () -> {
+			scriptTabPanel.openObjectReference();
+		});
 		menubarBuilder.addMenuSeparator(helpMenu);
 		menubarBuilder.addMenuItem(helpMenu, "Hakkında", -1, -1, () -> 
 			new AboutWindow(engineWindow).setVisible(true)

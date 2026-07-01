@@ -29,8 +29,11 @@ public class AIAssistantPanel extends DockablePanel {
 		JButton btnNewButton = new JButton("Gönder");
 		panel_1.add(btnNewButton);
 		
+		JScrollPane scrollPane_1 = new JScrollPane();
+		panel.add(scrollPane_1, BorderLayout.CENTER);
+		
 		JTextArea textArea = new JTextArea();
-		panel.add(textArea, BorderLayout.CENTER);
+		scrollPane_1.setViewportView(textArea);
 		
 		JScrollPane scrollPane = new JScrollPane();
 		add(scrollPane, BorderLayout.CENTER);
