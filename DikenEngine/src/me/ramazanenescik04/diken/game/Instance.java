@@ -19,19 +19,19 @@ public abstract class Instance extends Node {
     public final Event OnPreRender = new Event();
     public final Event OnPostRender = new Event();
 
-    public int x;
-    public int y;
+    private int x;
+    private int y;
     
-    public float scaleX = 1.0f;
-    public float scaleY = 1.0f;
+    private float scaleX = 1.0f;
+    private float scaleY = 1.0f;
     private float rotation = 0.0f;
     
     protected Hitbox aabb = null;
-    public int color = 0xFFFFFFFF; // Varsayılan Beyaz
+    private int color = 0xFFFFFFFF; // Varsayılan Beyaz
     
     protected boolean solid = true;
     protected boolean anchored = false;
-    public boolean visible = true;
+    private boolean visible = true;
 
     public Instance() {
         this("Instance");
@@ -183,6 +183,50 @@ public abstract class Instance extends Node {
 	public void setRotation(float rotation) {
 		this.rotation = rotation;
 	}
+	
+	public int getX() {
+		return x;
+	}
+
+	public void setX(int x) {
+		this.x = x;
+	}
+
+	public int getY() {
+		return y;
+	}
+
+	public void setY(int y) {
+		this.y = y;
+	}
+
+	public float getScaleX() {
+		return scaleX;
+	}
+
+	public void setScaleX(float scaleX) {
+		this.scaleX = scaleX;
+	}
+
+	public float getScaleY() {
+		return scaleY;
+	}
+
+	public void setScaleY(float scaleY) {
+		this.scaleY = scaleY;
+	}
+
+	public int getColor() {
+		return color;
+	}
+	
+	public void setLocation(int x, int y) {
+		this.setX(x); this.setY(y);
+	}
+
+	public void setColor(int color) {
+		this.color = color;
+	}
 
 	public List<Instance> findInArea(Hitbox area) {
 		List<Instance> result = new ArrayList<>();
@@ -218,13 +262,13 @@ public abstract class Instance extends Node {
         var key = new SettingCategory.SettingKey("instance", "Instance", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1));
         var settingCategory = SettingCategory
                 .createSettingCategory(key)
-                .addSetting(new Setting<Integer>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.x = val))
-                .addSetting(new Setting<Integer>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> this.y = val))
+                .addSetting(new Setting<Integer>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setX))
+                .addSetting(new Setting<Integer>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setY))
                 .addSetting(new Setting<Float>("Rotation", rotation, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setRotation))
                 .addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setVisible))
 				.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setSolid))
 				.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setAnchored))
-				.addSetting(new Setting<Integer>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(val -> this.color = val));
+				.addSetting(new Setting<Integer>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor));
         
         if (this.aabb != null) {
 			settingCategory.addSetting(new Setting<Integer>("Width", aabb.getWidth(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {

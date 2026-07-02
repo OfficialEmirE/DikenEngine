@@ -85,7 +85,7 @@ public class SpriteSheet extends Instance {
 			Bitmap thisBitmap = FrameBitmapPool.newBitmap(parentBitmap.w, parentBitmap.h);
 			for (var y = 0; y < (parentBitmap.h / texture.h) + 1; y++) {
 				for (var x = 0; x < (parentBitmap.w / texture.w) + 1; x++) {
-					thisBitmap.blendDraw(texture, x * texture.w, y * texture.h, this.color);
+					thisBitmap.blendDraw(texture, x * texture.w, y * texture.h, this.getColor());
 				}
 			}
 			return thisBitmap;

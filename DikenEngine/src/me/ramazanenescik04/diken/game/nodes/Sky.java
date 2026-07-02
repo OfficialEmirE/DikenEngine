@@ -33,7 +33,7 @@ public class Sky extends Instance {
 	
 	public Sky(int color) {
 		super("Sky");
-		this.color = color;
+		this.setColor(color);
 	}
 	
 	public Sky(String skyBitmap) {
@@ -65,12 +65,13 @@ public class Sky extends Instance {
 			this.height = 1;
 		}
 		
+		int color = this.getColor();
 		Bitmap bitmap = FrameBitmapPool.newBitmap(width, height);
 		bitmap.clear(color);
 		if (this.skyBitmap != null) {
 			for (int y = 0; y < (bitmap.h / skyBitmap.h) + 1; y++) {
 				for (int x = 0; x < (bitmap.w / skyBitmap.w) + 1; x++) {
-					bitmap.blendDraw(skyBitmap, x * skyBitmap.w, y * skyBitmap.h, this.color);
+					bitmap.blendDraw(skyBitmap, x * skyBitmap.w, y * skyBitmap.h, color);
 				}
 			}
 		}

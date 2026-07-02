@@ -15,7 +15,7 @@ public class SpawnLocation extends Part {
 	public SpawnLocation() {
 		super();
 		this.name = "SpawnLocation";
-		this.color = 0xfff0f0f0;
+		this.setColor(0xfff0f0f0);
 		this.setSolid(false);
 		this.setAnchored(true);
 	}
@@ -28,7 +28,7 @@ public class SpawnLocation extends Part {
 	public SpawnLocation(int x, int y, int width, int height) {
 		super(x, y, width, height);
 		this.name = "SpawnLocation";
-		this.color = 0xfff0f0f0;
+		this.setColor(0xfff0f0f0);
 		this.setSolid(false);
 		this.setAnchored(true);
 	}

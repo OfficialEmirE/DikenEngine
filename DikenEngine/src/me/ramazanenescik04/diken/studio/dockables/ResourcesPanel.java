@@ -52,6 +52,10 @@ public class ResourcesPanel extends DockablePanel {
         JToolBar toolBar = new JToolBar();
         toolBar.setBackground(new Color(60, 60, 60));
 
+        JButton newButton = new JButton("Yeni");
+        newButton.addActionListener(_ -> newResourceDialog());
+        toolBar.add(newButton);
+        
         JButton addButton = new JButton("Ekle");
         addButton.addActionListener(_ -> addResourceDialog());
         toolBar.add(addButton);
@@ -64,8 +68,8 @@ public class ResourcesPanel extends DockablePanel {
 
         rebuildList();
     }
-    
-    public void reloadWorld(World newWorld) {
+
+	public void reloadWorld(World newWorld) {
 		this.theWorld = newWorld;
 		
 		this.rebuildList();
@@ -180,7 +184,6 @@ public class ResourcesPanel extends DockablePanel {
     }
 
     private void addResourceDialog() {
-        // Resource tipi seçimi
         EnumResource[] types = EnumResource.values();
         EnumResource selectedType = (EnumResource) JOptionPane.showInputDialog(
             parentFrame,
@@ -306,6 +309,8 @@ public class ResourcesPanel extends DockablePanel {
             );
         }
     }
+    
+    private void newResourceDialog() {}
 
     private void removeSelectedResource() {
         if (selectedKey == null) return;

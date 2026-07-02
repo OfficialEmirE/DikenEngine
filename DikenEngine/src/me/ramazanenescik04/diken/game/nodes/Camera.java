@@ -52,9 +52,9 @@ public class Camera extends AbstractService {
 		}
 		
 		if (cameraType == CameraType.FOLLOW && followingInstance != null) {
-			world.camera.x = (followingInstance.x + followingInstance.getAABBWidth() / 2)
+			world.camera.x = (followingInstance.getX() + followingInstance.getAABBWidth() / 2)
 					- (engine.getScaledWidth() / 2);
-			world.camera.y = (followingInstance.y + followingInstance.getAABBHeight() / 2)
+			world.camera.y = (followingInstance.getY() + followingInstance.getAABBHeight() / 2)
 					- (engine.getScaledHeight() / 2);
 		} else if (cameraType == CameraType.FREECAM) {		
 			if (engine.input.isKeyDown(KeyEvent.VK_W)) {

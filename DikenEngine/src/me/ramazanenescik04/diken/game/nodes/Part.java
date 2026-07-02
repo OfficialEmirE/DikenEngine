@@ -69,6 +69,7 @@ public class Part extends Instance {
 	public Bitmap render() {
 		int width = Math.max(1, this.aabb.getWidth());
 		int height = Math.max(1, this.aabb.getHeight());
+		int color = this.getColor();
 		
 		if (cachedBitmap == null || cachedWidth != width || cachedHeight != height || cachedColor != color || cSurface != surface) {
 			cachedBitmap = new Bitmap(width, height);
@@ -78,7 +79,7 @@ public class Part extends Instance {
 			
 			for (var y = 0; y < (cachedBitmap.h / surfaceTexture.h) + 1; y++) {
 				for (var x = 0; x < (cachedBitmap.w / surfaceTexture.w) + 1; x++) {
-					cachedBitmap.blendDraw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h, this.color);
+					cachedBitmap.blendDraw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h, color);
 				}
 			}
 			

@@ -45,6 +45,7 @@ public abstract class Node implements Cloneable {
 	public final Event OnReload = new Event();
 	public final Event OnDestroy = new Event();
 	public final Event OnParentChanged = new Event();
+	public final Event OnPropertyChanged = new Event();
 	
 	// Render listeners
 	public final Event OnPreRender = new Event();
@@ -190,6 +191,9 @@ public abstract class Node implements Cloneable {
     }
     
     public void setParent(Node newParent) {
+    	OnPropertyChanged.FireEvent("Parent", this.parent, newParent);
+    	OnParentChanged.FireEvent(this.parent, newParent);
+    	notifyAncestors(OnParentChangedDescendant, this.parent, newParent);
     	if (newParent == null) {
     		this.parent.removeChild(this);
     	} else {
@@ -434,6 +438,7 @@ public abstract class Node implements Cloneable {
 	}
 	
 	public void setName(String name) {
+		OnPropertyChanged.FireEvent("name", this.name, name);
 		this.name = name;
 	}
     
@@ -494,12 +499,12 @@ public abstract class Node implements Cloneable {
             if (!aAnchored && !bAnchored) {
                 int halfA = pushX / 2;
                 int halfB = pushX - halfA;
-                a.x += dirA * halfA;
-                b.x += dirB * halfB;
+                a.setX(a.getX() + dirA * halfA);
+                b.setX(b.getX() + dirB * halfB);
             } else if (!aAnchored) {
-                a.x += dirA * pushX;
+                a.setX(a.getX() + dirA * pushX);
             } else {
-                b.x += dirB * pushX;
+                b.setX(b.getX() + dirB * pushX);
             }
 
         } else {
@@ -525,12 +530,12 @@ public abstract class Node implements Cloneable {
             if (!aAnchored && !bAnchored) {
                 int halfA = pushY / 2;
                 int halfB = pushY - halfA;
-                a.y += dirA * halfA;
-                b.y += dirB * halfB;
+                a.setY(a.getY() + dirA * halfA);
+                b.setY(b.getY() + dirB * halfB);
             } else if (!aAnchored) {
-                a.y += dirA * pushY;
+                a.setY(a.getY() + dirA * pushY);
             } else {
-                b.y += dirB * pushY;
+                b.setY(b.getY() + dirB * pushY);
             }
         }
     }
@@ -540,6 +545,7 @@ public abstract class Node implements Cloneable {
 	}
 
 	public void setDebugRenderer(boolean debug) {
+		OnPropertyChanged.FireEvent("debug", this.debug, debug);
 		this.debug = debug;
 	}
 	
@@ -548,10 +554,12 @@ public abstract class Node implements Cloneable {
 	}
 	
 	public void setArchiveable(boolean archiveable) {
+		OnPropertyChanged.FireEvent("archiveable", this.archiveable, archiveable);
 		this.archiveable = archiveable;
 	}
 	
 	public void removeNode() {
+		OnPropertyChanged.FireEvent("removed", this.removed, true);
 		this.removed = true;
 		OnDestroy.FireEvent();
 	}
@@ -561,6 +569,7 @@ public abstract class Node implements Cloneable {
 	}
 	
     public void setZIndex(int zIndex) {
+    	OnPropertyChanged.FireEvent("zIndex", this.zIndex, zIndex);
         this.zIndex = zIndex;
     }
 	

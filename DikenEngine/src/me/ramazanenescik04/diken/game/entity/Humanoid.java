@@ -88,12 +88,11 @@ public class Humanoid extends Part {
 		List<SpawnLocation> spawnLocations = world.getWorkspace().findByClass(SpawnLocation.class);
 		
 		if (spawnLocations.isEmpty()) {
-			this.x = 0; // Yeniden doğma pozisyonu
-			this.y = 0;
+			this.setLocation(0, 0);
 		} else {
 			SpawnLocation spawnLocation = spawnLocations.get(ThreadLocalRandom.current().nextInt(spawnLocations.size()));
-			this.x = (spawnLocation.getGlobalAABB().getWidth() / 2 - render().w / 2) + spawnLocation.getGlobalX();
-			this.y = (spawnLocation.getGlobalAABB().getHeight() / 2 - render().h / 2) + spawnLocation.getGlobalY();
+			this.setX((spawnLocation.getGlobalAABB().getWidth() / 2 - render().w / 2) + spawnLocation.getGlobalX());
+			this.setY((spawnLocation.getGlobalAABB().getHeight() / 2 - render().h / 2) + spawnLocation.getGlobalY());
 		}
 	}
 	
@@ -103,11 +102,11 @@ public class Humanoid extends Part {
 	
 	public Tool setSelectedTool(Tool tool) {
 		if (tool != null) {
-			tool.visible = true;
+			tool.setVisible(true);
 		}
 		Tool oldTool = this.selectedTool;
 		if (oldTool != null) {
-			oldTool.visible = false;
+			oldTool.setVisible(false);
 		}
 		return this.selectedTool = tool;
 	}

@@ -70,18 +70,18 @@ public class Model extends Instance {
 	        if (descendant instanceof Instance instance) {
 	            hasInstance = true;
 	            
-	            if (instance.x < minInstanceX) {
-	                minInstanceX = instance.x;
+	            if (instance.getX() < minInstanceX) {
+	                minInstanceX = instance.getX();
 	            }
-	            if (instance.y < minInstanceY) {
-	                minInstanceY = instance.y;
+	            if (instance.getY() < minInstanceY) {
+	                minInstanceY = instance.getY();
 	            }
 	            
-	            if (instance.x + instance.getAABBWidth() > maxInstanceX) {
-	                maxInstanceX = instance.x + instance.getAABBWidth();
+	            if (instance.getX() + instance.getAABBWidth() > maxInstanceX) {
+	                maxInstanceX = instance.getX() + instance.getAABBWidth();
 	            }
-	            if (instance.y + instance.getAABBHeight() > maxInstanceY) {
-	                maxInstanceY = instance.y + instance.getAABBHeight();
+	            if (instance.getY() + instance.getAABBHeight() > maxInstanceY) {
+	                maxInstanceY = instance.getY() + instance.getAABBHeight();
 	            }
 	        }
 	    }

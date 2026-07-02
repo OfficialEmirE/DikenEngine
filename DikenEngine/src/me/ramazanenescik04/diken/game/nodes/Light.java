@@ -40,13 +40,12 @@ public class Light extends Instance {
     public Light(String name) {
         super(name);
         this.solid = false;
-        this.visible = true;
+        this.setVisible(true);
     }
 
     public Light(String name, int x, int y) {
         this(name);
-        this.x = x;
-        this.y = y;
+        this.setLocation(x, y);
     }
 
     public Light(DataInputStream in) throws IOException {
