@@ -302,7 +302,7 @@ public class StudioPanel extends JPanel {
 		toolbarBuilder.addButton(instanceMovementTools, "scalePart", 6, 0, "Instance'in boyutunu genişlet", () -> {});
 		toolbarBuilder.addButton(instanceMovementTools, "deletePart", 0, 0, "Seçtiğin herhangi bir objeyi siler", () -> {
 			explorerPanel.getSelectedNodes().forEach(e -> {
-				if (!(e instanceof AbstractService)) {
+				if (!(e instanceof AbstractService) && e != null) {
 					e.removeNode();
 				}
 			});
