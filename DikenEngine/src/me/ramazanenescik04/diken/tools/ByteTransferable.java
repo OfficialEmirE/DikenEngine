@@ -2,7 +2,6 @@ package me.ramazanenescik04.diken.tools;
 import java.awt.datatransfer.*;
 
 public class ByteTransferable implements Transferable {
-    // Kendi MIME tipimizi tanımlıyoruz (Bayt dizisi için)
     public static final DataFlavor BYTE_ARRAY_FLAVOR = new DataFlavor(byte[].class, "Byte Array");
 
     private byte[] data;

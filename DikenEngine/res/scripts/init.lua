@@ -1,6 +1,6 @@
 local world, DikenBridge = ...
 
-Instance = {}
+Node = {}
 
 local orijinalPrint = print
 
@@ -47,11 +47,18 @@ local function modifyMetatable(javaObj)
 	        return name
 	    end
 
-		return "Instance: " .. tostring(rawJava)
+		return "Node: " .. tostring(rawJava)
 	end
     
     mt.__index = function(self, key)
         local rawJava = self._javaRef
+		
+		if key == "Parent" and rawJava.getParent then
+		    local pSuccess, parentObj = pcall(rawJava.getParent, rawJava)
+		    if pSuccess and parentObj ~= nil then
+		    	return modifyMetatable(parentObj)
+			end
+		end
         
         local success, val = pcall(function() return rawJava[key] end)
         if success and val ~= nil then 
@@ -139,13 +146,13 @@ hex = function(str)
     return tonumber(str, 16)
 end
 
--- Instance.new çıktısını otomatik sarmalıyoruz
-Instance.new = function(className)
+-- Node.new çıktısını otomatik sarmalıyoruz
+Node.new = function(className)
     local rawNewObj = DikenBridge:create(className)
     return modifyMetatable(rawNewObj)
 end
 
-Instance.clone = function(object)
+Node.clone = function(object)
     local rawNewObj = DikenBridge:clone(object)
     return modifyMetatable(rawNewObj)
 end

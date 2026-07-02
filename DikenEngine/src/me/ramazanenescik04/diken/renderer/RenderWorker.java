@@ -23,7 +23,7 @@ public class RenderWorker implements Runnable {
 	public synchronized void start() {
         if (running) return;
         running = true;
-        thread = new Thread(this, "RenderThread");
+        thread = new Thread(this, "Render Thread");
         thread.setDaemon(true);
         thread.start();
     }
@@ -72,7 +72,7 @@ public class RenderWorker implements Runnable {
             if (frameToRender != null) {
                 // Gerçek çizim ve ekrana sunma işlemleri burada yapılır
                 FrameBitmapPool.beginFrame();
-                engine.render(frameToRender); // Burası senin orijinal render(bitmap) metodun olmalı
+                engine.render(frameToRender);
                 rendererPanel.present(scale);
             }
         }

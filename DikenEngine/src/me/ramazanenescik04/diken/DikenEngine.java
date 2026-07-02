@@ -11,8 +11,10 @@ import java.util.Date;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.lwjgl.LWJGLException;
 import com.formdev.flatlaf.*;
@@ -519,7 +521,31 @@ public class DikenEngine implements Runnable, IInputListener {
 		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Dark", FlatDarkLaf.class.getName()));
 		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf IntelliJ", FlatIntelliJLaf.class.getName()));
 		
-		DikenEngine engine = new DikenEngine(800, 600, 2, true);
+		DikenEngine engine;
+		if (args.length > 0 && args[0].equals("--studio")) {
+			engine = new DikenEngine(800, 600, 2, true);
+		} else {
+			engine = new DikenEngine(800, 600, 2, false);
+			
+			JFileChooser fileChooser = new JFileChooser();
+	        fileChooser.setDialogTitle("Yükleyeceğin Dünyayı Seç");
+			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine World File", "dew"));
+
+	        int result = fileChooser.showOpenDialog(engine.engineWindow);
+	        if (result != JFileChooser.APPROVE_OPTION) {System.exit(1); return;}
+
+	        File selectedFile = fileChooser.getSelectedFile();
+	        
+	        try {
+	        	var loadedWorld = World.loadWorld(selectedFile);
+	        	loadedWorld.getRunService().run();
+	        	engine.engineWindow.setTitle(engine.engineWindow.getTitle() + " - " + loadedWorld.gameName);
+				engine.setWorld(loadedWorld);
+			} catch (IOException | ReflectiveOperationException e) {
+				CrashDialog.crash(engine.engineWindow, e, "Dünya Yükleme Başarısızlıkla Sonuçlandı!");
+				System.exit(67);
+			}
+		}
 		engine.start();
 	}
 

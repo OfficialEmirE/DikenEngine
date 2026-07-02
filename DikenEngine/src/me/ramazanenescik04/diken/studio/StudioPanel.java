@@ -30,9 +30,13 @@ import bibliothek.gui.dock.common.theme.ThemeMap;
 import me.ramazanenescik04.diken.Config;
 import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
-import me.ramazanenescik04.diken.game.nodes.Camera.CameraType;
+import me.ramazanenescik04.diken.game.nodes.Decal;
+import me.ramazanenescik04.diken.game.nodes.Folder;
+import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.Sky;
+import me.ramazanenescik04.diken.game.services.AbstractService;
 import me.ramazanenescik04.diken.game.services.Lighting;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.scripting.Script;
@@ -156,8 +160,8 @@ public class StudioPanel extends JPanel {
 	
 	public void startPlayTest() {
 		var world = this.editWorld.copy();
-		world.getRunService().run();
 		this.engine.setWorld(world);
+		world.getRunService().run();
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
@@ -167,7 +171,6 @@ public class StudioPanel extends JPanel {
 	public void stopPlayTest() {
 		this.engine.getWorld().getRunService().stop();
 		var world = this.editWorld;
-		world.getCameraNode().setCameraType(CameraType.NONE);
 		this.engine.setWorld(world);
 		
 		this.explorerPanel.reloadWorld(world);
@@ -292,6 +295,30 @@ public class StudioPanel extends JPanel {
 		toolbarBuilder.addButton(playTestButtons, "startPlayTest", 3, 0, "Oyunu Başlat", this::startPlayTest);
 		toolbarBuilder.addButton(playTestButtons, "stopPlayTest", 13, 0, "Oyunu Durdur", this::stopPlayTest);
 		
+		var instanceMovementTools = toolbarBuilder.newToolbar("InstanceMovementTools");
+		
+		toolbarBuilder.addButton(instanceMovementTools, "selectPart", 4, 0, "Instance'i seç", () -> {});
+		toolbarBuilder.addButton(instanceMovementTools, "movePart", 5, 0, "Instance'i hareket ettir", () -> {});
+		toolbarBuilder.addButton(instanceMovementTools, "scalePart", 6, 0, "Instance'in boyutunu genişlet", () -> {});
+		toolbarBuilder.addButton(instanceMovementTools, "deletePart", 0, 0, "Seçtiğin herhangi bir objeyi siler", () -> {
+			explorerPanel.getSelectedNodes().forEach(e -> {
+				if (!(e instanceof AbstractService)) {
+					e.removeNode();
+				}
+			});
+			
+			explorerPanel.rebuildExplorer();
+		});
+		
+		var basicObjectTools = toolbarBuilder.newToolbar("BasicObjectTools");
+		
+		toolbarBuilder.addButton(basicObjectTools, "createPart", 0, 1, "Part oluştur",
+				() -> addNodeToSelected(new Part()));
+		toolbarBuilder.addButton(basicObjectTools, "createDecal", 1, 1, "Decal oluştur",
+				() -> addNodeToSelected(new Decal()));
+		toolbarBuilder.addButton(basicObjectTools, "createFolder", 6, 1, "Folder oluştur",
+				() -> addNodeToSelected(new Folder()));
+		
 		return toolbarBuilder.getJToolBar();
 	}
 	
@@ -354,6 +381,10 @@ public class StudioPanel extends JPanel {
 		});
 		
 		var helpMenu = menubarBuilder.newMenu("helpMenu", "Yardım");
+		menubarBuilder.addMenuItem(helpMenu, "Hakkında", -1, -1, () -> 
+			new AboutWindow(engineWindow).setVisible(true)
+		);
+		menubarBuilder.addMenuSeparator(helpMenu);
 		menubarBuilder.addMenuItem(helpMenu, "GitHub Sayfası", -1, -1, () -> 
 			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
 		);
@@ -363,12 +394,17 @@ public class StudioPanel extends JPanel {
 		menubarBuilder.addMenuItem(helpMenu, "Obje Tarayıcısı", -1, -1, () -> {
 			scriptTabPanel.openObjectReference();
 		});
-		menubarBuilder.addMenuSeparator(helpMenu);
-		menubarBuilder.addMenuItem(helpMenu, "Hakkında", -1, -1, () -> 
-			new AboutWindow(engineWindow).setVisible(true)
-		);
 		
 		return menubarBuilder.getJMenuBar();
+	}
+	
+	private void addNodeToSelected(Node n) {
+		var selectedNode = explorerPanel.getSelectedNode();
+		
+		if (selectedNode != null) {
+			selectedNode.addChild(n);
+			explorerPanel.rebuildExplorer();
+		}
 	}
 	
 	private void exportProject() {

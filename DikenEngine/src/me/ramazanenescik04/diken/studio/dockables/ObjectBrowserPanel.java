@@ -154,7 +154,6 @@ public class ObjectBrowserPanel extends JPanel {
         result.add(UIService.class);
         result.add(InputService.class);
         result.add(RunService.class);
-        result.add(CoreUIService.class);
         
         // Enumlar ve Yardımcı Sınıflar
         result.addAll(LuaInit.initClasses().values());

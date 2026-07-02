@@ -96,6 +96,16 @@ public class Humanoid extends Part {
 		}
 	}
 	
+	public void move(int deltaX, int deltaY) {
+	    // Gelen değişim miktarını hız ile çarpıyoruz
+	    int moveX = (int) (deltaX * speed);
+	    int moveY = (int) (deltaY * speed);
+	    
+	    // Mevcut konumun üzerine ekliyoruz
+	    this.setX(this.getX() + moveX);
+	    this.setY(this.getY() + moveY);
+	}
+	
 	public Tool getSelectedTool() {
 		return this.selectedTool;
 	}

@@ -94,4 +94,9 @@ public class Game extends AbstractService {
 		list.add(settingCategory);
 		return list;
 	}
+
+	@Override
+	public boolean showStudio() {
+		return false;
+	}
 }

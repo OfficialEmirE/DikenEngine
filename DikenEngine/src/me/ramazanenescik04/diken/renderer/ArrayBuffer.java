@@ -35,8 +35,8 @@ public class ArrayBuffer {
             return;
         }
 
-        int kopyalanacakUzunluk = Math.min(this.localArray.length, copy.localArray.length);
-        System.arraycopy(copy.localArray, 0, this.localArray, 0, kopyalanacakUzunluk);
+        int copySize = Math.min(this.localArray.length, copy.localArray.length);
+        System.arraycopy(copy.localArray, 0, this.localArray, 0, copySize);
     }
     
     public void put(int index, int color) {

@@ -160,4 +160,9 @@ public class Camera extends AbstractService {
             });
         }
 	}
+
+	@Override
+	public boolean showStudio() {
+		return true;
+	}
 }

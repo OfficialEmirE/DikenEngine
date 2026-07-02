@@ -4,11 +4,13 @@ import javax.swing.JMenuItem;
 import java.awt.BorderLayout;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
@@ -20,6 +22,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.JPopupMenu;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +33,8 @@ import java.awt.Color;
 import java.awt.Cursor;
 
 import javax.swing.DropMode;
+import javax.swing.JFileChooser;
+
 import java.awt.Font;
 
 public class ExplorerPanel extends DockablePanel {
@@ -184,12 +190,16 @@ public class ExplorerPanel extends DockablePanel {
 	    JPopupMenu contextMenu = new JPopupMenu();
 	    
 	    JMenuItem itemYeniden = new JMenuItem("Yeniden Adlandır");
+	    JMenuItem itemDisariyaAktar = new JMenuItem("Dışarıya Aktar");
+	    JMenuItem itemIceriyeAktar = new JMenuItem("İçeriye Aktar");
 	    JMenuItem itemKopyala = new JMenuItem("Kopyala");
 	    JMenuItem itemKes = new JMenuItem("Kes");
 	    JMenuItem itemYapistir = new JMenuItem("Yapıştır");
 	    JMenuItem itemSil = new JMenuItem("Sil");
 	    
 	    contextMenu.add(itemYeniden);
+	    contextMenu.add(itemDisariyaAktar);
+	    contextMenu.add(itemIceriyeAktar);
 	    contextMenu.addSeparator();
 	    contextMenu.add(itemKopyala);
 	    contextMenu.add(itemKes);
@@ -209,6 +219,8 @@ public class ExplorerPanel extends DockablePanel {
 	            boolean hasSelection = selectedNode != null && !selectedNode.isRoot();
 	            
 	            itemYeniden.setEnabled(hasSelection && !isServiceOrRoot);
+	            itemDisariyaAktar.setEnabled(hasSelection && !isServiceOrRoot);
+	            itemIceriyeAktar.setEnabled(hasSelection);
 	            itemKopyala.setEnabled(hasSelection && !isServiceOrRoot);
 	            itemKes.setEnabled(hasSelection && !isServiceOrRoot);
 	            itemYapistir.setEnabled(hasClipboard && hasSelection);
@@ -225,6 +237,59 @@ public class ExplorerPanel extends DockablePanel {
 	        if (selectedNode == null || isServiceOrRoot(selectedNode)) return;
 	        if (!(selectedNode.getUserObject() instanceof Node gameNode)) return;
 	        startRename(selectedNode, gameNode);
+	    });
+	    
+	    itemDisariyaAktar.addActionListener(_ -> {
+			DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+			if (selectedNode == null || isServiceOrRoot(selectedNode))
+				return;
+			if (!(selectedNode.getUserObject() instanceof Node gameNode))
+				return;
+			
+			JFileChooser fileChooser = new JFileChooser();
+	        fileChooser.setDialogTitle("Yükleyeceğin Dünyayı Seç");
+			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine Node File", "dnf"));
+
+	        int result = fileChooser.showSaveDialog(this);
+	        if (result != JFileChooser.APPROVE_OPTION) return;
+
+	        File selectedFile = fileChooser.getSelectedFile();
+	        if (selectedFile != null && gameNode != null) {
+				try {
+					Node.exportNode(selectedFile, gameNode);
+				} catch (IOException e1) {
+					DikenEngine.errorLog("Node dışarıya aktarmada bir sorun çıktı!", e1);
+				}
+			}
+	    });
+	    
+	    itemIceriyeAktar.addActionListener(_ -> {
+			DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+			if (selectedNode == null)
+				return;
+			if (!(selectedNode.getUserObject() instanceof Node gameNode))
+				return;
+			
+			JFileChooser fileChooser = new JFileChooser();
+	        fileChooser.setDialogTitle("Yükleyeceğin Dünyayı Seç");
+			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine Node File", "dnf"));
+
+	        int result = fileChooser.showOpenDialog(this);
+	        if (result != JFileChooser.APPROVE_OPTION) return;
+
+	        File selectedFile = fileChooser.getSelectedFile();
+	        if (selectedFile != null && gameNode != null) {
+				try {
+					var loadedNode = Node.importNode(selectedFile);
+					
+					if (loadedNode != null)
+						gameNode.addChild(loadedNode);
+				} catch (IOException e1) {
+					DikenEngine.errorLog("Node içeriye aktarmada bir sorun çıktı!", e1);
+				}
+				
+				rebuildExplorer();
+			}
 	    });
 	    
 	    itemKopyala.addActionListener(_ -> handleCopy());
@@ -355,6 +420,8 @@ public class ExplorerPanel extends DockablePanel {
 	}
 
 	private void addExplorerNode(DefaultMutableTreeNode parentNode, Node node) {
+		if (node instanceof AbstractService service && !(service.showStudio() || showHideServices)) return;
+		
 		var mutableNode = createStudioObject(parentNode, node);
 
 		for (Node child : node.getChildren()) {

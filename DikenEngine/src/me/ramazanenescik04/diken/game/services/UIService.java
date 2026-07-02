@@ -1,12 +1,15 @@
 package me.ramazanenescik04.diken.game.services;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.component.ScreenGui;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
@@ -15,6 +18,8 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class UIService extends Service {
+	private boolean coreUiEnabled;
+
 	public UIService() {
 		this("UI");
 	}
@@ -38,7 +43,8 @@ public class UIService extends Service {
 		var key = new SettingCategory.SettingKey("uiService", "UI", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(15, 1));
 		
 		var settingCategory = SettingCategory
-				.createSettingCategory(key);
+				.createSettingCategory(key)
+				.addSetting(new Setting<>("CoreUI Enabled", this.coreUiEnabled, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
@@ -78,5 +84,19 @@ public class UIService extends Service {
 				childInstance.mouseHandled(inputMode, x, y, clicked);
 			}
         }
+	}
+
+	@Override
+	public void saveNodeData(DataOutputStream out) throws IOException {
+		super.saveNodeData(out);
+		
+		out.writeBoolean(coreUiEnabled);
+	}
+
+	@Override
+	public void loadNodeData(DataInputStream in) throws IOException {
+		super.loadNodeData(in);
+		
+		this.coreUiEnabled = in.readBoolean();
 	}
 }

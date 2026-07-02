@@ -32,6 +32,8 @@ public abstract class AbstractService extends Node {
 	@Override
 	public void setParent(Node newParent) {}
 	
+	public abstract boolean showStudio();
+	
 	public List<SettingCategory> getNodeSettings() {
 		var list = super.getNodeSettings();
 		list.getFirst().getSettings().stream()

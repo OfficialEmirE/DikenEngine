@@ -2,14 +2,17 @@ package me.ramazanenescik04.diken.game.services;
 
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.NodeResource;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
+import me.ramazanenescik04.diken.resource.CursorResource;
+import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class InputService extends Service {
@@ -22,7 +25,7 @@ public class InputService extends Service {
 	public final Event OnMouseClicked = new Event();
 	
 	private transient UIService uiService;
-	private transient DikenEngine engine;
+	private NodeResource<CursorResource> cursor = new NodeResource<CursorResource>("empty", EnumResource.CURSOR);
 	
 	public InputService() {
 		this("InputService");
@@ -44,8 +47,8 @@ public class InputService extends Service {
 		if (uiService == null)
 			uiService = world.getService(UIService.class);
 		
-		if (this.engine == null)
-			this.engine = engine;
+		cursor.update(world);
+		engine.setCursor(cursor.getResource());
 	}
 	
 	@Override
@@ -63,6 +66,10 @@ public class InputService extends Service {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+	
+	public void setCursor(String cursorResource) {
+		cursor.setKey(cursorResource);
 	}
 	
 	public boolean isKeyDown(int key) {

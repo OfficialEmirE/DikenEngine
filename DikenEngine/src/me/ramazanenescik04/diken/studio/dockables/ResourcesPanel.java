@@ -54,6 +54,7 @@ public class ResourcesPanel extends DockablePanel {
 
         JButton newButton = new JButton("Yeni");
         newButton.addActionListener(_ -> newResourceDialog());
+        newButton.setEnabled(false);
         toolBar.add(newButton);
         
         JButton addButton = new JButton("Ekle");

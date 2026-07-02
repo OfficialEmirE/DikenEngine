@@ -10,7 +10,7 @@ import org.luaj.vm2.lib.VarArgFunction;
 import me.ramazanenescik04.diken.DikenEngine;
 
 public class Event {
-	private List<LuaValue> listeners = new ArrayList<>();
+	private List<Signal> listeners = new ArrayList<>();
 	
 	public void FireEvent(Object... args) {
         if (listeners == null || listeners.isEmpty()) return;
@@ -20,23 +20,30 @@ public class Event {
             luaArgs[i] = org.luaj.vm2.lib.jse.CoerceJavaToLua.coerce(args[i]);
         }
 
-        for (LuaValue listener : listeners) {
+        for (Signal listener : listeners) {
             try {
-                listener.invoke(LuaValue.varargsOf(luaArgs));
+                listener.signalFunc.invoke(LuaValue.varargsOf(luaArgs));
             } catch (Exception e) {
                 DikenEngine.errorLog("Lua Event Error [???]: " + e.getMessage());
             }
         }
 	}
 	
-	public void Connect(LuaValue luaFunction) {
-		if (luaFunction == null || !luaFunction.isfunction()) return;
-
-        listeners.add(luaFunction);
+	public void Disconnect(Signal signal) {
+		listeners.remove(signal);
 	}
 	
-	public void Connect(LuaEventListenerJava listener) {
-		if (listener == null) return;
+	public Signal Connect(LuaValue luaFunction) {
+		if (luaFunction == null || !luaFunction.isfunction()) return null;
+
+		var signal = new Signal(luaFunction);
+        listeners.add(signal);
+        
+        return signal;
+	}
+	
+	public Signal Connect(LuaEventListenerJava listener) {
+		if (listener == null) return null;
 
 	    LuaValue luaFunctionWrapper = new VarArgFunction() {
 	        @Override
@@ -60,7 +67,7 @@ public class Event {
 	        }
 	    };
 
-	    Connect(luaFunctionWrapper);
+	    return Connect(luaFunctionWrapper);
 	}
 
 	public static interface LuaEventListenerJava {

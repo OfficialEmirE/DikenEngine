@@ -8,6 +8,8 @@ import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaTable;
 
 import me.ramazanenescik04.diken.game.NodeResource;
+import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.event.Signal;
 import me.ramazanenescik04.diken.game.nodes.Camera;
 import me.ramazanenescik04.diken.game.nodes.Light;
 import me.ramazanenescik04.diken.game.nodes.Part;
@@ -28,6 +30,8 @@ public class LuaInit {
 		enumList.put("MouseEvent", MouseEvent.class);
 		enumList.put("NodeResource", NodeResource.class);
 		enumList.put("Point", Point.class);
+		enumList.put("Event", Event.class);
+		enumList.put("Signal", Signal.class);
 		
 		return enumList;
 	}

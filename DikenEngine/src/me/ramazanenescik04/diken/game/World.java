@@ -21,7 +21,6 @@ import java.util.zip.GZIPOutputStream;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.nodes.Camera;
 import me.ramazanenescik04.diken.game.services.UIService;
-import me.ramazanenescik04.diken.game.services.CoreUIService;
 import me.ramazanenescik04.diken.game.services.Game;
 import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.game.services.Lighting;
@@ -76,10 +75,9 @@ public class World implements Cloneable {
     
     private void loadResources() {
     	this.resources.put("empty", null);
-    	this.resources.put("sky", IOResource.loadResource(DikenEngine.class.getResourceAsStream("/sky.png"), EnumResource.IMAGE));
+    	this.addResource("sky", IOResource.loadResource(DikenEngine.class.getResourceAsStream("/sky.png"), EnumResource.IMAGE));
     	
-    	this.resources.put("default_font", UniFont.getFont("default_font"));
-    	this.resources.put("Sans-Serif", UniFont.fromAwtFont(new java.awt.Font(java.awt.Font.SANS_SERIF, 0, 12)));
+    	this.addResource("default_font", UniFont.getFont("default_font"));
     }
     
     private void initServices(Node root) {
@@ -89,7 +87,6 @@ public class World implements Cloneable {
     	root.addChild(new PlayerService());
     	root.addChild(new Lighting());
     	root.addChild(new UIService());
-    	root.addChild(new CoreUIService());
     	root.addChild(new InputService());
     	root.addChild(new RunService(this));
     }
@@ -329,37 +326,6 @@ public class World implements Cloneable {
         }
     }
     
-    private static void saveNode(Node current, DataOutputStream outStream) throws IOException {
-    	outStream.writeUTF(current.getClass().getName());
-    	outStream.writeInt(current.children.size());
-    	current.saveNodeData(outStream);
-    	
-    	for (Node node : current.children) {
-    		saveNode(node, outStream);
-    	}
-    }
-    
-    private static Node loadNode(DataInputStream inStream) throws IOException {
-        String className = inStream.readUTF();
-        int childCount = inStream.readInt();
-        
-        Node node;
-        try {
-            Class<?> clazz = Class.forName(className);
-            node = (Node) clazz.getConstructor(DataInputStream.class).newInstance(inStream);
-        } catch (Exception e) {
-            throw new IOException("Node sınıfı yüklenemedi: " + className, e);
-        }
-        
-        // Çocukları recursive yükle
-        for (int i = 0; i < childCount; i++) {
-            Node child = loadNode(inStream);
-            node.addChild(child); // ya da node.children.add(child)
-        }
-        
-        return node;
-    }
-    
     private static void writeWorld(World theWorld, DataOutputStream outStream) throws IOException {
         outStream.writeUTF("DikenEngine-WorldFile");
         outStream.writeInt(WORLD_IO_VERSION);
@@ -369,12 +335,12 @@ public class World implements Cloneable {
         
         outStream.writeInt(theWorld.resources.size() - 1);
         for (var entry : theWorld.resources.entrySet()) {
-            outStream.writeUTF(entry.getKey());
             IResource resource = entry.getValue();
             
             if (resource == null)
             	continue;
             
+            outStream.writeUTF(entry.getKey());
             outStream.writeUTF(resource.getClass().getName());
             
             ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -385,7 +351,7 @@ public class World implements Cloneable {
         
         theWorld.root.sendDisposeAllNodes(theWorld.root);
         
-        saveNode(theWorld.root, outStream);
+        Node.saveNode(theWorld.root, outStream);
     }
     
     private static World readWorld(DataInputStream outStream) throws IOException, ReflectiveOperationException {
@@ -396,7 +362,7 @@ public class World implements Cloneable {
         
         int worldVersion = outStream.readInt();
         if (worldVersion < WORLD_IO_VERSION) {
-        	throw new IOException("Dünya yükleme sistemi, eski dünya dosyaları yüklemeyi desteklemiyor!");
+        	throw new IOException("Dünya yükleme sistemi, eski dünya dosyaları yüklemeyi desteklemiyor! (şimdilik)");
         }
     
         String gameName = outStream.readUTF();
@@ -419,7 +385,7 @@ public class World implements Cloneable {
             resources.put(key, resource);
         }
         
-        Node rootNode = loadNode(outStream);
+        Node rootNode = Node.loadNode(outStream);
 		rootNode.sendReloadAllNodes(rootNode);
 		
 		World world = new World(gameName, rootNode);
@@ -531,6 +497,7 @@ public class World implements Cloneable {
 		copyWorld.resources.values().forEach(this::reloadResources);
 		copyWorld.lastUpdateTime = System.currentTimeMillis();
 		copyWorld.zoom = this.zoom;
+		copyWorld.root.sendReloadAllNodes(copyWorld.root);
 		return copyWorld;
     }
 }

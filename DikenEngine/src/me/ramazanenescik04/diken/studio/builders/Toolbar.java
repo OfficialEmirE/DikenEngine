@@ -36,7 +36,7 @@ public class Toolbar {
 	}
 	
 	public static final class Builder {
-		private Map<String, Toolbar> toolbars = new HashMap<>();
+		private Map<String, Toolbar> toolbars = new LinkedHashMap<>();
 		
 		public Toolbar newToolbar(String id) {
 			var toolbar = new Toolbar(id);

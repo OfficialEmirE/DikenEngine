@@ -3,6 +3,7 @@ package me.ramazanenescik04.diken.game;
 import java.awt.Point;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -610,6 +611,56 @@ public abstract class Node implements Cloneable {
 		this.archiveable = in.readBoolean();
 		this.removed = in.readBoolean();
 	}
+	
+	public static void exportNode(File file, Node node) throws IOException {
+		try (var out = new DataOutputStream(new java.io.FileOutputStream(file))) {
+			out.writeUTF("DikenEngine-NodeFile");
+			
+			saveNode(node, out);
+		}
+	}
+	
+	public static Node importNode(File file) throws IOException {
+		try (var in = new DataInputStream(new java.io.FileInputStream(file))) {
+			String signature = in.readUTF();
+	        if (!signature.equals("DikenEngine-NodeFile")) {
+	            throw new IOException("DikenEngine NodeFile Dosyası Değil!");
+	        }
+	        
+	        return loadNode(in);
+		}
+	}
+	
+	public static Node loadNode(DataInputStream inStream) throws IOException {
+        String className = inStream.readUTF();
+        int childCount = inStream.readInt();
+        
+        Node node;
+        try {
+            Class<?> clazz = Class.forName(className);
+            node = (Node) clazz.getConstructor(DataInputStream.class).newInstance(inStream);
+        } catch (Exception e) {
+            throw new IOException("Node sınıfı yüklenemedi: " + className, e);
+        }
+        
+        // Çocukları recursive yükle
+        for (int i = 0; i < childCount; i++) {
+            Node child = loadNode(inStream);
+            node.addChild(child); // ya da node.children.add(child)
+        }
+        
+        return node;
+    }
+	
+	public static void saveNode(Node current, DataOutputStream outStream) throws IOException {
+    	outStream.writeUTF(current.getClass().getName());
+    	outStream.writeInt(current.children.size());
+    	current.saveNodeData(outStream);
+    	
+    	for (Node node : current.children) {
+    		saveNode(node, outStream);
+    	}
+    }
 
 	// --- Lifecycle Hooks (3. Madde) ---
     // Alt sınıflar isterse bunları override edebilir

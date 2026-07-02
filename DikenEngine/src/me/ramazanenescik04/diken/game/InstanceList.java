@@ -73,7 +73,7 @@ public final class InstanceList {
 	    } else if (nPackage.contains(".scripting")) {
 	        return new CategoryKey(12, 1, "Scriptler");
 	    } else if (nPackage.contains(".game.event")) {
-	        return new CategoryKey(8, 2, "Eventeler");
+	        return new CategoryKey(8, 2, "Eventler");
 	    }
 	    return new CategoryKey(12, 3, "Diğer");
 	}

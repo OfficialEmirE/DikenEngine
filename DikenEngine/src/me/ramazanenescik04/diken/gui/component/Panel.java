@@ -41,14 +41,16 @@ public class Panel extends GuiComponent {
 
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
-		bitmap.clear(this.backgroundColor);
-		
-		int x = 0, y = 0, w = this.getWidth() - 1, h = this.getHeight() - 1;
-		for (int i = 0; i < borderSize; i++) {
-			bitmap.box(x, y, w, h, borderColor);
+		if (panelBorder == BorderStyle.Fill) {
+			bitmap.clear(this.backgroundColor);
 			
-			x += 1; y += 1;
-			w -= 1; h -= 1;
+			int x = 0, y = 0, w = this.getWidth() - 1, h = this.getHeight() - 1;
+			for (int i = 0; i < borderSize; i++) {
+				bitmap.box(x, y, w, h, borderColor);
+				
+				x += 1; y += 1;
+				w -= 1; h -= 1;
+			}
 		}
 		
 		if (isDebugRenderer()) {

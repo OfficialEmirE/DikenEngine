@@ -1,7 +1,6 @@
 package me.ramazanenescik04.diken.game.services;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -15,8 +14,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
 
 public class RunService extends Service {
-	private transient World world;
-	private boolean running;
+	private boolean running, runScriptEvent, stopScriptEvent;
 
 	public RunService(World world) {
 		this(world, "RunService");
@@ -31,24 +29,44 @@ public class RunService extends Service {
 		super(in);
 		loadNodeData(in);
 	}
-	
+
+	@Override
+	public void update(World world, DikenEngine engine) {
+		if (stopScriptEvent) {
+			List<Script> scripts = this.world.getRoot().findByClass(Script.class);
+	    	for (Script script : scripts) {
+	    		script.stop();
+	    	}
+	    	System.gc();
+	    	
+			this.stopScriptEvent = true;
+		}
+		
+		super.update(world, engine);
+		
+		if (runScriptEvent) {
+			world.startScripts();
+			this.runScriptEvent = false;
+		}
+	}
+
 	public boolean isRunning() {
 		return running;
 	}
 
 	public void run() {
 		this.running = true;
-		
-		this.world.startScripts();
+		this.runScriptEvent = true;
 	}
 	
 	public void stop() {
 		this.running = false;
-		
-		List<Script> scripts = this.world.getRoot().findByClass(Script.class);
-    	for (Script script : scripts) {
-    		script.stop();
-    	}
+		this.stopScriptEvent = true;
+	}
+	
+	public void restart() {
+		stop();
+		run();
 	}
 	
 	@Override
@@ -67,21 +85,5 @@ public class RunService extends Service {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
-	}
-
-	@Override
-	public void saveNodeData(DataOutputStream out) throws IOException {
-		super.saveNodeData(out);
-		out.writeBoolean(running);
-	}
-
-	@Override
-	public void loadNodeData(DataInputStream in) throws IOException {
-		super.loadNodeData(in);
-		this.running = in.readBoolean();
-		this.OnReload.Connect(_ -> {
-			World currentWorld = DikenEngine.getEngine() != null ? DikenEngine.getEngine().getWorld() : null;
-			this.world = currentWorld;
-		});
 	}
 }
