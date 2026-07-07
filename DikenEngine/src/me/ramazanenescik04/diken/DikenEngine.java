@@ -38,15 +38,14 @@ import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.studio.LoadingDialog;
 import me.ramazanenescik04.diken.studio.StudioPanel;
-import me.ramazanenescik04.diken.tools.PixelToColor;
 import me.ramazanenescik04.diken.tools.Utils;
 
 /**
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.0.0";
-	public static final int protocolVersion = VERSION.hashCode();
+	public static final String VERSION = "3.0.0-Snapshot";
+	public static final int protocolVersion = 299;
 
 	private static DikenEngine instance;
 
@@ -383,32 +382,15 @@ public class DikenEngine implements Runnable, IInputListener {
 	public void render(Bitmap bitmap) {
 		if (theWorld != null) {
 			theWorld.render(bitmap);
+			
+			if (studioMode && studioPanel != null) {
+				studioPanel.renderOverlay(bitmap);
+			}
 		}
-
+		
 		if (this.config.getSettingValue("debug", Boolean.class)) {
-			bitmap.blendFill(0, 0, 120, 62, 0x2f000000);
 			bitmap.drawText("DikenEngine " + VERSION, 2, 2, false);
 			bitmap.drawText("FPS: " + currentFPS, 2, 12, false);
-			bitmap.drawText("Screen: null (No Screen)", 2, 22, false);
-			bitmap.drawText("Width: " + getScaledWidth() + " Height: " + getScaledHeight(), 2, 32, false);
-			bitmap.drawText("Scale: " + this.getScale(), 2, 42, false);
-			java.awt.Point point = input.getMousePosition();
-			bitmap.drawText("Mouse: " + point.x + ", " + point.y, 2, 52, false);
-
-			Runtime runtime = Runtime.getRuntime();
-			long totalMemory = runtime.totalMemory();
-			long freeMemory = runtime.freeMemory();
-			long usedMemory = totalMemory - freeMemory;
-			long maxMemory = runtime.maxMemory();
-
-			int percentageUse = Utils.toProccesBarValue(usedMemory, maxMemory, 94);
-			bitmap.blendFill(getScaledWidth() - 120, 0, getScaledWidth(), 52, 0x2f000000);
-			bitmap.drawText("Used Memory: " + usedMemory / 1024 / 1024 + " MB", getScaledWidth() - 118, 2, 0xffffffff, false);
-			bitmap.box(getScaledWidth() - 118, 12, getScaledWidth() - 30, 20, 0xffffffff);
-			bitmap.fill(getScaledWidth() - 117, 13, (getScaledWidth() - 117) + percentageUse, 19,
-					PixelToColor.blend(0xff00ff00, 0xffff0000, (percentageUse * 255) / 100));
-			bitmap.drawText("%" + usedMemory * 100L / maxMemory, getScaledWidth() - 26, 13, false);
-			bitmap.drawText("Max Memory: " + (maxMemory / 1024 / 1024) + " MB", getScaledWidth() - 118, 22, false);
 		}
 	}
 

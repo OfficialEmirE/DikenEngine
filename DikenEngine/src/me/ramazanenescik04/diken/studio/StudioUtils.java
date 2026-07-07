@@ -12,7 +12,7 @@ import me.ramazanenescik04.diken.studio.dockables.DockablePanel;
 import static me.ramazanenescik04.diken.game.EnumSettingType.*;
 
 final class StudioUtils {
-	static void openSettingsDialog(CControl control, DikenEngine engine, JFrame engineWindow) {
+	static SettingsDialog openSettingsDialog(CControl control, DikenEngine engine, JFrame engineWindow) {
 		SettingsDialog dialog = new SettingsDialog(engineWindow, "Motor Ayarları");
 
 		dialog.addSection(1, 3, "DikenEngine Ayarları");
@@ -70,14 +70,14 @@ final class StudioUtils {
 			dialog.addSettings(window.getDockableSettings().toArray(new Setting<?>[0]));
 		}
 		
-		dialog.setVisible(true);
+		return dialog;
 	}
 
-	static void openGameSettingsDialog(World editWorld, JFrame engineWindow) {
+	static SettingsDialog openGameSettingsDialog(World editWorld, JFrame engineWindow) {
 		SettingsDialog dialog = new SettingsDialog(engineWindow, "Oyun Ayarları");
 		dialog.addSection("Genel Bilgiler");
 		dialog.addSetting(new Setting<>("İsim", editWorld.gameName, String.class, TEXT_FIELD).addChangeListener(e ->  editWorld.gameName = e));
 		
-		dialog.setVisible(true);
+		return dialog;
 	}
 }

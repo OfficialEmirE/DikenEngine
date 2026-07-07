@@ -603,7 +603,6 @@ public class ExplorerPanel extends DockablePanel {
 	            
 	            Node copied = node.copy();
 	            if (copied != null) {
-	                copied.setName(node.getName() + "_copy");
 	                parent.addChild(copied);
 	            }
 	        }
@@ -693,17 +692,32 @@ public class ExplorerPanel extends DockablePanel {
 	public void selectNode(Node node) {
 	    if (node == null) return;
 	    
-	    // Tüm satırlarda node'u ara
-	    for (int i = 0; i < tree.getRowCount(); i++) {
-	        TreePath path = tree.getPathForRow(i);
-	        DefaultMutableTreeNode treeNode = 
-	            (DefaultMutableTreeNode) path.getLastPathComponent();
-	        if (treeNode.getUserObject() == node) {
-	            tree.setSelectionPath(path);
-	            tree.scrollPathToVisible(path);
-	            return;
+	    TreePath path = findTreePath(rootTreeNode, node);
+	    if (path == null) return;
+	    
+	    tree.expandPath(path.getParentPath());
+	    tree.setSelectionPath(path);
+	    tree.scrollPathToVisible(path);
+	}
+	
+	public void refreshSelection() {
+	    fireSelectedNodeChanged(getSelectedNode(), getSelectedNodes());
+	}
+	
+	private TreePath findTreePath(DefaultMutableTreeNode currentNode, Node node) {
+	    if (currentNode.getUserObject() == node) {
+	        return new TreePath(currentNode.getPath());
+	    }
+	    
+	    for (int i = 0; i < currentNode.getChildCount(); i++) {
+	        DefaultMutableTreeNode child = (DefaultMutableTreeNode) currentNode.getChildAt(i);
+	        TreePath path = findTreePath(child, node);
+	        if (path != null) {
+	            return path;
 	        }
 	    }
+	    
+	    return null;
 	}
 	
 	public interface PickCallback {

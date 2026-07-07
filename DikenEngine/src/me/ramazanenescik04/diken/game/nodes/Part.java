@@ -30,6 +30,7 @@ public class Part extends Instance {
 		Stud(0, 0),
 		InStud(1, 0),
 		Smooth(2, 0),
+		Universal(-1, -1),
 		Weld(3, 0),
 		Motor(4, 0);
 		
@@ -75,11 +76,33 @@ public class Part extends Instance {
 			cachedBitmap = new Bitmap(width, height);
 			cachedBitmap.clear(color);
 			
-			var surfaceTexture = ((ArrayBitmap) ResourceLocator.getResource("surface")).getBitmap(surface.x, surface.y);
-			
-			for (var y = 0; y < (cachedBitmap.h / surfaceTexture.h) + 1; y++) {
-				for (var x = 0; x < (cachedBitmap.w / surfaceTexture.w) + 1; x++) {
-					cachedBitmap.blendDraw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h, color);
+			if (surface == Surface.Universal) {
+			    // 1. Kullanılacak iki farklı dokuyu önden bir kez çekiyoruz (Döngü içinde sürekli getResource çağırmak performansı düşürür)
+			    var surfaceAtlas = (ArrayBitmap) ResourceLocator.getResource("surface");
+			    var texture0 = surfaceAtlas.getBitmap(0, 0);
+			    var texture1 = surfaceAtlas.getBitmap(1, 0);
+			    
+			    int texW = texture0.w; // Genellikle 16 piksel
+			    int texH = texture0.h; // Genellikle 16 piksel
+
+			    // 2. Ekranı veya hedef bitmap'i kaplayacak kadar döngü oluşturuyoruz
+			    for (var y = 0; y < (cachedBitmap.h / texH) + 1; y++) {
+			        for (var x = 0; x < (cachedBitmap.w / texW) + 1; x++) {
+			            
+			            // Satır ve sütun toplamına göre 0 veya 1 seçerek damalı/ızgara deseni oluşturuyoruz
+			            var surfaceTexture = ((x + y) % 2 == 0) ? texture0 : texture1;
+			            
+			            // Dokuyu doğru x ve y piksel koordinatlarına çiziyoruz
+			            cachedBitmap.blendDraw(surfaceTexture, x * texW, y * texH, color);
+			        }
+			    }
+			} else {
+				var surfaceTexture = ((ArrayBitmap) ResourceLocator.getResource("surface")).getBitmap(surface.x, surface.y);
+				
+				for (var y = 0; y < (cachedBitmap.h / surfaceTexture.h) + 1; y++) {
+					for (var x = 0; x < (cachedBitmap.w / surfaceTexture.w) + 1; x++) {
+						cachedBitmap.blendDraw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h, color);
+					}
 				}
 			}
 			

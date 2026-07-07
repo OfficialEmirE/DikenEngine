@@ -87,9 +87,7 @@ public class PlayerService extends Service {
 				.addSetting(new Setting<>("Username", username, String.class, EnumSettingType.TEXT_FIELD)
 						.addChangeListener(this::setUsername))
 				.addSetting(new Setting<>("Character", character, Humanoid.class, EnumSettingType.OBJECT_SELECT)
-						.addChangeListener(this::setCharacter)
-						.setChangeable(false)
-						.setDescription("Elle bunu ayarlamak, şu an için Studio'da reflection sorunu oluşturuyor."));
+						.addChangeListener(this::setCharacter));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
