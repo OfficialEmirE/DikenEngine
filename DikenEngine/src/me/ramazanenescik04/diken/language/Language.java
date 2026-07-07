@@ -108,7 +108,7 @@ public final class Language {
 			if (language == null)
 				continue;
 			
-			languageIds.add(languages[i].id);
+			languageIds.add(i);
 		}
 		return languageIds.toArray(new Integer[0]);
 	}
