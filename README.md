@@ -10,7 +10,7 @@ A game engine designed for making 2D games in Java!
 > [!IMPORTANT]
 > 3.0.0 Still under development. Not yet suitable for game development.
 
-In version 3.0.0, you can open and play `.dwf` worlds. 
+In version 3.0.0, you can open and play `.dwf` files. 
 
 > [!TIP]
 > Add the `--studio` parameter to launch the Studio interface.
