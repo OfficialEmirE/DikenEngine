@@ -29,7 +29,7 @@ In version 3.0.0, you can open and play `.dwf` files.
 > Java 25 and above is recommended for compilation!
 
 Follow these instructions to compile DikenEngine:
-1. Clone the DikenEngine repository: `git clone https://github.com`
+1. Clone the DikenEngine repository: `git clone https://github.com/OfficialEmirE/DikenEngine.git`
 2. Navigate to the DikenEngine directory: `cd ./DikenEngine/DikenEngine` 
 3. Compilation:
 - Install Eclipse IDE.
