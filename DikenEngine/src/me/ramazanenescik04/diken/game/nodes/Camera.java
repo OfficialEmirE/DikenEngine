@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.game.nodes;
 
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -19,18 +20,22 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Camera extends AbstractService {
+	
 	public enum CameraType {
 		NONE,
 		FOLLOW,
-		FREECAM,
-		SCRIPTABLE
+		FREECAM
 	}
 	
 	private CameraType cameraType = CameraType.NONE;
-	private Instance followingInstance;
-	private java.awt.Point cameraPos;
 	
-	public Camera() {
+	private Instance followingInstance;
+	private String nodeObjectID = "";
+	
+	private Point cameraPos = new Point();
+	private float zoom = 1.0f;
+	
+	public Camera(World world) {
 		this("Camera");
 	}
 	
@@ -52,29 +57,26 @@ public class Camera extends AbstractService {
 		}
 		
 		if (cameraType == CameraType.FOLLOW && followingInstance != null) {
-			world.camera.x = (followingInstance.getX() + followingInstance.getAABBWidth() / 2)
+			cameraPos.x = (followingInstance.getX() + followingInstance.getAABBWidth() / 2)
 					- (engine.getScaledWidth() / 2);
-			world.camera.y = (followingInstance.getY() + followingInstance.getAABBHeight() / 2)
+			cameraPos.y = (followingInstance.getY() + followingInstance.getAABBHeight() / 2)
 					- (engine.getScaledHeight() / 2);
 		} else if (cameraType == CameraType.FREECAM) {		
 			if (engine.input.isKeyDown(KeyEvent.VK_W)) {
-				world.camera.y -= 2;
+				cameraPos.y -= 2;
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_A)) {
-				world.camera.x -= 2;
+				cameraPos.x -= 2;
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_S)) {
-				world.camera.y += 2;
+				cameraPos.y += 2;
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_D)) {
-				world.camera.x += 2;
+				cameraPos.x += 2;
 			}
-		} else if (cameraType == CameraType.SCRIPTABLE && cameraPos != null) { // SCRIPTABLE
-			world.camera.x = cameraPos.x;
-			world.camera.y = cameraPos.y;
 		}
 	}
 	
@@ -94,18 +96,59 @@ public class Camera extends AbstractService {
 
 	public void setFollowingInstance(Instance followingInstance) {
 		this.followingInstance = followingInstance;
+		
+		if (followingInstance != null) {
+			this.nodeObjectID = followingInstance != null ? followingInstance.getNetId().toString() : "";
+		}
 	}
 
-	public java.awt.Point getCameraPos() {
+	public Point getPosition() {
 		return cameraPos;
 	}
 
-	public void setCameraPos(java.awt.Point cameraPos) {
+	public void setPosition(Point cameraPos) {
 		this.cameraPos = cameraPos;
 	}
 	
-	public void setCameraPos(int x, int y) {
+	public void setPosition(int x, int y) {
 		this.cameraPos = new java.awt.Point(x, y);
+	}
+	
+	public int getX() {
+		return cameraPos.x;
+	}
+	
+	public void setX(int x) {
+		this.cameraPos.x = x;
+	}
+
+	public int getY() {
+		return cameraPos.y;
+	}
+	
+	public void setY(int y) {
+		this.cameraPos.y = y;
+	}
+	
+	public void addY(int i) {
+		this.cameraPos.y += i;
+	}
+
+	public void addX(int i) {
+		this.cameraPos.x += i;		
+	}
+
+	public float getZoom() {
+		return zoom;
+	}
+	
+	public void setZoom(float zoom) {
+		this.zoom = Math.max(0.1f, zoom);
+	}
+
+	public void reset() {
+		this.cameraPos = new Point();
+		this.zoom = 1.0f;
 	}
 
 	@Override
@@ -124,13 +167,22 @@ public class Camera extends AbstractService {
         list.add(settingCategory);
         return list;
     }
+	
+	protected void reloadNode() {
+		if (nodeObjectID.isEmpty())
+			return;
+		
+		UUID target = UUID.fromString(nodeObjectID);
+        List<Node> results = getRootNode().findByNetId(target);
+        this.followingInstance = (Instance) (results.isEmpty() ? null : results.get(0));
+	}
 
 	@Override
 	public void saveNodeData(DataOutputStream out) throws IOException {
 		super.saveNodeData(out);
 		
 		out.writeUTF(cameraType.name());
-		out.writeUTF(followingInstance != null ? followingInstance.getNetId().toString() : "");
+		out.writeUTF(nodeObjectID);
 		out.writeBoolean(cameraPos != null);
 		if (cameraPos != null) {
 			out.writeInt(cameraPos.x);
@@ -143,7 +195,7 @@ public class Camera extends AbstractService {
 		super.loadNodeData(in);
 		
 		this.cameraType = CameraType.valueOf(in.readUTF());
-		String uuidStr = in.readUTF();
+		this.nodeObjectID = in.readUTF();
 		if (in.readBoolean()) {
 			int x = in.readInt();
 			int y = in.readInt();
@@ -151,14 +203,6 @@ public class Camera extends AbstractService {
 		} else {
 			this.cameraPos = null;
 		}
-		
-        if (!uuidStr.isEmpty()) {
-            OnReload.Connect(_ -> {
-                UUID target = UUID.fromString(uuidStr);
-                List<Node> results = getRootNode().findByNetId(target);
-                this.followingInstance = (Instance) (results.isEmpty() ? null : results.get(0));
-            });
-        }
 	}
 
 	@Override

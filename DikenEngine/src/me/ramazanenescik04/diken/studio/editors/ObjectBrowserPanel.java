@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.studio.dockables;
+package me.ramazanenescik04.diken.studio.editors;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -8,7 +8,6 @@ import java.util.*;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
 import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextPane;
@@ -25,7 +24,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.LuaDoc;
 import me.ramazanenescik04.diken.scripting.LuaInit;
 
-public class ObjectBrowserPanel extends JPanel {
+public class ObjectBrowserPanel extends BaseEditor {
 	private static final long serialVersionUID = 1L;
 	private final JList<Class<?>> classList;
     private final JList<Object> memberList; // Method veya Field
@@ -33,6 +32,7 @@ public class ObjectBrowserPanel extends JPanel {
     private boolean showUnlisted = true;
 
     public ObjectBrowserPanel() {
+    	super("studio.windows.objectBrowser");
         setLayout(new BorderLayout());
 
         // Sol: Class listesi

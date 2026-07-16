@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.game.setting;
 
+import java.util.Collection;
 import java.util.List;
 
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -20,6 +21,11 @@ public class SettingCategory {
 	
 	public SettingCategory addSetting(Setting<?> setting) {
 		settings.add(setting);
+		return this;
+	}
+	
+	public SettingCategory addSettings(Collection<Setting<?>> values) {
+		settings.addAll(values);
 		return this;
 	}
 

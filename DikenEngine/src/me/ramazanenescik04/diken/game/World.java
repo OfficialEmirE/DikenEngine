@@ -1,6 +1,5 @@
 package me.ramazanenescik04.diken.game;
 
-import java.awt.Point;
 import java.awt.geom.Point2D;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -10,9 +9,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -33,8 +35,11 @@ import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.scripting.Script;
+import me.ramazanenescik04.diken.tools.Pair;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
+import me.ramazanenescik04.diken.log.ConsoleLog;
+import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 
 /**
@@ -46,23 +51,21 @@ public class World implements Cloneable {
 
     public transient DikenEngine engine;
     
-    private final Node root;
-    public String gameName = "Game";
+    private final Game root;
     public long lastUpdateTime = System.currentTimeMillis();
     
-    public transient Map<String,IResource> resources;
+    public transient Map<String, IResource> resources;
     
-    public transient Point camera = new Point(0, 0);
-    private float zoom = 1.0f;
+    public final Camera camera = new Camera(this);
     private Hitbox gameViewport, uiViewport;
 
-    public World(String gameName, Node rootNode) {
-    	this.gameName = gameName;
-    	this.resources = new HashMap<>();
+    public World(String gameName, Game rootNode) {
+    	this.resources = new LinkedHashMap<String, IResource>();
     	this.loadResources();
 
     	if (rootNode == null) {
-    		this.root = new Game("game");
+    		this.root = new Game(gameName);
+    		this.root.allowThirdPartyResources = false;
     		initServices(this.root);
     	} else {
     		this.root = rootNode;
@@ -80,9 +83,9 @@ public class World implements Cloneable {
     	this.addResource("default_font", UniFont.getFont("default_font"));
     }
     
-    private void initServices(Node root) {
+    private void initServices(Game root) {
     	var workspace = new Workspace();
-    	workspace.addChild(new Camera());
+    	workspace.addChild(camera);
     	root.addChild(workspace);
     	root.addChild(new PlayerService());
     	root.addChild(new Lighting());
@@ -149,15 +152,15 @@ public class World implements Cloneable {
     		this.uiViewport.setBounds(0, 0, width, height);
     	}
     	
-        float activeZoom = Math.max(0.1f, this.zoom);
+        float activeZoom = Math.max(0.1f, camera.getZoom());
         int sceneWidth = Math.max(1, Math.round(width / activeZoom));
         int sceneHeight = Math.max(1, Math.round(height / activeZoom));
         Bitmap sceneBitmap = FrameBitmapPool.newBitmap(sceneWidth, sceneHeight);
         
         if (this.gameViewport == null) {
-    		this.gameViewport = new Hitbox(camera.x, camera.y, sceneWidth, sceneHeight);
+    		this.gameViewport = new Hitbox(camera.getX(), camera.getY(), sceneWidth, sceneHeight);
     	} else {
-    		this.gameViewport.setBounds(camera.x, camera.y, sceneWidth, sceneHeight);
+    		this.gameViewport.setBounds(camera.getX(), camera.getY(), sceneWidth, sceneHeight);
     	}
         
         var workspace = this.getService(Workspace.class);
@@ -249,47 +252,19 @@ public class World implements Cloneable {
     }
     
     public Point2D.Float worldToScreen(float worldX, float worldY) {
-        float activeZoom = Math.max(0.1f, this.zoom);
-        return new Point2D.Float((worldX - camera.x) * activeZoom, (worldY - camera.y) * activeZoom);
+        float activeZoom = Math.max(0.1f, camera.getZoom());
+        return new Point2D.Float((worldX - camera.getX()) * activeZoom, (worldY - camera.getY()) * activeZoom);
     }
 
     public Point2D.Float screenToWorld(float screenX, float screenY) {
-        float activeZoom = Math.max(0.1f, this.zoom);
-        return new Point2D.Float(screenX / activeZoom + camera.x, screenY / activeZoom + camera.y);
+        float activeZoom = Math.max(0.1f, camera.getZoom());
+        return new Point2D.Float(screenX / activeZoom + camera.getX(), screenY / activeZoom + camera.getY());
     }
 
     // --- Setter/Getter ---
-    
-    public void setCamera(Point camera) {
-        this.camera = camera;
-    }
 
-    /**
-	 * @deprecated getCamera kullanım dışı. {@link World#getCameraPoint()} kullanın.
-	 *             eğerki Camera node'a ihtiyacınız varsa
-	 *             {@link World#getCameraNode()} kullanın!
-	 * 
-	 * @return Camera Position
-	 */
-    @Deprecated
-    public Point getCamera() {
+    public Camera getCamera() {
         return camera;
-    }
-    
-    public Point getCameraPoint() {
-        return camera;
-    }
-    
-    public Camera getCameraNode() {
-        return this.getWorkspace().findFirstChildOfClass(Camera.class);
-    }
-    
-    public float getZoom() {
-    	return zoom;
-    }
-    
-    public void setZoom(float zoom) {
-    	this.zoom = Math.max(0.1f, zoom);
     }
     
     public Workspace getWorkspace() {
@@ -330,7 +305,7 @@ public class World implements Cloneable {
         outStream.writeUTF("DikenEngine-WorldFile");
         outStream.writeInt(WORLD_IO_VERSION);
         
-        outStream.writeUTF(theWorld.gameName);
+        outStream.writeUTF(theWorld.root.name);
         outStream.writeLong(System.currentTimeMillis());
         
         outStream.writeInt(theWorld.resources.size() - 1);
@@ -369,7 +344,7 @@ public class World implements Cloneable {
         long lastUpdateTime = outStream.readLong();
         int resourceLenght = outStream.readInt();
         
-        Map<String, IResource> resources = new HashMap<>();
+        Map<String, IResource> resources = new LinkedHashMap<>();
         resources.put("empty", null);
         
         for (int i = 0; i < resourceLenght; i++) {
@@ -385,7 +360,7 @@ public class World implements Cloneable {
             resources.put(key, resource);
         }
         
-        Node rootNode = Node.loadNode(outStream);
+        Game rootNode = (Game) Node.loadNode(outStream);
 		rootNode.sendReloadAllNodes(rootNode);
 		
 		World world = new World(gameName, rootNode);
@@ -431,13 +406,16 @@ public class World implements Cloneable {
             throw new IllegalArgumentException("Key veya EnumResource null olamaz!");
         }
 		
-        IResource res = resources.get(key);
-
-        if (res != null && res.resourceIs(expectedType)) {
-            return (T) res;
-        }
-        
-        return null;
+		IResource res = resources.get(key);
+		
+		if (res == null && this.root.allowThirdPartyResources && (key.startsWith("http://") || key.startsWith("https://"))) {
+			res = HttpLoadResource(expectedType, key);
+		}
+		
+		if (res != null && !res.resourceIs(expectedType))
+			return null;
+		
+        return (T) res;
     }
     
     public World addResource(String key, IResource resource) {
@@ -446,21 +424,25 @@ public class World implements Cloneable {
         }
 
         if (resources.containsKey(key)) {
-            System.out.println("Uyarı: " + key + " zaten kayıtlı, üzerine yazılıyor...");
+        	ConsoleLog.sendLog(LogType.C_WARN, key + " zaten kayıtlı, üzerine yazılıyor...");
         }
 
         resources.put(key, resource);
         return this;
     }
     
-    public World removeResource(String key) {
+    public World addResource(Pair<String, ? extends IResource> entry) {
+		return addResource(entry.first, entry.second);
+    }
+    
+    public IResource removeResource(String key) {
         IResource res = resources.remove(key);
         
         if (res != null) {
         	res.disponse();
-            System.out.println(key + " başarıyla kaldırıldı.");
+            ConsoleLog.sendLog(key + " başarıyla kaldırıldı.");
         }
-        return this;
+        return res;
     }
 
     public void clearAllResources() {
@@ -469,7 +451,7 @@ public class World implements Cloneable {
         resources.clear();
     }
     
-    public Node getRoot() {
+    public Game getRoot() {
     	return this.root;
     }
     
@@ -483,20 +465,46 @@ public class World implements Cloneable {
     		res.disponse();
     }
     
+    public void disposeNodes() {
+		this.root.sendDisposeAllNodes(root);
+	}
+
+	public void reloadNodes() {
+		this.root.sendReloadAllNodes(root);
+	}
+	
+	private IResource HttpLoadResource(EnumResource type, String url) {
+		try {
+			var httpClient = HttpClient.newHttpClient();
+			var httpRequestBuilder = HttpRequest.newBuilder(URI.create(url))
+					.GET()
+					.header("User-Agent",
+							"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:151.0) Gecko/20100101 Firefox/151.0");
+
+			var response = httpClient.send(httpRequestBuilder.build(), HttpResponse.BodyHandlers.ofInputStream());
+
+			return IOResource.loadResource(response.body(), type);
+		} catch (Exception e) {
+			DikenEngine.errorLog("HttpSend Error: " + e.getMessage());
+		}
+		
+		return null;
+	}
+    
     public World copy() {
-    	Node copyRoot;
+    	Game copyRoot;
     	if (root == null) {
-    		copyRoot = new Game(new String(this.gameName));
+    		copyRoot = new Game(new String(this.root.name));
     		this.initServices(copyRoot);
     	} else
-    		copyRoot = this.root.copy();
+    		copyRoot = (Game) this.root.copy();
     		
     	copyRoot.sendReloadAllNodes(copyRoot);
-    	World copyWorld = new World(new String(this.gameName), copyRoot);
-		copyWorld.resources = new HashMap<String, IResource>(this.resources);
+    	World copyWorld = new World(new String(this.root.name), copyRoot);
+		copyWorld.resources = new LinkedHashMap<String, IResource>(this.resources);
 		copyWorld.resources.values().forEach(this::reloadResources);
 		copyWorld.lastUpdateTime = System.currentTimeMillis();
-		copyWorld.zoom = this.zoom;
+		copyWorld.camera.setZoom(this.camera.getZoom());
 		copyWorld.root.sendReloadAllNodes(copyWorld.root);
 		return copyWorld;
     }

@@ -43,4 +43,6 @@ public interface IResource extends java.io.Serializable, Cloneable {
 	
 	public default void reload() {}
 	public default void disponse() {}
+	
+	IResource clone();
 }

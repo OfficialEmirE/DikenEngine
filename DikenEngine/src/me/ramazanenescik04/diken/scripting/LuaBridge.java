@@ -5,8 +5,6 @@ import me.ramazanenescik04.diken.game.InstanceList;
 import me.ramazanenescik04.diken.game.Node;
 
 public class LuaBridge {
-	private long lastLogTime = 0;
-	
 	private Script script;
 	
 	public LuaBridge(Script script) {
@@ -52,10 +50,6 @@ public class LuaBridge {
 	}
 
 	public void log(String message) {
-		long now = System.currentTimeMillis();
-	    if (now - lastLogTime < 100) return; // 100ms'de bir log bas
-	    lastLogTime = now;
-	    
 	    DikenEngine.log(message);
 	}
 }

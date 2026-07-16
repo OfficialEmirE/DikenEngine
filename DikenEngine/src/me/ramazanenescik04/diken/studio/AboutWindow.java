@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.net.URI;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.IOResource;
 
 import javax.imageio.ImageIO;
@@ -44,7 +45,7 @@ public class AboutWindow extends JDialog {
 	public AboutWindow(JFrame engineWindow) {
 		super(engineWindow);
 		
-		setTitle(engineWindow.getTitle() + " Hakkında");
+		setTitle(Lang.get("studio.about", engineWindow.getTitle()));
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 508, 597);
 		setMaximumSize(new Dimension(508, 597));
@@ -55,12 +56,12 @@ public class AboutWindow extends JDialog {
 		JPanel buttons = new JPanel();
 		getContentPane().add(buttons, BorderLayout.SOUTH);
 		
-		JButton okButton = new JButton("Tamam");
+		JButton okButton = new JButton(Lang.get("ok"));
 		okButton.addActionListener(_ -> {
 			dispose();
 		});
 		
-		JButton btnNewButton = new JButton("GitHub Sayfası");
+		JButton btnNewButton = new JButton(Lang.get("studio.menubar.github"));
 		btnNewButton.addActionListener(_ -> {
 			if (Desktop.isDesktopSupported()) {
 				try {
@@ -88,7 +89,7 @@ public class AboutWindow extends JDialog {
 		lblDikenengineInfo.setAlignmentX(0.5f);
 		aboutPage.add(lblDikenengineInfo);
 		
-		JLabel lblLicenseInfo = new JLabel("GNU GPL V2 Lisansını kullanmaktadır.");
+		JLabel lblLicenseInfo = new JLabel("Herp Fortress üzerinden inşa edilmiştir. GNU GPL V2 Lisansını kullanmaktadır.");
 		lblLicenseInfo.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		lblLicenseInfo.setAlignmentX(0.5f);
 		aboutPage.add(lblLicenseInfo);

@@ -43,6 +43,12 @@ public class Animation implements IResource {
                 currentFrame = 0;
         }
     }
+    
+    public void removeFrame(Bitmap selectedFrame) {
+		if (frames.remove(selectedFrame) && selectedFrame == getCurrentFrame()) {
+			currentFrame = 0;
+		}
+	}
 
     public void clearFrames() {
         frames.clear();
@@ -56,6 +62,53 @@ public class Animation implements IResource {
     public Bitmap getFrame(int index) {
         if (frames.isEmpty()) return null;
         return frames.get(index % frames.size());
+    }
+    
+    public Bitmap[] getFrames() {
+		return frames.toArray(Bitmap[]::new);
+	}
+    
+    public void setFrame(int index, Bitmap bitmap) {
+        if (bitmap != null && index >= 0 && index < frames.size()) {
+            frames.set(index, bitmap);
+        }
+    }
+    
+    public void insertFrame(int index, Bitmap bitmap) {
+        if (bitmap != null) {
+            frames.add(Math.max(0, Math.min(index, frames.size())), bitmap);
+        }
+    }
+    
+    public void moveFrameUp(int index) {
+        if (index > 0) {
+            Collections.swap(frames, index, index - 1);
+        }
+    }
+    
+    public void moveFrameDown(int index) {
+        if (index >= 0 && index < frames.size() - 1) {
+            Collections.swap(frames, index, index + 1);
+        }
+    }
+    
+    public void moveFrame(int from, int to) {
+    	if (from < 0 || from >= frames.size())
+    		return;
+
+    	if (to < 0 || to > frames.size())
+    		return;
+
+    	Bitmap frame = frames.remove(from);
+
+    	if (to > from)
+    		to--;
+
+    	frames.add(to, frame);
+    }
+    
+    public int indexOf(Bitmap bitmap) {
+        return frames.indexOf(bitmap);
     }
 
     // --- ANİMASYON ZAMANI ---
@@ -113,6 +166,7 @@ public class Animation implements IResource {
         int fps = in.readInt();
         int count = in.readInt();
         
+        this.clearFrames();
         this.setFPS(fps);
         for (int i = 0; i < count; i++) {
             int len = in.readInt();
@@ -155,7 +209,7 @@ public class Animation implements IResource {
     public IResource clone() {
     	Animation clonedAnim = new Animation(fps);
     	for (int i = 0; i < this.getFrameCount(); i++) {
-    		clonedAnim.addFrame(this.getFrame(i));
+    		clonedAnim.addFrame(this.getFrame(i).clone());
     	}
     	
     	clonedAnim.currentFrame = this.currentFrame;

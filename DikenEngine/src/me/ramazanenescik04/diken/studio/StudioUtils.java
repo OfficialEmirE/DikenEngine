@@ -1,83 +1,127 @@
 package me.ramazanenescik04.diken.studio;
 
+import java.awt.Window;
+import java.awt.event.KeyEvent;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
-import bibliothek.gui.dock.common.CControl;
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.setting.Setting;
-import me.ramazanenescik04.diken.studio.dockables.DockablePanel;
+import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.language.Lang;
 
-import static me.ramazanenescik04.diken.game.EnumSettingType.*;
-
-final class StudioUtils {
-	static SettingsDialog openSettingsDialog(CControl control, DikenEngine engine, JFrame engineWindow) {
-		SettingsDialog dialog = new SettingsDialog(engineWindow, "Motor Ayarları");
-
-		dialog.addSection(1, 3, "DikenEngine Ayarları");
-		var engineSettings = engine.config.getConfig();
-		dialog.addSettings(engineSettings.values().toArray(new Setting<?>[engineSettings.size()]));
+public final class StudioUtils {
+	public static Setting<String> LOOK_AND_FEEL;
+    public static Setting<String> DOCKING_THEME;
+    
+    public static final Map<String, Integer> keyMapList = new LinkedHashMap<>();
+	
+	static void init(StudioPanel studioPanel, DikenEngine engine, JFrame engineWindow) {
+		var engineSettings = SettingCategory.createSettingCategory("engineSettings", "Engine Settings", 1, 3);
+		engineSettings.addSettings(engine.config.getConfig().values());
 		
-		String[] keyThemes = new String[control.getThemes().size()];	
-		for (int i = 0; i < keyThemes.length; i++) {
-			var key = control.getThemes().getKey(i);
-			var firstChar = String.valueOf(key.charAt(0));
-			keyThemes[i] = key.replaceFirst(firstChar, firstChar.toUpperCase());
-		}
+		SettingsManager.registerCategory(engineSettings, false);
 		
-		var currentDockableTheme = control.getThemes().getSelectedKey();
-		var firstChar = String.valueOf(currentDockableTheme.charAt(0));
-		currentDockableTheme = currentDockableTheme.replaceFirst(firstChar, firstChar.toUpperCase());
-		
-		var installedLAFs = UIManager.getInstalledLookAndFeels();
-		String[] lookAndFeelNames = new String[installedLAFs.length];
-		for (int i = 0; i < installedLAFs.length; i++) {
-		    lookAndFeelNames[i] = installedLAFs[i].getName(); 
-		}
-		String currentLAFName = UIManager.getLookAndFeel().getName();
+		String[] lafNames = Arrays.stream(UIManager.getInstalledLookAndFeels())
+                .map(UIManager.LookAndFeelInfo::getName)
+                .toArray(String[]::new);
 
-		dialog.addSection(15, 2, "Tema");
-		dialog.addSetting(new Setting<>("Dockable Teması", currentDockableTheme, keyThemes, String.class,
-				LIST_SELECT).addChangeListener(e -> control.setTheme(e.toLowerCase())));
-		dialog.addSetting(new Setting<>("Look And Feel", currentLAFName, lookAndFeelNames, String.class,
-				LIST_SELECT).addChangeListener(selectedName -> {
-					try {
-						String targetClassName = null;
-						for (var laf : UIManager.getInstalledLookAndFeels()) {
-							if (laf.getName().equals(selectedName)) {
-								targetClassName = laf.getClassName();
-								break;
-							}
-						}
+        LOOK_AND_FEEL = new Setting<>("Look And Feel", lafNames.length > 0 ? lafNames[0] : "Metal",
+                lafNames, String.class, EnumSettingType.LIST_SELECT)
+            .setDescription("Studio IDE arayüz temasını değiştirir.");
+        LOOK_AND_FEEL.addChangeListener(StudioUtils::applyLookAndFeel);
 
-						if (targetClassName != null) {
-							UIManager.setLookAndFeel(targetClassName);
+        String[] dockingThemes = { "Eclipse", "Flat", "Bubble", "Basic", "Smooth" };
+        var currentDockableTheme = studioPanel.control.getThemes().getSelectedKey();
+        if (currentDockableTheme != null) {
+        	var firstChar = String.valueOf(currentDockableTheme.charAt(0));
+    		currentDockableTheme = currentDockableTheme.replaceFirst(firstChar, firstChar.toUpperCase());
+        }
 
-							for (java.awt.Window window : java.awt.Window.getWindows()) {
-								javax.swing.SwingUtilities.updateComponentTreeUI(window);
-							}
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}));
-		
-		for (var entry : DockablePanel.panels.entrySet()) {
-			var window = entry.getValue();
-			dialog.addSection(15, 1, window.getTitle());
-			
-			dialog.addSettings(window.getDockableSettings().toArray(new Setting<?>[0]));
-		}
-		
-		return dialog;
+        DOCKING_THEME = new Setting<>("Docking Theme", currentDockableTheme, dockingThemes, String.class, EnumSettingType.LIST_SELECT)
+            .setDescription("Panel (docking) arayüz temasını değiştirir.");
+        DOCKING_THEME.addChangeListener(e -> studioPanel.control.setTheme(e.toLowerCase()));
+
+        SettingCategory appearance = SettingCategory
+                .createSettingCategory("appearance", "Appearence", 15, 2)
+                .addSetting(LOOK_AND_FEEL)
+                .addSetting(DOCKING_THEME)
+                .addSetting(new Setting<>("Draw Grid", studioPanel.drawGrid, Boolean.class, EnumSettingType.CHECK_BOX)
+                		.addChangeListener(e -> studioPanel.drawGrid = e))
+                .addSetting(new Setting<>("Selection Color", studioPanel.selectionColor, Integer.class, EnumSettingType.COLOR_PICKER)
+                		.addChangeListener(e -> studioPanel.selectionColor = e))
+                .addSetting(new Setting<>("Handle Color", studioPanel.handleColor, Integer.class, EnumSettingType.COLOR_PICKER)
+                		.addChangeListener(e -> studioPanel.handleColor = e))
+                .addSetting(new Setting<>("Handle Size", studioPanel.handleSize, Integer.class, EnumSettingType.TEXT_FIELD)
+                		.addChangeListener(e -> studioPanel.handleSize = e))
+                .addSetting(new Setting<>("Grid Color", studioPanel.gridColor, Integer.class, EnumSettingType.COLOR_PICKER)
+                		.addChangeListener(e -> studioPanel.gridColor = e));
+
+        SettingsManager.registerCategory(appearance, true);
+        
+        SettingCategory keyMap = SettingCategory
+                .createSettingCategory("keyMap", "Key Map", 0, 3);
+        for (var entry : keyMapList.entrySet()) {
+        	String langKey = "studio.keymap." + entry.getKey();
+        	
+        	keyMap.addSetting(new Setting<>(Lang.get(langKey), entry.getValue(), Integer.class, EnumSettingType.KEY_BIND)
+        			.addChangeListener(entry::setValue));
+        }
+        
+        SettingsManager.registerCategory(keyMap, true);
 	}
-
-	static SettingsDialog openGameSettingsDialog(World editWorld, JFrame engineWindow) {
-		SettingsDialog dialog = new SettingsDialog(engineWindow, "Oyun Ayarları");
-		dialog.addSection("Genel Bilgiler");
-		dialog.addSetting(new Setting<>("İsim", editWorld.gameName, String.class, TEXT_FIELD).addChangeListener(e ->  editWorld.gameName = e));
+	
+	static void reloadGameSettings(World newWorld) {
+		SettingsManager.unregisterCategory("gameSettings");
 		
-		return dialog;
+		var gameSettings = SettingCategory.createSettingCategory("gameSettings", "Game Settings", 9, 1)
+				.addSetting(new Setting<>("Game Name", newWorld.getRoot().getName(), String.class, EnumSettingType.TEXT_FIELD)
+				.addChangeListener(newWorld.getRoot()::setName))
+				.addSetting(new Setting<>("Allow Third Party Resources", newWorld.getRoot().allowThirdPartyResources,
+						Boolean.class, EnumSettingType.CHECK_BOX)
+						.addChangeListener(e -> newWorld.getRoot().allowThirdPartyResources = e));
+		
+		SettingsManager.registerCategory(gameSettings, false);
+	}
+	
+	private static void applyLookAndFeel(String lafName) {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                    if (info.getName().equals(lafName)) {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        break;
+                    }
+                }
+                for (Window window : Window.getWindows()) {
+                    SwingUtilities.updateComponentTreeUI(window);
+                }
+            } catch (Exception e) {
+                DikenEngine.errorLog("[EngineSettings] LookAndFeel uygulanamadı!", e);
+            }
+        });
+    }
+	
+	static {
+		keyMapList.put("rename", KeyEvent.VK_F2);
+		keyMapList.put("copy", KeyEvent.VK_C);
+		keyMapList.put("cut", KeyEvent.VK_X);
+		keyMapList.put("paste", KeyEvent.VK_V);
+		keyMapList.put("duplicate", KeyEvent.VK_D);
+		keyMapList.put("delete", KeyEvent.VK_DELETE);
+		keyMapList.put("escape", KeyEvent.VK_ESCAPE);
+		
+		keyMapList.put("goInstance", KeyEvent.VK_F);
+		keyMapList.put("goForward", KeyEvent.VK_W);
+		keyMapList.put("goLeft", KeyEvent.VK_A);
+		keyMapList.put("goBack", KeyEvent.VK_S);
+		keyMapList.put("goRight", KeyEvent.VK_D);
 	}
 }

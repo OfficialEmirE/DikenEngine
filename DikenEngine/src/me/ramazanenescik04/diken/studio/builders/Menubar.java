@@ -7,7 +7,10 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.KeyStroke;
 
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -51,16 +54,16 @@ public class Menubar {
 	}
 	
 	public static final class Builder {
-		private Map<String, Menubar> toolbars = new LinkedHashMap<>();
+		private Map<String, Menubar> menubars = new LinkedHashMap<>();
 		
 		public Menubar newMenu(String id, String name) {
 			var toolbar = new Menubar(id, name);
-			toolbars.put(id, toolbar);
+			menubars.put(id, toolbar);
 			return toolbar;
 		}
 		
 		public Menubar getMenu(String id) {
-			return toolbars.getOrDefault(id, newMenu(id, "Untitled Menu"));
+			return menubars.getOrDefault(id, newMenu(id, "Untitled Menu"));
 		}
 		
 		private String addMenuItem(Menubar toolbar, JMenuItem menu) {
@@ -72,10 +75,10 @@ public class Menubar {
 			return menu.getName();
 		}
 		
-		public String addMenuItemCheckBox(Menubar toolbar, String name, int x, int y, Runnable r) {
+		public String addMenuItemCheckBox(Menubar toolbar, String name, int x, int y, Runnable r, Object...args) {
 			Objects.requireNonNull(r);
 
-			var button = new JCheckBoxMenuItem(name);
+			var button = new JCheckBoxMenuItem(Lang.get(name, args));
 			button.setName(name.trim() + "_ID");
 			button.addActionListener(_ -> r.run());
 
@@ -86,10 +89,10 @@ public class Menubar {
 			return addMenuItem(toolbar, button);
 		}
 
-		public String addMenuItem(Menubar toolbar, String name, int x, int y, Runnable r) {
+		public String addMenuItem(Menubar toolbar, String name, int x, int y, Runnable r, Object...args) {
 			Objects.requireNonNull(r);
 			
-			var button = new JMenuItem(name);
+			var button = new JMenuItem(Lang.get(name, args));
 			button.setName(name.trim() + "_ID");
 			button.addActionListener(_ -> r.run());
 			
@@ -98,6 +101,14 @@ public class Menubar {
 				button.setIcon(icon);
 			
 			return addMenuItem(toolbar, button);
+		}
+		
+		public void addMenuItem(Menubar menubar, String name, int x, int y, Runnable r, KeyStroke keyStroke) {
+			addMenuAccelerator(menubar, addMenuItem(menubar, name, x, y, r), keyStroke);
+		}
+		
+		public void addMenuAccelerator(Menubar menubar, String key, KeyStroke text) {
+			menubar.buttons.get(key).setAccelerator(text);
 		}
 		
 		public void addMenuSeparator(Menubar menubar) {
@@ -118,12 +129,27 @@ public class Menubar {
 			}
 			return false;
 		}
+		
+		public void setButtonEnabled(Menubar menu, String key, boolean b) {
+			JMenuItem button = menu.buttons.get(key);
+			if (button != null) {
+				button.setEnabled(b);
+			}
+		}
+		
+		public boolean isButtonEnabled(Menubar menu, String key) {
+			var button = menu.buttons.get(key);
+			if (button != null) {
+				return button.isEnabled();
+			}
+			return false;
+		}
 
 		public JMenuBar getJMenuBar() {
 			var jToolBar = new JMenuBar();
 			
-			for (var toolbar : toolbars.values()) {
-				var menu = new JMenu(toolbar.getName());
+			for (var toolbar : menubars.values()) {
+				var menu = new JMenu(Lang.get(toolbar.getName()));
 				toolbar.getButtons().forEach(button -> {
 					if (button instanceof JMenu) {
 						menu.addSeparator();
@@ -135,6 +161,21 @@ public class Menubar {
 			}
 			
 			return jToolBar;
+		}
+		
+
+		public JPopupMenu getJPopupMenu(Menubar menubar) {
+			var jPopupMenu = new JPopupMenu();
+			
+			menubar.getButtons().forEach(button -> {
+				if (button instanceof JMenu) {
+					jPopupMenu.addSeparator();
+				} else {
+					jPopupMenu.add(button);
+				}
+			});
+
+			return jPopupMenu;
 		}
 		
 		private static ImageIcon getIcon(int x, int y) {

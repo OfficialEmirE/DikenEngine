@@ -972,4 +972,22 @@ public class Bitmap implements IResource {
 		}
 		return null;
 	}
+
+	public Bitmap[][] cutImage(int sw, int sh) {
+		var img = this.toImage();
+		
+		int xSlices = img.getWidth() / sw;
+	    int ySlices = img.getHeight() / sh;
+	    Bitmap[][] result = new Bitmap[xSlices][ySlices];
+
+	    for(int x = 0; x < xSlices; ++x) {
+	    	for(int y = 0; y < ySlices; ++y) {
+	    		int[] pixels = new int[sw * sh];
+	        	img.getRGB(x * sw, y * sh, sw, sh, pixels, 0, sw);
+	    		
+	        	result[x][y] = new Bitmap(sw, sh, pixels);
+	        }
+	    }
+		return result;
+	}
 }

@@ -8,11 +8,14 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.UIManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -24,7 +27,7 @@ import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
-import me.ramazanenescik04.diken.language.Language;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
 import me.ramazanenescik04.diken.renderer.RenderWorker;
@@ -44,8 +47,8 @@ import me.ramazanenescik04.diken.tools.Utils;
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.0.0-Snapshot";
-	public static final int protocolVersion = 299;
+	public static final String VERSION = "3.0.0";
+	public static final int protocolVersion = 300;
 
 	private static DikenEngine instance;
 
@@ -72,7 +75,6 @@ public class DikenEngine implements Runnable, IInputListener {
 	public InputHandler input;
 	public CursorResource cursorResource;
 	public Config config = new Config();
-	public Language defaultLanguage = Language.TURKISH;
 	
 	private List<IEngineListener> listeners = new ArrayList<>();
 	
@@ -89,6 +91,17 @@ public class DikenEngine implements Runnable, IInputListener {
 
 		this.config.setSetting("guiScale", scale);
 		this.config.loadConfig();
+		
+		Map<String, String> available = Lang.getAvailableLanguages(); // kod -> görünen isim
+        Map<String, String> nameToCode = new LinkedHashMap<>();
+        for (var entry : available.entrySet()) {
+            nameToCode.put(entry.getValue(), entry.getKey());
+        }
+		
+		String code = nameToCode.get(this.config.getSettingValue("lang", String.class));
+		if (code != null && Lang.isLanguageAvailable(code)) {
+			Lang.setLanguage(code);
+		}
 
 		this.width = tmpW = width;
 		this.height = tmpH = height;
@@ -101,6 +114,11 @@ public class DikenEngine implements Runnable, IInputListener {
 	}
 
 	private void initWindow(boolean openStudio) {
+		FlatDarkLaf.setup();
+		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Light", FlatLightLaf.class.getName()));
+		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Dark", FlatDarkLaf.class.getName()));
+		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf IntelliJ", FlatIntelliJLaf.class.getName()));
+		
 		try {
 			this.rendererPanel = new RendererPanel(this.width, this.height);
 		} catch (LWJGLException e) {
@@ -140,8 +158,12 @@ public class DikenEngine implements Runnable, IInputListener {
 		running = true;
 		this.engineWindow.setVisible(true);
 		this.rendererPanel.requestFocusInWindow();
+		
 		if (this.loadingDialog != null)
 			this.loadingDialog.dispose();
+		
+		if (this.studioMode && this.studioPanel != null)
+			this.studioPanel.newWorld();
 		
 		new Thread(this, "DikenEngine Thread").start();
 	}
@@ -187,6 +209,10 @@ public class DikenEngine implements Runnable, IInputListener {
 
 	public int getScale() {
 		return scale;
+	}
+	
+	public StudioPanel getStudio() {
+		return studioPanel;
 	}
 
 	private int getInternalRenderWidth() {
@@ -317,15 +343,8 @@ public class DikenEngine implements Runnable, IInputListener {
 			}
 
 			if (key == KeyEvent.VK_F3) {
-				this.config.setSetting("debug", !this.config.getSetting("debug", Boolean.class).getValue());
+				this.config.setSetting("debug", !this.config.getSettingValue("debug", Boolean.class));
 			}
-
-			/*if (key == KeyEvent.VK_F9 && !studioMode) {
-				if (wManager.isWindowVaild(ConsoleWindow.class)) {
-					return;
-				}
-				wManager.addWindow(new ConsoleWindow(2, 2, 200, 200));
-			}*/
 			
 			if (key == KeyEvent.VK_F11) {
 				toggleFullscreen();
@@ -405,6 +424,28 @@ public class DikenEngine implements Runnable, IInputListener {
 		
 		if (studioMode && studioPanel != null) {
 			studioPanel.tick();
+		}
+		
+		// FPS DÜŞÜRÜCÜ 6700
+		Map<String, String> available = Lang.getAvailableLanguages();
+        String currentDisplayName = available.getOrDefault(Lang.getCurrentLanguage(), "English");
+        
+		if (!currentDisplayName.equals(this.config.getSettingValue("lang", String.class))) {
+	        Map<String, String> nameToCode = new LinkedHashMap<>();
+	        for (var entry : available.entrySet()) {
+	            nameToCode.put(entry.getValue(), entry.getKey());
+	        }
+			
+			String code = nameToCode.get(this.config.getSettingValue("lang", String.class));
+			if (code != null && Lang.isLanguageAvailable(code)) {
+				Lang.setLanguage(code);
+				
+				JOptionPane.showMessageDialog(
+						engineWindow, 
+						Lang.get("studio.restartNote"), 
+						Lang.get("studio.restartRequired"), 
+						JOptionPane.WARNING_MESSAGE);
+			}
 		}
 
 		if (this.cursorResource == null && rendererPanel.getCursor() != Cursor.getDefaultCursor()) {
@@ -498,11 +539,6 @@ public class DikenEngine implements Runnable, IInputListener {
 	}
 
 	public static void main(String[] args) {
-		FlatDarkLaf.setup();
-		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Light", FlatLightLaf.class.getName()));
-		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf Dark", FlatDarkLaf.class.getName()));
-		UIManager.installLookAndFeel(new UIManager.LookAndFeelInfo("FlatLaf IntelliJ", FlatIntelliJLaf.class.getName()));
-		
 		DikenEngine engine;
 		if (args.length > 0 && args[0].equals("--studio")) {
 			engine = new DikenEngine(800, 600, 2, true);
@@ -521,7 +557,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	        try {
 	        	var loadedWorld = World.loadWorld(selectedFile);
 	        	loadedWorld.getRunService().run();
-	        	engine.engineWindow.setTitle(engine.engineWindow.getTitle() + " - " + loadedWorld.gameName);
+	        	engine.engineWindow.setTitle(engine.engineWindow.getTitle() + " - " + loadedWorld.getRoot().getName());
 				engine.setWorld(loadedWorld);
 			} catch (IOException | ReflectiveOperationException e) {
 				CrashDialog.crash(engine.engineWindow, e, "Dünya Yükleme Başarısızlıkla Sonuçlandı!");

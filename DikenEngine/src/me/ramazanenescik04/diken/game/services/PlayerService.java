@@ -19,7 +19,8 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class PlayerService extends Service {
 	private Humanoid character;
-	private String username = "Player" + (int) (Math.random() * 100);
+	private String username = "Player";
+	private String nodeObjectID = "";
 
 	public PlayerService() {
 		this("PlayerService");
@@ -48,6 +49,9 @@ public class PlayerService extends Service {
 
 	public void setCharacter(Humanoid character) {
 		this.character = character;
+		if (this.character != null) {
+			this.nodeObjectID = (character != null ? character.getNetId().toString() : ""); 
+		}
 	}
 	
 	@Override
@@ -65,7 +69,7 @@ public class PlayerService extends Service {
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_A)) {
-				this.character.move(1, 0);
+				this.character.move(-1, 0);
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_S)) {
@@ -73,7 +77,7 @@ public class PlayerService extends Service {
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_D)) {
-				this.character.move(-1, 0);
+				this.character.move(1, 0);
 			}
 		}
 	}
@@ -93,6 +97,15 @@ public class PlayerService extends Service {
 		list.add(settingCategory);
 		return list;
 	}
+	
+	protected void reloadNode() {
+		if (nodeObjectID.isEmpty())
+			return;
+		
+		UUID target = UUID.fromString(nodeObjectID);
+		List<Node> results = getRootNode().findByNetId(target);
+		this.character = (Humanoid) (results.isEmpty() ? null : results.get(0));
+	}
 
 	@Override
 	public void saveNodeData(DataOutputStream out) throws IOException {
@@ -107,14 +120,7 @@ public class PlayerService extends Service {
 	@Override
 	public void loadNodeData(DataInputStream in) throws IOException {
 		super.loadNodeData(in);
-		this.username = in.readBoolean() ? in.readUTF() : null;
-		String characterId = in.readUTF();
-		if (!characterId.isEmpty()) {
-			OnReload.Connect(_ -> {
-				UUID target = UUID.fromString(characterId);
-				List<Node> results = getRootNode().findByNetId(target);
-				this.character = (Humanoid) (results.isEmpty() ? null : results.get(0));
-			});
-		}
+		this.username = in.readBoolean() ? in.readUTF() : "Player";
+		this.nodeObjectID = in.readUTF();
 	}
 }

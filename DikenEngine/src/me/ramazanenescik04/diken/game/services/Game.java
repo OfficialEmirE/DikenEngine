@@ -16,6 +16,8 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Game extends AbstractService {
+	public boolean allowThirdPartyResources;
+
 	public Game() {
 		this("game");
 	}
@@ -28,7 +30,7 @@ public class Game extends AbstractService {
 		super(in);
 		loadNodeData(in);
 	}
-	
+
 	public Object HttpSend(String url, String requestMethod, Object data) {
 		try {
 			var httpClient = HttpClient.newHttpClient();

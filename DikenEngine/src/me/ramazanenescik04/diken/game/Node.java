@@ -603,6 +603,7 @@ public abstract class Node implements Cloneable {
 		out.writeBoolean(debug);
 		out.writeBoolean(archiveable);
 		out.writeBoolean(removed);
+		out.writeInt(zIndex);
 	}
 	
 	public void loadNodeData(DataInputStream in) throws IOException {
@@ -610,6 +611,7 @@ public abstract class Node implements Cloneable {
 		this.debug = in.readBoolean();
 		this.archiveable = in.readBoolean();
 		this.removed = in.readBoolean();
+		this.zIndex = in.readInt();
 	}
 	
 	public static void exportNode(File file, Node node) throws IOException {

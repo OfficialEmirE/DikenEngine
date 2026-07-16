@@ -2,6 +2,7 @@ package me.ramazanenescik04.diken.studio.dockables;
 
 import me.ramazanenescik04.diken.game.InstanceList;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
@@ -20,7 +21,7 @@ public class BasicObjectsPanel extends DockablePanel {
     private static final long serialVersionUID = 1L;
 
     public BasicObjectsPanel(Consumer<Node> onDoubleClick) {
-    	super("basic_objects_id", "Basit Objeler");
+    	super("basic_objects_id", "studio.windows.basicObjects");
     	
         setLayout(new BorderLayout());
         setBackground(new Color(45, 45, 45));
@@ -70,7 +71,7 @@ public class BasicObjectsPanel extends DockablePanel {
             item.add(iconLabel, BorderLayout.WEST);
         } catch (Exception e) {}
         
-        JLabel nameLabel = new JLabel(key.displayName());
+        JLabel nameLabel = new JLabel(Lang.get(key.displayName()));
         nameLabel.setForeground(new Color(220, 220, 220));
         nameLabel.setFont(new Font("Tahoma", Font.PLAIN, 13));
         item.add(nameLabel, BorderLayout.CENTER);

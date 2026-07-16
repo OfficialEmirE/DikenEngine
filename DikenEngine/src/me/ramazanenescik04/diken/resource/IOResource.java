@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.util.Objects;
 
 import javax.imageio.ImageIO;
 
@@ -20,6 +21,8 @@ public class IOResource {
 	public static final Bitmap missingTexture = generateMissingTexture();
 	
 	public static IResource loadResource(InputStream stream, EnumResource _enum) {
+		Objects.requireNonNull(stream, "InputStream cannot be null");
+		Objects.requireNonNull(_enum, "EnumResource cannot be null");
 		try {
 			if (_enum == EnumResource.IMAGE) {
 				BufferedImage img = ImageIO.read(stream);
@@ -45,21 +48,9 @@ public class IOResource {
 	}
 	
 	public static Bitmap[][] loadResourceAndCut(InputStream stream, int sw, int sh) {
-		BufferedImage img = ((Bitmap)loadResource(stream, EnumResource.IMAGE)).toImage();
-		int xSlices = img.getWidth() / sw;
-	    int ySlices = img.getHeight() / sh;
-	    Bitmap[][] result = new Bitmap[xSlices][ySlices];
+		Bitmap img = ((Bitmap)loadResource(stream, EnumResource.IMAGE));
 
-	    for(int x = 0; x < xSlices; ++x) {
-	    	for(int y = 0; y < ySlices; ++y) {
-	    		int[] pixels = new int[sw * sh];
-	        	img.getRGB(x * sw, y * sh, sw, sh, pixels, 0, sw);
-	    		
-	        	result[x][y] = new Bitmap(sw, sh, pixels);
-	        }
-	    }
-
-	    return result;
+	    return img.cutImage(sw, sh);
 	}
 	
 	public static InputStream createClassResource(String path) {

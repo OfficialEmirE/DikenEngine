@@ -290,6 +290,10 @@ public abstract class GuiComponent extends Node {
                 }
                 
                 sceneBitmap.draw(myTexture, screenX, screenY);
+                
+                if (this.debug) {
+                	sceneBitmap.box(screenX, screenY, screenX + (myTexture.w - 1), screenY + (myTexture.h - 1), 0xff00ff00);
+                }
             }
         }
         

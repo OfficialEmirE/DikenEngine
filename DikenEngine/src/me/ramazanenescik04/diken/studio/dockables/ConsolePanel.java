@@ -7,6 +7,7 @@ import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogText;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
@@ -16,7 +17,6 @@ import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 
 import java.awt.Font;
-import java.awt.Image;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -41,15 +41,14 @@ public class ConsolePanel extends DockablePanel {
 	private JTextField textField;
 
 	public ConsolePanel() {
-		super("console_id", "Konsol");
+		super("console_id", "studio.windows.console");
 		
 		setForeground(new Color(255, 255, 255));
 		setBackground(new Color(63, 63, 63));
 		setLayout(new BorderLayout(0, 0));
 		
 		var img = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(12, 0).toImage();
-		var scaled = img.getScaledInstance(20, 20, Image.SCALE_SMOOTH);
-		CButton clearScreen = new CButton("Konsolu Temizle", new ImageIcon(scaled));
+		CButton clearScreen = new CButton(Lang.get("clear.console"), new ImageIcon(img));
 		dock.addAction(clearScreen);
 		
 		JPanel commandLinePanel = new JPanel();
@@ -61,7 +60,7 @@ public class ConsolePanel extends DockablePanel {
 		textField.setColumns(10);
 		commandLinePanel.add(textField);
 		
-		JButton sendButton = new JButton("Gönder");
+		JButton sendButton = new JButton(Lang.get("send"));
 		sendButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				var command = textField.getText();
@@ -165,17 +164,11 @@ public class ConsolePanel extends DockablePanel {
 		}
 	}
 	
-	@SuppressWarnings("unused")
-	// TODO: burası kodlanacak
 	private void sendCommand(String command) {
 		var world = DikenEngine.getEngine().getWorld();
 		
-		if (true) {
-			var script = new Script();
-			script.setSource(command);
-			script.initialize(world);
-		} else {
-			DikenEngine.errorLog("Your game doesn't allow you to run this command!");
-		}
+		var script = new Script();
+		script.setSource(command);
+		script.initialize(world);
 	}
 }

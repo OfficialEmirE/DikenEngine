@@ -16,6 +16,7 @@ import javax.swing.JTextArea;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.TitledBorder;
 
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.tools.Utils;
 
 import javax.swing.JLabel;
@@ -105,7 +106,7 @@ public class CrashDialog extends JDialog {
 		errorLogo.setIcon(errorIcon);
 		infoPanel.add(errorLogo, BorderLayout.WEST);
 		
-		JLabel infoText = new JLabel(msg);
+		JLabel infoText = new JLabel(Lang.get(msg));
 		infoPanel.add(infoText, BorderLayout.CENTER);
 		
 		JScrollPane scrollPane = new JScrollPane();

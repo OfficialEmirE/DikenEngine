@@ -16,7 +16,9 @@ import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.AbstractService;
 import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.studio.StudioTreeRenderer;
+import me.ramazanenescik04.diken.studio.StudioUtils;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.JPopupMenu;
@@ -59,7 +61,7 @@ public class ExplorerPanel extends DockablePanel {
 	 * Create the panel.
 	 */
 	public ExplorerPanel(World world) {
-		super("explorer_id", "Gezgin");
+		super("explorer_id", "studio.windows.explorer");
 		
 		this.theWorld = world;
 		var root = world.getRoot();
@@ -132,37 +134,40 @@ public class ExplorerPanel extends DockablePanel {
 		    public void keyPressed(java.awt.event.KeyEvent e) {
 		    	boolean ctrl = e.isControlDown();
 		    	
-		        if (e.getKeyCode() == java.awt.event.KeyEvent.VK_F2) {
-		            DefaultMutableTreeNode selectedNode = 
-		                (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-		            if (selectedNode == null || isServiceOrRoot(selectedNode)) return;
-		            if (!(selectedNode.getUserObject() instanceof Node gameNode)) return;
-		            
-		            startRename(selectedNode, gameNode);
-		        } else if (ctrl && e.getKeyCode() == java.awt.event.KeyEvent.VK_C) {
-		            handleCopy();
-		            
-		        } else if (ctrl && e.getKeyCode() == java.awt.event.KeyEvent.VK_X) {
-		            handleCut();
-		            
-		        } else if (ctrl && e.getKeyCode() == java.awt.event.KeyEvent.VK_V) {
-		            handlePaste();
-		            
-		        } else if (ctrl && e.getKeyCode() == java.awt.event.KeyEvent.VK_D) {
-		            handleDuplicate();
-		        } else if (e.getKeyCode() == java.awt.event.KeyEvent.VK_DELETE) {
-		        	var selectedNodes = getSelectedDMTNodes();
-			    	for (var selectedNode : selectedNodes) {
-			    		if (selectedNode == null || isServiceOrRoot(selectedNode)) return;
-				        handleDelete(selectedNode);
-			    	}  
-		        } else if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE && pickCallback != null) {
-		            pickCallback.onPicked(null);
-		            pickCallback = null;
-		            tree.setCursor(Cursor.getDefaultCursor());
-		        }
+		    	ExplorerPanel.this.keyPressed(ctrl, e.getKeyCode(), e.getKeyChar());
 		    }
 		});
+	}
+	
+	public void keyPressed(boolean ctrl, int key, char character) {
+		if (key == StudioUtils.keyMapList.get("rename")) {
+            DefaultMutableTreeNode selectedNode = 
+                (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+            if (selectedNode == null || isServiceOrRoot(selectedNode)) return;
+            if (!(selectedNode.getUserObject() instanceof Node gameNode)) return;
+            
+            startRename(selectedNode, gameNode);
+        } else if (ctrl && key == StudioUtils.keyMapList.get("copy")) {
+            handleCopy();
+            
+        } else if (ctrl && key == StudioUtils.keyMapList.get("cut")) {
+            handleCut();
+            
+        } else if (ctrl && key == StudioUtils.keyMapList.get("paste")) {
+            handlePaste();
+        } else if (ctrl && key == StudioUtils.keyMapList.get("duplicate")) {
+            handleDuplicate();
+        } else if (key == StudioUtils.keyMapList.get("delete")) {
+        	var selectedNodes = getSelectedDMTNodes();
+	    	for (var selectedNode : selectedNodes) {
+	    		if (selectedNode == null || isServiceOrRoot(selectedNode)) return;
+		        handleDelete(selectedNode);
+	    	}  
+        } else if (key == StudioUtils.keyMapList.get("escape") && pickCallback != null) {
+            pickCallback.onPicked(null);
+            pickCallback = null;
+            tree.setCursor(Cursor.getDefaultCursor());
+        }
 	}
 	
 	public void reloadWorld(World newWorld) {
@@ -189,13 +194,13 @@ public class ExplorerPanel extends DockablePanel {
 	public void setupTreeContextMenu(JTree tree) {
 	    JPopupMenu contextMenu = new JPopupMenu();
 	    
-	    JMenuItem itemYeniden = new JMenuItem("Yeniden Adlandır");
-	    JMenuItem itemDisariyaAktar = new JMenuItem("Dışarıya Aktar");
-	    JMenuItem itemIceriyeAktar = new JMenuItem("İçeriye Aktar");
-	    JMenuItem itemKopyala = new JMenuItem("Kopyala");
-	    JMenuItem itemKes = new JMenuItem("Kes");
-	    JMenuItem itemYapistir = new JMenuItem("Yapıştır");
-	    JMenuItem itemSil = new JMenuItem("Sil");
+	    JMenuItem itemYeniden = new JMenuItem(Lang.get("explorer.rename"));
+	    JMenuItem itemDisariyaAktar = new JMenuItem(Lang.get("studio.menubar.export"));
+	    JMenuItem itemIceriyeAktar = new JMenuItem(Lang.get("explorer.import"));
+	    JMenuItem itemKopyala = new JMenuItem(Lang.get("explorer.copy"));
+	    JMenuItem itemKes = new JMenuItem(Lang.get("explorer.cut"));
+	    JMenuItem itemYapistir = new JMenuItem(Lang.get("explorer.paste"));
+	    JMenuItem itemSil = new JMenuItem(Lang.get("explorer.delete"));
 	    
 	    contextMenu.add(itemYeniden);
 	    contextMenu.add(itemDisariyaAktar);
@@ -247,7 +252,7 @@ public class ExplorerPanel extends DockablePanel {
 				return;
 			
 			JFileChooser fileChooser = new JFileChooser();
-	        fileChooser.setDialogTitle("Yükleyeceğin Dünyayı Seç");
+	        fileChooser.setDialogTitle(Lang.get("explorer.exportNodeTitle"));
 			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine Node File", "dnf"));
 
 	        int result = fileChooser.showSaveDialog(this);
@@ -271,7 +276,7 @@ public class ExplorerPanel extends DockablePanel {
 				return;
 			
 			JFileChooser fileChooser = new JFileChooser();
-	        fileChooser.setDialogTitle("Yükleyeceğin Dünyayı Seç");
+	        fileChooser.setDialogTitle(Lang.get("explorer.importNodeTitle"));
 			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine Node File", "dnf"));
 
 	        int result = fileChooser.showOpenDialog(this);
@@ -739,7 +744,6 @@ public class ExplorerPanel extends DockablePanel {
 	        if (target == null) {
 	            target = theWorld.getWorkspace();
 	        }
-	        // servis ise direkt onun içine ekleniyor zaten (target servis kendisi)
 	    }
 	    
 	    suppressRebuild = true;
@@ -774,9 +778,9 @@ public class ExplorerPanel extends DockablePanel {
 	@Override
 	public List<Setting<?>> getDockableSettings() {
 		List<Setting<?>> list = super.getDockableSettings();
-		list.add(new Setting<>("Root'u göster.", this.tree.isRootVisible(), Boolean.class, EnumSettingType.CHECK_BOX)
+		list.add(new Setting<>("Show Root Node", this.tree.isRootVisible(), Boolean.class, EnumSettingType.CHECK_BOX)
 				.addChangeListener(this.tree::setRootVisible));
-		list.add(new Setting<>("Gizli Servisleri Göster.", this.showHideServices, Boolean.class,
+		list.add(new Setting<>("Show Hidded Services", this.showHideServices, Boolean.class,
 				EnumSettingType.CHECK_BOX).addChangeListener(e -> {
 					showHideServices = e;
 					rebuildExplorer();

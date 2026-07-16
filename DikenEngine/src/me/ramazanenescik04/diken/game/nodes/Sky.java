@@ -91,7 +91,7 @@ public class Sky extends Instance {
 	}
 
 	public void syncToCamera(World world, DikenEngine engine) {
-		float activeZoom = Math.max(0.1f, world.getZoom());
+		float activeZoom = Math.max(0.1f, world.camera.getZoom());
         int sceneWidth = Math.max(1, Math.round(engine.getScaledWidth() / activeZoom));
         int sceneHeight = Math.max(1, Math.round(engine.getScaledHeight() / activeZoom));
 		this.width = sceneWidth + 20;

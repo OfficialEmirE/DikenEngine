@@ -15,6 +15,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public abstract class AbstractValue<T> extends Node {
 	private T value;
+	private String nodeObjectID = "";
 	private final Class<T> typeClass;
 	private final EnumSettingType enumSettingType;
 	
@@ -27,6 +28,9 @@ public abstract class AbstractValue<T> extends Node {
 		
 		this.typeClass = typeClass;
 		this.value = value;
+		if (value != null && value instanceof Node node) {
+			nodeObjectID = (node != null ? node.getNetId().toString() : ""); 
+		}
 		if (enumSettingType.isAllowedClasses(typeClass)) {
 			this.enumSettingType = enumSettingType;
         } else {
@@ -53,6 +57,10 @@ public abstract class AbstractValue<T> extends Node {
 	
 	public void setValue(T value) {
 		this.value = value;
+		
+		if (value != null && value instanceof Node node) {
+			nodeObjectID = (node != null ? node.getNetId().toString() : ""); 
+		}
 	}
 	
 	public Class<T> getTypeClass() {
@@ -70,6 +78,17 @@ public abstract class AbstractValue<T> extends Node {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+	
+	@Override
+	@SuppressWarnings("unchecked")
+	protected void reloadNode() {
+		if (nodeObjectID.isEmpty())
+			return;
+		
+		UUID target = UUID.fromString(nodeObjectID);
+        List<Node> results = getRootNode().findByNetId(target);
+        this.value = (T) (results.isEmpty() ? null : results.get(0));
 	}
 	
 	@Override
@@ -103,8 +122,7 @@ public abstract class AbstractValue<T> extends Node {
 					out.writeUTF(value.toString());
 			}
 			case OBJECT_SELECT -> {
-				Node node = (Node) value;
-				out.writeUTF(node != null ? node.getNetId().toString() : "");
+				out.writeUTF(nodeObjectID);
 			}
 			case UNKNOWN -> {
 			}
@@ -134,14 +152,7 @@ public abstract class AbstractValue<T> extends Node {
 	        case RESOURCE_SELECT -> this.value = (T) in.readUTF();
 	        case LIST_SELECT -> this.value = (T) in.readUTF();
 	        case OBJECT_SELECT -> {
-	            String uuidStr = in.readUTF();
-	            if (!uuidStr.isEmpty()) {
-	                OnReload.Connect(_ -> {
-	                    UUID target = UUID.fromString(uuidStr);
-	                    List<Node> results = getRootNode().findByNetId(target);
-	                    this.value = (T) (results.isEmpty() ? null : results.get(0));
-	                });
-	            }
+	        	nodeObjectID = in.readUTF();
 	        }
 	        case UNKNOWN -> {}
 	    }

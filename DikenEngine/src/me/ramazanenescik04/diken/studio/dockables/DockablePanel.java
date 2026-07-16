@@ -12,6 +12,7 @@ import javax.swing.JPanel;
 
 import bibliothek.gui.dock.common.DefaultSingleCDockable;
 import me.ramazanenescik04.diken.game.setting.Setting;
+import me.ramazanenescik04.diken.language.Lang;
 
 public class DockablePanel extends JPanel {
 	private static final long serialVersionUID = -5075070012793078559L;
@@ -26,7 +27,7 @@ public class DockablePanel extends JPanel {
     };
 	
 	public DockablePanel(String id, String title) {
-		this.dock = new DefaultSingleCDockable(id, title, this);
+		this.dock = new DefaultSingleCDockable(id, Lang.get(title), this);
 		this.dock.setTitleIcon(EMPTY_ICON);
 		this.dock.setExternalizable(false);
 		this.dock.setCloseable(true);

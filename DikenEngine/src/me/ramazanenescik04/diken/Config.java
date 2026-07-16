@@ -9,7 +9,7 @@ import java.util.*;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
-import me.ramazanenescik04.diken.language.Language;
+import me.ramazanenescik04.diken.language.Lang;
 
 /**
  * Represents the `Config` type within the DikenEngine `game` package.
@@ -22,18 +22,21 @@ public class Config {
 
 	public Config() {		
 		defaultConfig.put("sync", new Setting<Boolean>("V-Sync", false, Boolean.class, EnumSettingType.CHECK_BOX));
-		defaultConfig.put("debug", new Setting<Boolean>("Hata Ayıklama", false, Boolean.class, EnumSettingType.CHECK_BOX));
-		defaultConfig.put("maxFPS", new Setting<>("Hata Ayıklama", 120, Integer.class, EnumSettingType.TEXT_FIELD));
-		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Sabit İc Cozünürlük", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("debug", new Setting<Boolean>("Debug Mode", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("maxFPS", new Setting<>("Max Fps", 120, Integer.class, EnumSettingType.TEXT_FIELD));
+		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Fixed Internal Resolution", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
-		defaultConfig.put("lang", new Setting<>("Dil", Language.TURKISH.getId(), Language.getLanguageListId(), Integer.class, EnumSettingType.LIST_SELECT).addChangeListener((value -> {
-			DikenEngine.getEngine().defaultLanguage = Language.getLanguageById(value);
-		})));
+		Map<String, String> available = Lang.getAvailableLanguages();
+        String[] displayNames = available.values().toArray(new String[0]);
+        String currentDisplayName = available.getOrDefault(Lang.getCurrentLanguage(), "English");
 		
-		defaultConfig.put("guiScale", new Setting<Integer>("GUI Ölceği", 1, 1, 3, Integer.class, EnumSettingType.SLIDER));
-		defaultConfig.put("screenshotPath", new Setting<String>("Ekran Görüntüsü Kaydetme Konumu", "./", String.class, EnumSettingType.TEXT_FIELD));
+		defaultConfig.put("lang",
+				new Setting<>("Language", currentDisplayName, displayNames, String.class, EnumSettingType.LIST_SELECT));
 		
-		defaultConfig.put("saveLog", new Setting<Boolean>("Logları Kaydet", false, Boolean.class, EnumSettingType.CHECK_BOX));
+		defaultConfig.put("guiScale", new Setting<Integer>("GUI Scale", 1, 1, 3, Integer.class, EnumSettingType.SLIDER));
+		defaultConfig.put("screenshotPath", new Setting<String>("Screenshot Path", "./", String.class, EnumSettingType.TEXT_FIELD));
+		
+		defaultConfig.put("saveLog", new Setting<Boolean>("Save Logs", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		this.config.putAll(defaultConfig);
 	}

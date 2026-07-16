@@ -33,6 +33,7 @@ public class RunService extends Service {
 	@Override
 	public void update(World world, DikenEngine engine) {
 		if (stopScriptEvent) {
+			world.disposeNodes();
 			List<Script> scripts = this.world.getRoot().findByClass(Script.class);
 	    	for (Script script : scripts) {
 	    		script.stop();
@@ -45,6 +46,7 @@ public class RunService extends Service {
 		super.update(world, engine);
 		
 		if (runScriptEvent) {
+			world.reloadNodes();
 			world.startScripts();
 			this.runScriptEvent = false;
 		}

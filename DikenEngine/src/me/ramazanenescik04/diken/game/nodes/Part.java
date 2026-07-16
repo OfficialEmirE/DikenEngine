@@ -10,6 +10,7 @@ import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -18,12 +19,6 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Part` type within the DikenEngine `game.nodes` package.
  */
 public class Part extends Instance {
-	private transient Bitmap cachedBitmap;
-	private transient int cachedWidth = -1;
-	private transient int cachedHeight = -1;
-	private transient int cachedColor = 0;
-	private transient Surface cSurface = Surface.Stud;
-	
 	private Surface surface = Surface.Stud;
 	
 	public enum Surface {
@@ -68,60 +63,45 @@ public class Part extends Instance {
 	}
 	
 	public Bitmap render() {
-		int width = Math.max(1, this.aabb.getWidth());
-		int height = Math.max(1, this.aabb.getHeight());
-		int color = this.getColor();
+		int width = this.aabb.getWidth();
+		int height = this.aabb.getHeight();
+	
+		if (width <= 0 || height <= 0)
+			return null;
 		
-		if (cachedBitmap == null || cachedWidth != width || cachedHeight != height || cachedColor != color || cSurface != surface) {
-			cachedBitmap = new Bitmap(width, height);
-			cachedBitmap.clear(color);
-			
-			if (surface == Surface.Universal) {
-			    // 1. Kullanılacak iki farklı dokuyu önden bir kez çekiyoruz (Döngü içinde sürekli getResource çağırmak performansı düşürür)
-			    var surfaceAtlas = (ArrayBitmap) ResourceLocator.getResource("surface");
-			    var texture0 = surfaceAtlas.getBitmap(0, 0);
-			    var texture1 = surfaceAtlas.getBitmap(1, 0);
-			    
-			    int texW = texture0.w; // Genellikle 16 piksel
-			    int texH = texture0.h; // Genellikle 16 piksel
+		var bitmap = FrameBitmapPool.newBitmap(width, height);
+		
+		if (surface == Surface.Universal) {
+		    // 1. Kullanılacak iki farklı dokuyu önden bir kez çekiyoruz (Döngü içinde sürekli getResource çağırmak performansı düşürür)
+		    var surfaceAtlas = (ArrayBitmap) ResourceLocator.getResource("surface");
+		    var texture0 = surfaceAtlas.getBitmap(0, 0);
+		    var texture1 = surfaceAtlas.getBitmap(1, 0);
+		    
+		    int texW = texture0.w; // Genellikle 16 piksel
+		    int texH = texture0.h; // Genellikle 16 piksel
 
-			    // 2. Ekranı veya hedef bitmap'i kaplayacak kadar döngü oluşturuyoruz
-			    for (var y = 0; y < (cachedBitmap.h / texH) + 1; y++) {
-			        for (var x = 0; x < (cachedBitmap.w / texW) + 1; x++) {
-			            
-			            // Satır ve sütun toplamına göre 0 veya 1 seçerek damalı/ızgara deseni oluşturuyoruz
-			            var surfaceTexture = ((x + y) % 2 == 0) ? texture0 : texture1;
-			            
-			            // Dokuyu doğru x ve y piksel koordinatlarına çiziyoruz
-			            cachedBitmap.blendDraw(surfaceTexture, x * texW, y * texH, color);
-			        }
-			    }
-			} else {
-				var surfaceTexture = ((ArrayBitmap) ResourceLocator.getResource("surface")).getBitmap(surface.x, surface.y);
-				
-				for (var y = 0; y < (cachedBitmap.h / surfaceTexture.h) + 1; y++) {
-					for (var x = 0; x < (cachedBitmap.w / surfaceTexture.w) + 1; x++) {
-						cachedBitmap.blendDraw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h, color);
-					}
+		    // 2. Ekranı veya hedef bitmap'i kaplayacak kadar döngü oluşturuyoruz
+		    for (var y = 0; y < (bitmap.h / texH) + 1; y++) {
+		        for (var x = 0; x < (bitmap.w / texW) + 1; x++) {
+		            
+		            // Satır ve sütun toplamına göre 0 veya 1 seçerek damalı/ızgara deseni oluşturuyoruz
+		            var surfaceTexture = ((x + y) % 2 == 0) ? texture0 : texture1;
+		            
+		            // Dokuyu doğru x ve y piksel koordinatlarına çiziyoruz
+		            bitmap.draw(surfaceTexture, x * texW, y * texH);
+		        }
+		    }
+		} else {
+			var surfaceTexture = ((ArrayBitmap) ResourceLocator.getResource("surface")).getBitmap(surface.x, surface.y);
+			
+			for (var y = 0; y < (bitmap.h / surfaceTexture.h) + 1; y++) {
+				for (var x = 0; x < (bitmap.w / surfaceTexture.w) + 1; x++) {
+					bitmap.draw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h);
 				}
 			}
-			
-			// Later
-			cachedWidth = width;
-			cachedHeight = height;
-			cachedColor = color;
-			cSurface = surface;
 		}
 		
-		return cachedBitmap;
-	}
-
-	@Override
-	protected void reloadNode() {
-		cachedBitmap = null;
-		cachedWidth = -1;
-		cachedHeight = -1;
-		cSurface = Surface.Stud;
+		return bitmap;
 	}
 	
 	public Surface getSurface() {
@@ -161,9 +141,6 @@ public class Part extends Instance {
 	public void loadNodeData(DataInputStream in) throws IOException {
 		super.loadNodeData(in);
 		this.surface = Surface.valueOf(in.readUTF());
-		this.cachedBitmap = null;
-		this.cachedWidth = -1;
-		this.cachedHeight = -1;
 	}
 }
 

@@ -24,6 +24,7 @@ public class Lighting extends Service {
 	private Sky sky;
 	public int ambientColor = 0xFF3C3C3C;
 	public boolean lightingEnabled = true;
+	private String nodeObjectID = "";
 
 	public Lighting() {
 		this("Lighting");
@@ -283,6 +284,10 @@ public class Lighting extends Service {
 
 	public void setSky(Sky sky) {
 		this.sky = sky;
+		
+		if (this.sky != null) {
+			this.nodeObjectID = sky != null ? sky.getNetId().toString() : "";
+		}
 	}
 
 	public Sky getSky() {
@@ -324,11 +329,20 @@ public class Lighting extends Service {
 		list.add(settingCategory);
 		return list;
 	}
+	
+	protected void reloadNode() {
+		if (nodeObjectID.isEmpty())
+			return;
+		
+		UUID target = UUID.fromString(nodeObjectID);
+		List<Node> results = getRootNode().findByNetId(target);
+		this.sky = (Sky) (results.isEmpty() ? null : results.get(0));
+	}
 
 	@Override
 	public void saveNodeData(DataOutputStream out) throws IOException {
 		super.saveNodeData(out);
-		out.writeUTF(sky != null ? sky.getNetId().toString() : "");
+		out.writeUTF(nodeObjectID);
 		out.writeInt(ambientColor);
 		out.writeBoolean(lightingEnabled);
 	}
@@ -336,16 +350,9 @@ public class Lighting extends Service {
 	@Override
 	public void loadNodeData(DataInputStream in) throws IOException {
 		super.loadNodeData(in);
-		String skyId = in.readUTF();
+		this.nodeObjectID = in.readUTF();
 		this.ambientColor = in.readInt();
 		this.lightingEnabled = in.readBoolean();
-		if (!skyId.isEmpty()) {
-			OnReload.Connect(_ -> {
-				UUID target = UUID.fromString(skyId);
-				List<Node> results = getRootNode().findByNetId(target);
-				this.sky = (Sky) (results.isEmpty() ? null : results.get(0));
-			});
-		}
 	}
 
 }

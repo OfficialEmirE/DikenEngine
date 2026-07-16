@@ -65,17 +65,17 @@ public final class InstanceList {
 	    String nPackage = obj.getClass().getPackageName();
 	    
 	    if (nPackage.contains(".game.nodes.values")) {
-	        return new CategoryKey(0, 2, "Değerler");
+	        return new CategoryKey(0, 2, "studio.windows.basicObjects.values");
 	    } else if (nPackage.contains(".game.nodes") || nPackage.contains(".game.entity")) {
-	        return new CategoryKey(9, 1, "Temel Nesneler");
+	        return new CategoryKey(9, 1, "studio.windows.basicObjects.nodes");
 	    } else if (nPackage.contains(".gui.component") || nPackage.contains(".gui.component.color")) {
-	        return new CategoryKey(15, 1, "Grafik Arayüz");
+	        return new CategoryKey(15, 1, "studio.windows.basicObjects.gui");
 	    } else if (nPackage.contains(".scripting")) {
-	        return new CategoryKey(12, 1, "Scriptler");
+	        return new CategoryKey(12, 1, "studio.windows.basicObjects.script");
 	    } else if (nPackage.contains(".game.event")) {
-	        return new CategoryKey(8, 2, "Eventler");
+	        return new CategoryKey(8, 2, "studio.windows.basicObjects.event");
 	    }
-	    return new CategoryKey(12, 3, "Diğer");
+	    return new CategoryKey(12, 3, "studio.windows.basicObjects.other");
 	}
 	
 	public static record CategoryKey(int iconX, int iconY, String displayName) {

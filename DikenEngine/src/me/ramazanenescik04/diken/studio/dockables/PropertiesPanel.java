@@ -4,6 +4,7 @@ import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 import javax.swing.*;
@@ -20,7 +21,7 @@ public class PropertiesPanel extends DockablePanel {
     private JFrame window;
 
     public PropertiesPanel(ExplorerPanel explorerPanel, JFrame window) {
-    	super("properties_id", "Özellikler");
+    	super("properties_id", "studio.windows.properties");
     	
     	this.explorerPanel = explorerPanel;
     	this.window = window;
@@ -63,9 +64,9 @@ public class PropertiesPanel extends DockablePanel {
         explorerPanel.startPickMode(node -> {
             if (node != null && !requiredClass.isInstance(node)) {
                 JOptionPane.showMessageDialog(this,
-                    "Bu ayar sadece " + requiredClass.getSimpleName() + " tipini kabul ediyor.",
-                    "Geçersiz Tip", JOptionPane.WARNING_MESSAGE);
-                valueLabel.setText(setting.getValue() instanceof Node n ? n.getName() : "Yok");
+                	Lang.get("properties.selectNodeError", requiredClass.getSimpleName()),
+                    Lang.get("properties.selectNodeError.title"), JOptionPane.WARNING_MESSAGE);
+                valueLabel.setText(setting.getValue() instanceof Node n ? n.getName() : Lang.get("studio.none"));
                 valueLabel.setForeground(new Color(220, 220, 220));
                 return;
             }
@@ -74,7 +75,7 @@ public class PropertiesPanel extends DockablePanel {
                 setting.setValue(node);
                 valueLabel.setText(node.getName());
             } else {
-                valueLabel.setText(setting.getValue() instanceof Node n ? n.getName() : "Yok");
+                valueLabel.setText(setting.getValue() instanceof Node n ? n.getName() : Lang.get("studio.none"));
             }
             valueLabel.setForeground(new Color(220, 220, 220));
         });
@@ -153,10 +154,6 @@ public class PropertiesPanel extends DockablePanel {
         switch (setting.getType()) {
         	case TEXT_FIELD -> {
         		var textField = buildTextField(setting);
-
-        		/*if (node instanceof Service) {
-        			textField.setEnabled(false);
-        		}*/
         		
         		return textField;
         	}
@@ -167,7 +164,7 @@ public class PropertiesPanel extends DockablePanel {
 				textField.addActionListener(_ -> {
 					explorerPanel.suppressRebuild = true;
 					try {
-						var color2 = JColorChooser.showDialog(window, "Renk seç.", color);
+						var color2 = JColorChooser.showDialog(window, Lang.get("select.color"), color);
 
 						if (color2 != null) {
 							textField.setText(
@@ -200,6 +197,28 @@ public class PropertiesPanel extends DockablePanel {
             	comboBox.addActionListener(_ -> {
             		applySettingValue(stringSetting, comboBox.getSelectedItem());
             	});
+            	comboBox.setRenderer(new DefaultListCellRenderer() {
+            	    @Override
+            	    public Component getListCellRendererComponent(
+            	            JList<?> list,
+            	            Object value,
+            	            int index,
+            	            boolean isSelected,
+            	            boolean cellHasFocus) {
+
+            	        JLabel label = (JLabel) super.getListCellRendererComponent(
+            	                list, value, index, isSelected, cellHasFocus);
+
+            	        String key = value.toString();
+
+            	        if (key.contains("&")) {
+            	            label.setBorder(new EmptyBorder(0, 20, 0, 0));
+            	            label.setText("↳ " + key);
+            	        }
+
+            	        return label;
+            	    }
+            	});
             	
             	return comboBox;
         	}
@@ -213,7 +232,7 @@ public class PropertiesPanel extends DockablePanel {
         	    valueLabel.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
 
         	    Object currentValue = setting.getValue();
-        	    valueLabel.setText(currentValue instanceof Node n ? n.getName() : "Yok");
+        	    valueLabel.setText(currentValue instanceof Node n ? n.getName() : Lang.get("studio.none"));
 
         	    JButton selectButton = new JButton("S");
         	    selectButton.setMargin(new Insets(2, 4, 2, 4));
@@ -231,7 +250,7 @@ public class PropertiesPanel extends DockablePanel {
 
         	    clearButton.addActionListener(_ -> {
         	    	applySettingValue(setting, null);
-        	        valueLabel.setText("Yok");
+        	        valueLabel.setText(Lang.get("studio.none"));
         	    });
 
         	    JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));

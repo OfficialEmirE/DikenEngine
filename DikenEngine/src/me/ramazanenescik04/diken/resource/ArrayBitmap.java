@@ -3,6 +3,7 @@ package me.ramazanenescik04.diken.resource;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 /**
  * Represents the `ArrayBitmap` type within the DikenEngine `resource` package.
@@ -96,5 +97,13 @@ public class ArrayBitmap implements IResource {
 
 	public IResource clone() {
 		return new ArrayBitmap(bitmap.clone());
+	}
+
+	public void forEach(Consumer<Bitmap> consumer) {
+		for (int y = 0; y < bitmap.length; y++) {
+			for (int x = 0; x < bitmap[y].length; x++) {
+				consumer.accept(bitmap[y][x]);
+			}
+		}
 	}
 }

@@ -50,12 +50,21 @@ public class UniFont implements IResource {
 
     // IResource için null olmamalı
     public UniFont() {}
+    
+    public UniFont(UniFont uniFont) {
+		this.name = uniFont.name;
+		this.displayName = uniFont.displayName;
+		
+		for (var entry : uniFont.charBitmaps.entrySet()) {
+			this.charBitmaps.put(entry.getKey(), entry.getValue().clone());
+		}
+   	}
 
     // =========================================================================
     // Factory — dosyadan yükle
     // =========================================================================
 
-    /**
+	/**
      * Resources klasöründeki font verilerini yükler.
      *
      * @param fontName {@code /fonts/<fontName>/} altındaki klasör adı
@@ -276,7 +285,6 @@ public class UniFont implements IResource {
         }
     }
 
-
 	@Override
 	public void loadResource(DataInputStream in) throws IOException {
         name        = in.readUTF();
@@ -292,6 +300,11 @@ public class UniFont implements IResource {
             charBitmaps.put(ch, Bitmap.fromBytes(data));
         }
     }
+	
+	@Override
+	public UniFont clone() {
+		return new UniFont(this);
+	}
 
     // =========================================================================
     // Private yardımcılar

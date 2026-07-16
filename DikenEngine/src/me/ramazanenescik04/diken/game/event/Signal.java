@@ -8,4 +8,9 @@ public class Signal {
 	public Signal(LuaValue luaFunction) {
 		this.signalFunc = luaFunction;
 	}
+
+	@Override
+	public String toString() {
+		return "[Signal]-" + signalFunc.checkfunction().name();
+	}
 }

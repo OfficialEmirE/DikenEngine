@@ -13,12 +13,15 @@ import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.input.InputHandler;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.scripting.LuaDoc;
 
 public class ScreenGui extends Node {
 	private boolean enabled = true;
+	private transient final List<DrawList> drawList = new ArrayList<>();
 	
 	public ScreenGui() {
 		this("ScreenGui");
@@ -33,12 +36,19 @@ public class ScreenGui extends Node {
 		loadNodeData(in);
 	}
 	
-	public void drawScreen(Bitmap sceneBitmap, Hitbox viewport) {
+	public void drawScreen(Bitmap sceneBitmap, Hitbox viewport, boolean allowDrawBitmap) {
 		OnPreRender.FireEvent();
         if (!enabled) return;
         
         List<Node> sortedChildren = new ArrayList<>(children);
     	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
+    	
+    	if (allowDrawBitmap) {
+    		drawList.forEach(e -> {
+        		sceneBitmap.draw(e.bitmap, e.x, e.y);
+        	});
+    	}   	
+    	drawList.clear();
         
         for (int i = 0; i < sortedChildren.size(); i++) {
             Node child = sortedChildren.get(i);
@@ -101,6 +111,20 @@ public class ScreenGui extends Node {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
+	
+	@LuaDoc
+	public Bitmap create(int width, int height) {
+		return new Bitmap(width, height);
+	}
+	
+	@LuaDoc(description = "! ONLY USE YOUR RENDER SYSTEMS !")
+	public Bitmap createFramePool(int width, int height) {
+		return FrameBitmapPool.newBitmap(width, height);
+	}
+	
+	public void drawBitmap(Bitmap btp, int x, int y) {
+		this.drawList.add(new DrawList(btp, x, y));
+	}
 
 	@Override
 	public List<SettingCategory> getNodeSettings() {
@@ -127,4 +151,6 @@ public class ScreenGui extends Node {
 		super.loadNodeData(in);
 		this.enabled = in.readBoolean();
 	}
+	
+	private record DrawList(Bitmap bitmap, int x, int y) {}
 }

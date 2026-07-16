@@ -1,23 +1,37 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
+import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.gui.UniFont;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.studio.builders.Menubar;
+import me.ramazanenescik04.diken.studio.builders.Toolbar;
+import me.ramazanenescik04.diken.studio.dialog.CropDialog;
+import me.ramazanenescik04.diken.studio.editors.AnimationEditor;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.*;
 
 public class ResourcesPanel extends DockablePanel {
 
@@ -26,13 +40,16 @@ public class ResourcesPanel extends DockablePanel {
     private World theWorld;
     private JPanel listPanel;
     private JFrame parentFrame;
+    private EditorTabPanel editor;
 
     private String selectedKey = null;
+    private final Set<String> expandedNodes = new HashSet<>();
 
-    public ResourcesPanel(World world, JFrame parentFrame) {
-    	super("resources_panel", "Kaynaklar");
+    public ResourcesPanel(World world, EditorTabPanel editor, JFrame parentFrame) {
+    	super("resources_panel", "studio.windows.resources");
     	
         this.theWorld = world;
+        this.editor = editor;
         this.parentFrame = parentFrame;
 
         setLayout(new BorderLayout());
@@ -49,59 +66,101 @@ public class ResourcesPanel extends DockablePanel {
         add(scrollPane, BorderLayout.CENTER);
 
         // Toolbar
-        JToolBar toolBar = new JToolBar();
-        toolBar.setBackground(new Color(60, 60, 60));
-
-        JButton newButton = new JButton("Yeni");
-        newButton.addActionListener(_ -> newResourceDialog());
-        newButton.setEnabled(false);
-        toolBar.add(newButton);
+        Toolbar.Builder builder = new Toolbar.Builder();
         
-        JButton addButton = new JButton("Ekle");
-        addButton.addActionListener(_ -> addResourceDialog());
-        toolBar.add(addButton);
-
-        JButton removeButton = new JButton("Kaldır");
-        removeButton.addActionListener(_ -> removeSelectedResource());
-        toolBar.add(removeButton);
-
-        add(toolBar, BorderLayout.NORTH);
+        var defaultToolbar = builder.newToolbar("default");
+        builder.addButton(defaultToolbar, "new", 10, 0, Lang.get("studio.menubar.new"), this::newResourceDialog);
+        builder.addButton(defaultToolbar, "add", 9, 0, Lang.get("resources.add"), this::addResourceDialog);
+        builder.addButton(defaultToolbar, "remove", 0, 0, Lang.get("resources.remove"), this::removeSelectedResource);
+        builder.addButton(defaultToolbar, "refresh", 2, 15, Lang.get("resources.refresh"), this::rebuildList);
+        
+        builder.convertCButton(dock);
 
         rebuildList();
     }
-
+    
 	public void reloadWorld(World newWorld) {
 		this.theWorld = newWorld;
 		
 		this.rebuildList();
 	}
 
-    private void rebuildList() {
-        listPanel.removeAll();
+	private void rebuildList() {
+	    listPanel.removeAll();
 
-        for (var entry : theWorld.resources.entrySet()) {
-            String key = entry.getKey();
-            IResource resource = entry.getValue();
-            
-            if (key.equals("empty") || key.equals("default_font") || resource == null) continue;
+	    Map<String, List<Map.Entry<String, IResource>>> children = new HashMap<>();
 
-            JPanel item = createItem(key, resource);
-            listPanel.add(item);
-        }
+	    for (var entry : theWorld.resources.entrySet()) {
+	        String key = entry.getKey();
 
-        listPanel.revalidate();
-        listPanel.repaint();
-    }
+	        if (key.equals("empty") || key.equals("default_font"))
+	            continue;
 
-    private JPanel createItem(String key, IResource resource) {
+	        int i = key.indexOf('&');
+	        if (i != -1) {
+	            children.computeIfAbsent(key.substring(0, i), _ -> new ArrayList<>()).add(entry);
+	        }
+	    }
+
+	    for (var entry : theWorld.resources.entrySet()) {
+	        String key = entry.getKey();
+	        IResource resource = entry.getValue();
+
+	        if (key.equals("empty") || key.equals("default_font") || resource == null)
+	            continue;
+
+	        // Child'ları burada göstermeyeceğiz.
+	        if (key.contains("&"))
+	            continue;
+
+	        listPanel.add(createItem(key, resource, false));
+
+	        List<Map.Entry<String, IResource>> list = children.get(key);
+	        if (list != null && expandedNodes.contains(key)) {
+	            for (var child : list) {
+	                listPanel.add(createItem(child.getKey(), child.getValue(), true));
+	            }
+	        }
+	    }
+
+	    listPanel.revalidate();
+	    listPanel.repaint();
+	}
+
+	private JPanel createItem(String key, IResource resource, boolean child) {
         JPanel item = new JPanel(new BorderLayout(8, 0));
         item.setBackground(getItemBackground(key));
         item.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(35, 35, 35)),
-            new EmptyBorder(4, 8, 4, 8)
+        	BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(35, 35, 35)),
+        	new EmptyBorder(4, child ? 28 : 8, 4, 8)
         ));
         item.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         item.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
+        
+        JLabel arrow = new JLabel(" ");
+        arrow.setPreferredSize(new Dimension(16, 16));
+        
+        boolean hasChildren = theWorld.resources.keySet().stream()
+                .anyMatch(e -> e.startsWith(key + "&"));
+
+        if (!child) {
+            if (hasChildren) {
+                arrow.setText(expandedNodes.contains(key) ? "▼" : "▶");
+
+                arrow.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        if (expandedNodes.contains(key))
+                            expandedNodes.remove(key);
+                        else
+                            expandedNodes.add(key);
+
+                        rebuildList();
+                        e.consume();
+                    }
+                });
+            }
+        }
 
         // Önizleme / ikon
         JLabel iconLabel = new JLabel();
@@ -113,6 +172,10 @@ public class ResourcesPanel extends DockablePanel {
         if (resourceType == EnumResource.IMAGE || resourceType == EnumResource.CURSOR) {
         	if (resource instanceof Bitmap bitmap) {
                 var icon = getIcon(bitmap);
+                
+                if (icon == null) {
+                	icon = getIcon(((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 1));
+                }
                 
                 if (icon == null) {
                 	iconLabel.setText("?");
@@ -137,7 +200,15 @@ public class ResourcesPanel extends DockablePanel {
             iconLabel.setFont(new Font("Tahoma", Font.BOLD, 14));
         }
         
-        item.add(iconLabel, BorderLayout.WEST);
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        leftPanel.setOpaque(false);
+
+        if (hasChildren)
+        	leftPanel.add(arrow);
+        
+        leftPanel.add(iconLabel);
+
+        item.add(leftPanel, BorderLayout.WEST);
 
         // İsim + tip
         JPanel textPanel = new JPanel();
@@ -161,6 +232,11 @@ public class ResourcesPanel extends DockablePanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 selectedKey = key;
+                
+                if (e.getClickCount() == 2) {
+                	openEditor(resourceType, key);
+                }           
+                
                 rebuildList(); // seçim rengini güncelle
             }
 
@@ -176,7 +252,8 @@ public class ResourcesPanel extends DockablePanel {
                 item.setBackground(getItemBackground(key));
             }
         });
-
+        
+        addPopup(item, buildMenubar(key, resource));
         return item;
     }
 
@@ -188,8 +265,8 @@ public class ResourcesPanel extends DockablePanel {
         EnumResource[] types = EnumResource.values();
         EnumResource selectedType = (EnumResource) JOptionPane.showInputDialog(
             parentFrame,
-            "Kaynak tipini seçin:",
-            "Kaynak Ekle",
+            Lang.get("resources.selectResourceType"),
+            Lang.get("resources.addResource"),
             JOptionPane.PLAIN_MESSAGE,
             null,
             types,
@@ -200,7 +277,7 @@ public class ResourcesPanel extends DockablePanel {
 
         // Dosya seçimi
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Kaynak Dosyası Seç");
+        fileChooser.setDialogTitle(Lang.get("resources.selectResourceName"));
         
         if (selectedType == EnumResource.IMAGE || selectedType == EnumResource.CURSOR) {
         	fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "png", "jpg", "jpeg", "bmp", "gif"));
@@ -226,7 +303,7 @@ public class ResourcesPanel extends DockablePanel {
         if (selectedType != EnumResource.FONT) {
         	resourceName = JOptionPane.showInputDialog(
             	parentFrame,
-                "Kaynak adı:",
+            	Lang.get("resources.setResourceName"),
                 defaultName
             );
         }
@@ -237,8 +314,8 @@ public class ResourcesPanel extends DockablePanel {
         if (theWorld.resources.containsKey(resourceName)) {
             int overwrite = JOptionPane.showConfirmDialog(
                 parentFrame,
-                "\"" + resourceName + "\" zaten mevcut. Üzerine yazılsın mı?",
-                "Uyarı",
+                Lang.get("resources.overwriteWarning", resourceName),
+                Lang.get("message.warning"),
                 JOptionPane.YES_NO_OPTION
             );
             if (overwrite != JOptionPane.YES_OPTION) return;
@@ -247,12 +324,16 @@ public class ResourcesPanel extends DockablePanel {
         try (FileInputStream fis = new FileInputStream(selectedFile)) {
         	if (selectedType == EnumResource.FONT) {
         		Font mainFont = Font.createFont(Font.TRUETYPE_FONT, fis);
-        		Object[] stilSecenekleri = {"Düz (Plain)", "Kalın (Bold)", "İtalik (Italic)", "Kalın + İtalik"};
+        		Object[] stilSecenekleri = {
+        				Lang.get("font.plain"),
+        				Lang.get("font.bold"),
+        				Lang.get("font.italic"),
+        				Lang.get("font.bold.italic")};
                 
                 int styleSelect = JOptionPane.showOptionDialog(
                 		parentFrame,
-                        "Lütfen font stilini seçiniz:",
-                        "Stil Seçimi",
+                		Lang.get("resources.selectFontStyle"),
+                		Lang.get("resources.selectFontStyle.title"),
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.QUESTION_MESSAGE,
                         null,
@@ -270,29 +351,18 @@ public class ResourcesPanel extends DockablePanel {
                 else if (styleSelect == 2) selectedStyle = Font.ITALIC;
                 else if (styleSelect == 3) selectedStyle = Font.BOLD | Font.ITALIC;
                 
-                String sizeInput = JOptionPane.showInputDialog(parentFrame, "Lütfen font boyutunu giriniz (Örn: 18, 24):");
+                String sizeInput = JOptionPane.showInputDialog(parentFrame, Lang.get("resources.fontSizeInput"));
                 
                 if (sizeInput != null) {
-                    try {
-                        float selectedSize = Float.parseFloat(sizeInput);
+					float selectedSize = Float.parseFloat(sizeInput);
 
-                        Font finalFont = mainFont.deriveFont(selectedStyle, selectedSize);
-                        
-                        resourceName = JOptionPane.showInputDialog(
-                            	parentFrame,
-                                "Kaynak adı:",
-                                finalFont.getFontName() + "-" + finalFont.getSize()
-                            );
-                        
-                        theWorld.addResource(resourceName, UniFont.fromAwtFont(finalFont));
-                    } catch (Exception e) {
-                    	JOptionPane.showMessageDialog(
-                        	parentFrame,
-                        	"Kaynak yüklenemedi: " + e.getMessage(),
-                            "Hata",
-                            JOptionPane.ERROR_MESSAGE
-                        );
-                    }
+					Font finalFont = mainFont.deriveFont(selectedStyle, selectedSize);
+
+					resourceName = JOptionPane.showInputDialog(parentFrame,
+							Lang.get("resources.setResourceName"),
+							finalFont.getFontName() + "-" + finalFont.getSize());
+
+					theWorld.addResource(resourceName, UniFont.fromAwtFont(finalFont));
                 }
         	} else {
         		var resource = IOResource.loadResource(fis, selectedType);
@@ -302,24 +372,48 @@ public class ResourcesPanel extends DockablePanel {
             rebuildList();
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(
-                parentFrame,
-                "Kaynak yüklenemedi: " + e.getMessage(),
-                "Hata",
-                JOptionPane.ERROR_MESSAGE
-            );
+            
+            CrashDialog.crash(parentFrame, e, Lang.get("resources.importError"));
         }
     }
     
-    private void newResourceDialog() {}
+    private void newResourceDialog() {
+    	try {
+    		EnumResource[] types = EnumResource.values();
+            EnumResource selectedType = (EnumResource) JOptionPane.showInputDialog(
+                parentFrame,
+                Lang.get("resources.selectResourceType"),
+                Lang.get("resources.newResource"),
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                types,
+                types[3]
+            );
+
+            if (selectedType == null) return;
+            
+            var defaultName = selectedType.name() + "_" + (int) (Math.random() * 9999); //Random Name
+            var resourceName = JOptionPane.showInputDialog(
+            	parentFrame,
+                Lang.get("resources.setResourceName"),
+                defaultName
+            );
+            
+            openEditor(selectedType, resourceName);
+		} catch (Exception e) {
+			e.printStackTrace();
+
+			CrashDialog.crash(parentFrame, e, Lang.get("resources.importError"));
+		}
+    }
 
     private void removeSelectedResource() {
         if (selectedKey == null) return;
 
         int confirm = JOptionPane.showConfirmDialog(
             parentFrame,
-            "\"" + selectedKey + "\" kaynağını kaldırmak istediğine emin misin?",
-            "Onay",
+            Lang.get("resources.removeWarning", selectedKey),
+            Lang.get("message.confirm"),
             JOptionPane.YES_NO_OPTION
         );
 
@@ -330,17 +424,122 @@ public class ResourcesPanel extends DockablePanel {
         rebuildList();
     }
     
+    private void cloneSelectedResource() {
+        if (selectedKey == null) return;
+
+        IResource old = theWorld.resources.get(selectedKey);
+        theWorld.addResource(selectedKey += "_1", old.clone());
+        selectedKey = null;
+        rebuildList();
+    }
+    
+    private void cutImage() {
+    	if (selectedKey == null) return;
+
+        IResource resource = theWorld.resources.get(selectedKey);
+        
+        if (resource instanceof Bitmap bitmap) {
+        	var dialog = new CropDialog(parentFrame, bitmap);
+        	dialog.setVisible(true);
+        	
+        	try {
+        		int[] index = {0};
+				var bitmaps = dialog.get();
+				
+				if (bitmaps == null) {
+					return;
+				}
+				
+				bitmaps.forEach(e -> {
+					theWorld.addResource(selectedKey + "&" + index[0], e);
+					index[0]++;
+				});
+				
+				rebuildList();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+        }
+    }
+    
+    private void renameResource() {
+    	String oldResourceKey = selectedKey;
+    	String newResourceKey = JOptionPane.showInputDialog(parentFrame, Lang.get("resources.setResourceName"), oldResourceKey);
+    	
+    	IResource res = theWorld.resources.get(oldResourceKey);
+    	theWorld.removeResource(oldResourceKey);
+    	theWorld.addResource(newResourceKey, res);
+    	
+    	selectedKey = newResourceKey;
+    	
+    	rebuildList();
+    }
+    
     private ImageIcon getIcon(Bitmap icon) {
     	try {
             Image img = icon.toImage();
-            Image scaled = img.getScaledInstance(28, 28, Image.SCALE_SMOOTH);
+            Image scaled = img.getScaledInstance(28, 28, Image.SCALE_FAST);
             return new ImageIcon(scaled);
         } catch (Exception e) {
             return null;
         }
     }
+    
+    public void openEditor(EnumResource selectedType, String key) {
+    	switch(selectedType) {
+    		case ANIMATION:
+    			editor.openEditor(new AnimationEditor(this.theWorld, key));
+    			break;
+    		default:
+    			break;
+    	}
+    	
+    	rebuildList();
+    }
 
     public String getSelectedResourceKey() {
         return selectedKey;
     }
+    
+    private JPopupMenu buildMenubar(String key, IResource resource) {
+    	Menubar.Builder builder = new Menubar.Builder();
+    	
+    	var menubar = builder.newMenu("default", "none");
+    	builder.addMenuItem(menubar, "resources.remove", 0, 0, this::removeSelectedResource);
+    	builder.addMenuItem(menubar, "resources.clone", 7, 0, this::cloneSelectedResource);
+    	var id = builder.addMenuItem(menubar, "resources.cutImage", 3, 15, this::cutImage);
+    	
+    	if (!(resource instanceof Bitmap)) {
+    		builder.setButtonEnabled(menubar, id, false);
+    	}
+    	builder.addMenuItem(menubar, "explorer.rename", 1, 0, this::renameResource);
+    	
+		return builder.getJPopupMenu(menubar);
+	}
+    
+	private static void addPopup(Component component, final JPopupMenu popup) {
+		component.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showMenu(e);
+				}
+			}
+			public void mouseReleased(MouseEvent e) {
+				if (e.isPopupTrigger()) {
+					showMenu(e);
+				}
+			}
+			private void showMenu(MouseEvent e) {
+				popup.show(e.getComponent(), e.getX(), e.getY());
+			}
+		});
+	}
+	
+	class ResourceNode {
+	    String key;
+	    IResource resource;
+
+	    boolean expanded;
+	    List<ResourceNode> children = new ArrayList<>();
+	}
 }

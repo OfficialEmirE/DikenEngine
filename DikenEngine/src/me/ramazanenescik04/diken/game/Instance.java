@@ -81,7 +81,7 @@ public abstract class Instance extends Node {
                 	screenY -= viewport.getY();
                 }
                 
-                btp.draw(myTexture.rotate(rotation), screenX, screenY);
+                btp.blendDraw(myTexture.rotate(rotation), screenX, screenY, color);
                 
                 if (debug && this instanceof Instance instance && instance.hasAABB()) {
                     Hitbox globalBox = instance.getGlobalAABB();

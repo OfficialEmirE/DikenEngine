@@ -18,7 +18,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class UIService extends Service {
-	private boolean coreUiEnabled;
+	private boolean allowDrawBitmap;
 
 	public UIService() {
 		this("UI");
@@ -44,7 +44,7 @@ public class UIService extends Service {
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<>("CoreUI Enabled", this.coreUiEnabled, Boolean.class, EnumSettingType.CHECK_BOX));
+				.addSetting(new Setting<>("Allow Draw Bitmap", this.allowDrawBitmap, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
@@ -55,13 +55,14 @@ public class UIService extends Service {
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
 		OnPreRender.FireEvent();
 		
+		
 		List<Node> sortedChildren = new ArrayList<>(children);
     	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
 
         for (int i = 0; i < sortedChildren.size(); i++) {
             Node child = sortedChildren.get(i);
             if (child instanceof ScreenGui childInstance) {
-				childInstance.drawScreen(sceneBitmap, viewport);
+				childInstance.drawScreen(sceneBitmap, viewport, allowDrawBitmap);
 			}
         }
         
@@ -90,13 +91,13 @@ public class UIService extends Service {
 	public void saveNodeData(DataOutputStream out) throws IOException {
 		super.saveNodeData(out);
 		
-		out.writeBoolean(coreUiEnabled);
+		out.writeBoolean(allowDrawBitmap);
 	}
 
 	@Override
 	public void loadNodeData(DataInputStream in) throws IOException {
 		super.loadNodeData(in);
 		
-		this.coreUiEnabled = in.readBoolean();
+		this.allowDrawBitmap = in.readBoolean();
 	}
 }

@@ -21,6 +21,7 @@ import javax.swing.JProgressBar;
 import javax.swing.SwingUtilities;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.IOResource;
 
 public class LoadingDialog extends JDialog {
@@ -34,7 +35,7 @@ public class LoadingDialog extends JDialog {
 	private final JProgressBar progressBar;
 
 	public LoadingDialog() {
-		setTitle("DikenEngine Yükleniyor...");
+		setTitle(Lang.get("loading.dikenengine"));
 		setUndecorated(true);
 		setSize(WIDTH, HEIGHT);
 		setLocationRelativeTo(null);
@@ -80,7 +81,7 @@ public class LoadingDialog extends JDialog {
 		footerPanel.setLayout(new BoxLayout(footerPanel, BoxLayout.Y_AXIS));
 		footerPanel.setBorder(BorderFactory.createEmptyBorder(0, 16, 12, 16));
 
-		statusLabel = new JLabel("Yükleniyor...");
+		statusLabel = new JLabel(Lang.get("loading"));
 		statusLabel.setForeground(Color.WHITE);
 		statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		statusLabel.setAlignmentX(JLabel.LEFT_ALIGNMENT);

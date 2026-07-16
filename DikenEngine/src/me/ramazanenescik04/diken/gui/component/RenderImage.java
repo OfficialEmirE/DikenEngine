@@ -49,7 +49,11 @@ public class RenderImage extends GuiComponent {
 	}
 	
 	public Bitmap render() {
-		return bitmap;
+		if (this.bitmap == null) {
+			return null;
+		}
+		
+		return bitmap.resize(getWidth(), getHeight());
 	}
 	
 	@Override
