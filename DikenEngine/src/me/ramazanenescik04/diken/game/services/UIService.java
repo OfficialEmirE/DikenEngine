@@ -11,6 +11,7 @@ import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
 import me.ramazanenescik04.diken.gui.component.ScreenGui;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -55,14 +56,15 @@ public class UIService extends Service {
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
 		OnPreRender.FireEvent();
 		
-		
 		List<Node> sortedChildren = new ArrayList<>(children);
     	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
 
         for (int i = 0; i < sortedChildren.size(); i++) {
             Node child = sortedChildren.get(i);
-            if (child instanceof ScreenGui childInstance) {
-				childInstance.drawScreen(sceneBitmap, viewport, allowDrawBitmap);
+            if (child instanceof ScreenGui screenGui) {
+				screenGui.drawScreen(sceneBitmap, viewport, allowDrawBitmap);
+			} else if (child instanceof GuiComponent guiComponent) {
+				guiComponent.drawComponent(sceneBitmap, viewport);
 			}
         }
         
@@ -72,8 +74,8 @@ public class UIService extends Service {
 	public void keyHandled(int inputMode, int key, char character) {
 		for (int i = 0; i < children.size(); i++) {
             Node child = children.get(i);
-            if (child instanceof ScreenGui childInstance) {
-				childInstance.keyHandled(inputMode, key, character);
+            if (child instanceof ScreenGui screenGui) {
+				screenGui.keyHandled(inputMode, key, character);
 			}
         }
 	}
@@ -81,8 +83,8 @@ public class UIService extends Service {
 	public void mouseHandled(int inputMode, int x, int y, int clicked) {
 		for (int i = 0; i < children.size(); i++) {
             Node child = children.get(i);
-            if (child instanceof ScreenGui childInstance) {
-				childInstance.mouseHandled(inputMode, x, y, clicked);
+            if (child instanceof ScreenGui screenGui) {
+				screenGui.mouseHandled(inputMode, x, y, clicked);
 			}
         }
 	}

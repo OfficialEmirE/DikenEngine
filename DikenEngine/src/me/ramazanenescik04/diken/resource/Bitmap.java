@@ -809,8 +809,7 @@ public class Bitmap implements IResource {
 	}
 	
 	public void drawText(String text, int x, int y, int color, boolean center) {
-		x += xOffs;
-		y += yOffs;
+		// xOffs/yOffs alt seviye metodlarda (blendDraw, draw) otomatik eklenir
 		if (center) {
 			TextRenderer.renderCenter(text, this, x, y, color);
 		} else {
@@ -819,8 +818,6 @@ public class Bitmap implements IResource {
 	}
 	
 	public void drawText(String text, int x, int y, boolean center) {
-		x += xOffs;
-		y += yOffs;
 		if (center) {
 			TextRenderer.renderCenter(text, this, x, y);
 		} else {
@@ -829,8 +826,6 @@ public class Bitmap implements IResource {
 	}
 	
 	public void drawText(String text, int x, int y, UniFont font, boolean center) {
-		x += xOffs;
-		y += yOffs;
 		if (center) {
 			TextRenderer.renderCenter(text, this, x, y, font);
 		} else {
@@ -839,8 +834,6 @@ public class Bitmap implements IResource {
 	}
 	
 	public void drawText(String text, int x, int y, int color, UniFont font, boolean center) {
-		x += xOffs;
-		y += yOffs;
 		if (center) {
 			TextRenderer.renderCenter(text, this, x, y, color, font);
 		} else {

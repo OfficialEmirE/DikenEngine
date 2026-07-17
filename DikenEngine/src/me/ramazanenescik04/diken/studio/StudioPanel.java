@@ -49,6 +49,8 @@ import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.Sky;
 import me.ramazanenescik04.diken.game.services.AbstractService;
 import me.ramazanenescik04.diken.game.services.Lighting;
+import me.ramazanenescik04.diken.game.services.UIService;
+import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
@@ -101,12 +103,19 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	
 	private boolean inputRegistered;
 	private boolean dragging;
+	private boolean middleDragging;
 	
 	private Point dragStartWorld = new Point();
+	private Point mouseLastScreen = new Point();
 	
 	private volatile List<Node> selectedEditorNodes = new ArrayList<>();
 	private Map<Instance, Point> dragStartLocations = new HashMap<>();
 	private Map<Instance, Dimension> dragStartSizes = new HashMap<>();
+	
+	// UI elemanı sürükleme için
+	private boolean uiDragging;
+	private Map<Node, UDim2> uiDragStartPositions = new HashMap<>();
+	private Point uiDragStartScreen = new Point();
 	
 	private boolean isPlayTestMode;
 	boolean drawGrid;
@@ -279,19 +288,19 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		
 		if (!isPlayTestMode && !ctrl && engine.input.isMouseOnScreen()) {
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goForward"))) {
-				editWorld.camera.addY(-2);
+				editWorld.camera.addY(-8);
 			}
 			
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goLeft"))) {
-				editWorld.camera.addX(-2);
+				editWorld.camera.addX(-8);
 			}
 			
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goBack"))) {
-				editWorld.camera.addY(+2);
+				editWorld.camera.addY(+8);
 			}
 			
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goRight"))) {
-				editWorld.camera.addX(2);
+				editWorld.camera.addX(8);
 			}
 		}
 	}
@@ -331,16 +340,38 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	public void mouseHandled(int inputMode, int x, int y, int clicked) {
 		if (editWorld.getRunService().isRunning()) return;
 		
+		if (inputMode == InputHandler.INPUT_RELEASED) {
+			handleEditorMouseReleased();
+			return;
+		}
+		
+		// Tekerlek olayını en önce ele al ki orta tuş (clicked==1) kontrolüne takılmasın
+		if (inputMode == InputHandler.INPUT_WHEEL) {
+			handleMouseWheelZoom(x, y, clicked);
+			return;
+		}
+		
+		// Orta tuş (BUTTON2 = clicked == 1) ile kamera sürükleme
+		if (clicked == 1) {
+			if (inputMode == InputHandler.INPUT_PRESSED) {
+				middleDragging = true;
+				mouseLastScreen.setLocation(x, y);
+			} else if (inputMode == InputHandler.INPUT_REPEATED && middleDragging) {
+				int dx = x - mouseLastScreen.x;
+				int dy = y - mouseLastScreen.y;
+				float zoom = editWorld.getCamera().getZoom();
+				editWorld.camera.addX(Math.round(-dx / zoom));
+				editWorld.camera.addY(Math.round(-dy / zoom));
+				mouseLastScreen.setLocation(x, y);
+			}
+			return;
+		}
+		
+		// Sol tuş (clicked == 0) ile select/move/scale
 		if (inputMode == InputHandler.INPUT_PRESSED && clicked == 0) {
 			handleEditorMousePressed(x, y);
 		} else if (inputMode == InputHandler.INPUT_REPEATED && clicked == 0) {
 			handleEditorMouseDragged(x, y);
-		} else if (inputMode == InputHandler.INPUT_RELEASED) {
-			handleEditorMouseReleased();
-		}
-		
-		if (inputMode == InputHandler.INPUT_WHEEL) {
-			handleMouseWheelZoom(x, y, clicked);
 		}
 	}
 	
@@ -363,6 +394,28 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	}
 
 	private void handleEditorMousePressed(int screenX, int screenY) {
+		// Önce UI component ara (screen koordinatlarında, world'de değil)
+		Node uiNode = findUIComponentAtScreen(screenX, screenY);
+		if (uiNode != null) {
+			if (!selectedEditorNodes.contains(uiNode)) {
+				explorerPanel.selectNode(uiNode);
+			}
+			
+			// Her zaman UI sürüklemeye izin ver (SELECT/MOVE/SCALE fark etmez)
+			uiDragging = true;
+			uiDragStartScreen.setLocation(screenX, screenY);
+			uiDragStartPositions.clear();
+			for (Node node : selectedEditorNodes) {
+				if (node instanceof me.ramazanenescik04.diken.gui.component.GuiComponent comp) {
+					uiDragStartPositions.put(node, comp.getPosition());
+				}
+			}
+			dragging = false;
+			return;
+		}
+		
+		uiDragging = false;
+		
 		Instance handleInstance = findScaleHandleAtScreen(screenX, screenY);
 		Instance clickedInstance = handleInstance != null ? handleInstance : findInstanceAtScreen(screenX, screenY);
 		
@@ -397,6 +450,23 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	}
 	
 	private void handleEditorMouseDragged(int screenX, int screenY) {
+		if (uiDragging) {
+			int deltaX = screenX - uiDragStartScreen.x;
+			int deltaY = screenY - uiDragStartScreen.y;
+			
+			for (var entry : uiDragStartPositions.entrySet()) {
+				Node node = entry.getKey();
+				if (!(node instanceof me.ramazanenescik04.diken.gui.component.GuiComponent comp)) continue;
+				if (comp.isRemoved()) continue;
+				
+				UDim2 startPos = entry.getValue();
+				int newOffsetX = snapValue(startPos.x.offset + deltaX);
+				int newOffsetY = snapValue(startPos.y.offset + deltaY);
+				comp.setPosition(new UDim2(startPos.x.scale, newOffsetX, startPos.y.scale, newOffsetY));
+			}
+			return;
+		}
+		
 		if (!dragging) return;
 		
 		Point currentWorld = screenToWorldPoint(screenX, screenY);
@@ -419,6 +489,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	}
 	
 	private void handleEditorMouseReleased() {
+		uiDragging = false;
+		middleDragging = false;
+		uiDragStartPositions.clear();
 		if (!dragging) return;
 		
 		dragging = false;
@@ -444,6 +517,29 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		}
 		
 		return selected;
+	}
+	
+	private Node findUIComponentAtScreen(int screenX, int screenY) {
+		var uiService = editWorld.getService(UIService.class);
+		if (uiService == null) return null;
+		
+		Node bestMatch = null;
+		int bestZ = Integer.MIN_VALUE;
+		
+		for (Node child : uiService.getDescendants()) {
+			if (!(child instanceof me.ramazanenescik04.diken.gui.component.GuiComponent comp)) continue;
+			if (!comp.isVisible()) continue;
+			
+			var bounds = comp.getAbsoluteBounds();
+			if (bounds.contains(screenX, screenY)) {
+				if (comp.getZIndex() >= bestZ) {
+					bestZ = comp.getZIndex();
+					bestMatch = comp;
+				}
+			}
+		}
+		
+		return bestMatch;
 	}
 	
 	private Instance findScaleHandleAtScreen(int screenX, int screenY) {
