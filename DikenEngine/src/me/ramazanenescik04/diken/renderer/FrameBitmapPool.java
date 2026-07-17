@@ -9,7 +9,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 
 /**
  * Frame-local bitmap pool for temporary render surfaces.
- * Use this only for bitmaps produced and consumed within the same frame.
+ * beginFrame() clears all cached bitmaps so they can be reused next frame.
  */
 public final class FrameBitmapPool {
 	private static final Map<Long, List<Bitmap>> BITMAPS = new HashMap<>();
@@ -19,6 +19,7 @@ public final class FrameBitmapPool {
 	}
 	
 	public static void beginFrame() {
+		BITMAPS.clear();   // ← FIX: Tüm pool'u temizle, memory'yi GC'ye bırak
 		CURSORS.clear();
 	}
 	

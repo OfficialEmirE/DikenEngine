@@ -40,7 +40,7 @@ public class RunService extends Service {
 	    	}
 	    	System.gc();
 	    	
-			this.stopScriptEvent = true;
+			this.stopScriptEvent = false;
 		}
 		
 		super.update(world, engine);

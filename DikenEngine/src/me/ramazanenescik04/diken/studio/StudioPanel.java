@@ -51,6 +51,7 @@ import me.ramazanenescik04.diken.game.services.AbstractService;
 import me.ramazanenescik04.diken.game.services.Lighting;
 import me.ramazanenescik04.diken.game.services.UIService;
 import me.ramazanenescik04.diken.gui.UDim2;
+import me.ramazanenescik04.diken.gui.component.GuiComponent;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
@@ -72,6 +73,7 @@ import me.ramazanenescik04.diken.tools.Utils;
 
 public final class StudioPanel extends JPanel implements IInputListener {
 	private static final long serialVersionUID = 1L;
+	
 
 	private JFrame engineWindow;
 	private RendererPanel gamePanel;
@@ -90,10 +92,13 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	private BasicObjectsPanel objectsPanel;
 	private ResourcesPanel resourcesPanel;
 	private AssistantPanel assistantPanel;
+	private CodeEditorPanel codeEditorPanel;
 	
 	public int selectionColor = 0xff33aaff;
-	public int handleColor = 0xffffffff;
-	public int handleSize = 6;
+	public int handleColor = 0xffffff00;
+	public int scaleHandleColor = 0xffffffff;
+	public int scaleHandleBorderColor = 0xff000000;
+	public int handleSize = 16;
 	public int gridColor = 0xff2f4752;
 	
 	private Consumer<World> newWorldListener;
@@ -105,16 +110,18 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	private boolean dragging;
 	private boolean middleDragging;
 	
-	private Point dragStartWorld = new Point();
+	// Drag state – screen-space start point, world-space start positions/sizes
+	private Point dragStartScreen = new Point();
 	private Point mouseLastScreen = new Point();
 	
 	private volatile List<Node> selectedEditorNodes = new ArrayList<>();
-	private Map<Instance, Point> dragStartLocations = new HashMap<>();
+	private Map<Instance, Point> dragStartPositions = new HashMap<>();
 	private Map<Instance, Dimension> dragStartSizes = new HashMap<>();
 	
-	// UI elemanı sürükleme için
+	// UI elemanı sürükleme
 	private boolean uiDragging;
 	private Map<Node, UDim2> uiDragStartPositions = new HashMap<>();
+	private Map<Node, Dimension> uiDragStartSizes = new HashMap<>();
 	private Point uiDragStartScreen = new Point();
 	
 	private boolean isPlayTestMode;
@@ -125,6 +132,16 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		MOVE,
 		SCALE
 	}
+	
+	private enum HandleType {
+		NONE,
+		CENTER,
+		TOP, BOTTOM, LEFT, RIGHT,
+		TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
+	}
+	
+	private HandleType activeHandle = HandleType.NONE;
+	private Instance handleTargetInstance;
 
 	public StudioPanel(JFrame window, RendererPanel gamePanel, DikenEngine engine) {
 		super(new BorderLayout());
@@ -155,10 +172,13 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		setPreferredSize(new Dimension(1280, 706));
 
 		explorerPanel = new ExplorerPanel(editWorld);
+		explorerPanel.postRebuildCallback = () -> codeEditorPanel.reloadScripts(editWorld);
+		explorerPanel.scriptRenameCallback = () -> codeEditorPanel.refreshScriptTitles();
 		propertiesPanel = new PropertiesPanel(explorerPanel, engineWindow);
 		consolePanel = new ConsolePanel();
 		objectsPanel = new BasicObjectsPanel(explorerPanel::addNodeToSelected);
 		assistantPanel = new AssistantPanel();
+		codeEditorPanel = new CodeEditorPanel();
 		scriptTabPanel = new EditorTabPanel();
 		scriptTabPanel.openEditor(new GamePreview(gamePanel));
 		resourcesPanel = new ResourcesPanel(editWorld, scriptTabPanel, engineWindow);
@@ -173,19 +193,18 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		});
 		explorerPanel.addNodeOpenListener(node -> {
 			if (node instanceof Script script) {
-				var scriptEditor = new ScriptEditor(script);
-				scriptTabPanel.openEditor(scriptEditor);
-				
-				script.OnDestroy.Connect(_ -> scriptTabPanel.removeEditor(scriptEditor));
+				codeEditorPanel.openScript(script);
 			}
 		});
 		
-		System.gc(); // Eski Dünyayı yok et
+		System.gc();
 		
 		CGrid grid = new CGrid(control);
-        grid.add(1, 0, 3, 3, scriptTabPanel.getDockable());
-        grid.add(1, 3, 3, 1, consolePanel.getDockable());
-        grid.add(4, 0, 1, 2, explorerPanel.getDockable(), assistantPanel.getDockable());
+        grid.add(1, 0, 2, 3, scriptTabPanel.getDockable());
+        grid.add(3, 0, 1, 3, codeEditorPanel.getDockable());
+        grid.add(1, 3, 2, 1, consolePanel.getDockable());
+        grid.add(3, 3, 1, 1, assistantPanel.getDockable());
+        grid.add(4, 0, 1, 2, explorerPanel.getDockable());
         grid.add(4, 2, 1, 2, propertiesPanel.getDockable());
         grid.add(0, 0, 1, 4, objectsPanel.getDockable());
         grid.add(0, 4, 1, 2, resourcesPanel.getDockable());
@@ -225,6 +244,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
 		this.scriptTabPanel.reloadWorld(world, false);
+		codeEditorPanel.reloadScripts(world);
 		StudioUtils.reloadGameSettings(world);
 		
 		System.gc();
@@ -325,8 +345,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 					i++;
 				}
 				
-				if (x == 0) x = 1; 
-				if (y == 0) y = 1;
+				if (i == 0) return;
+				x = Math.max(x, 1);
+				y = Math.max(y, 1);
 				
 				this.editWorld.camera.setX((x / i) - (this.engine.getScaledWidth() / 2));
 				this.editWorld.camera.setY((y / i) - (this.engine.getScaledHeight() / 2));
@@ -345,13 +366,11 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			return;
 		}
 		
-		// Tekerlek olayını en önce ele al ki orta tuş (clicked==1) kontrolüne takılmasın
 		if (inputMode == InputHandler.INPUT_WHEEL) {
 			handleMouseWheelZoom(x, y, clicked);
 			return;
 		}
 		
-		// Orta tuş (BUTTON2 = clicked == 1) ile kamera sürükleme
 		if (clicked == 1) {
 			if (inputMode == InputHandler.INPUT_PRESSED) {
 				middleDragging = true;
@@ -367,7 +386,6 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			return;
 		}
 		
-		// Sol tuş (clicked == 0) ile select/move/scale
 		if (inputMode == InputHandler.INPUT_PRESSED && clicked == 0) {
 			handleEditorMousePressed(x, y);
 		} else if (inputMode == InputHandler.INPUT_REPEATED && clicked == 0) {
@@ -385,7 +403,6 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			return;
 		}
 		
-		
 		zoom = targetZoom;
 		editWorld.getCamera().setZoom(zoom);
 		
@@ -393,130 +410,588 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		editWorld.camera.setY(Math.round(focusPoint.y - (y / zoom)));
 	}
 
+	// =========================================================================
+	//  MOUSE PRESS – find what was clicked, set up drag
+	// =========================================================================
 	private void handleEditorMousePressed(int screenX, int screenY) {
-		// Önce UI component ara (screen koordinatlarında, world'de değil)
+		activeHandle = HandleType.NONE;
+		handleTargetInstance = null;
+		dragging = false;
+		uiDragging = false;
+
+		// ----- First: try to click a gizmo handle of an already-selected node -----
+		Node anySelected = selectedEditorNodes.isEmpty() ? null : selectedEditorNodes.get(selectedEditorNodes.size() - 1);
+		if (anySelected != null && activeTool != EditorTool.SELECT) {
+			Hitbox selBounds = getNodeScreenBounds(anySelected);
+			if (selBounds != null) {
+				HandleType h = detectHandleAtBounds(selBounds, screenX, screenY);
+				if (h != HandleType.NONE) {
+					activeHandle = h;
+					startGuiGizmoDrag(screenX, screenY);
+					if (anySelected instanceof Instance inst) {
+						handleTargetInstance = inst;
+					}
+					return;
+				}
+			}
+		}
+
+		// ----- Otherwise: hit-test UI components (text, etc.) -----
 		Node uiNode = findUIComponentAtScreen(screenX, screenY);
 		if (uiNode != null) {
-			if (!selectedEditorNodes.contains(uiNode)) {
-				explorerPanel.selectNode(uiNode);
+			selectNode(uiNode);
+			// If a tool is active, check gizmo on the newly selected node immediately
+			if (activeTool != EditorTool.SELECT) {
+				Hitbox selBounds = getNodeScreenBounds(uiNode);
+				if (selBounds != null) {
+					HandleType h = detectHandleAtBounds(selBounds, screenX, screenY);
+					if (h != HandleType.NONE) {
+						activeHandle = h;
+						startGuiGizmoDrag(screenX, screenY);
+						return;
+					}
+				}
 			}
-			
-			// Her zaman UI sürüklemeye izin ver (SELECT/MOVE/SCALE fark etmez)
+			// Fallback: free move (uiDragging)
 			uiDragging = true;
 			uiDragStartScreen.setLocation(screenX, screenY);
 			uiDragStartPositions.clear();
 			for (Node node : selectedEditorNodes) {
-				if (node instanceof me.ramazanenescik04.diken.gui.component.GuiComponent comp) {
+				if (node instanceof GuiComponent comp) {
 					uiDragStartPositions.put(node, comp.getPosition());
 				}
 			}
-			dragging = false;
 			return;
 		}
-		
-		uiDragging = false;
-		
-		Instance handleInstance = findScaleHandleAtScreen(screenX, screenY);
-		Instance clickedInstance = handleInstance != null ? handleInstance : findInstanceAtScreen(screenX, screenY);
-		
-		if (clickedInstance != null && !selectedEditorNodes.contains(clickedInstance)) {
-			explorerPanel.selectNode(clickedInstance);
+
+		// ----- Hit-test world instances -----
+		int handleMargin = 24;
+		Instance hitInstance = findInstanceIncludingHandlesAtScreen(screenX, screenY, handleMargin);
+
+		if (hitInstance != null) {
+			selectNode(hitInstance);
+			handleTargetInstance = hitInstance;
+
+			if (activeTool == EditorTool.SELECT) {
+				activeHandle = HandleType.CENTER;
+			} else {
+				activeHandle = detectHandle(hitInstance, screenX, screenY);
+				if (activeHandle == HandleType.NONE) {
+					activeHandle = HandleType.CENTER;
+				}
+			}
+
+			startDragging(screenX, screenY);
 		}
-		
-		if (clickedInstance == null || activeTool == EditorTool.SELECT) {
-			dragging = false;
-			return;
+	}
+
+	/**
+	 * Returns the screen-space Hitbox of a selected Node (Instance or GuiComponent).
+	 */
+	private Hitbox getNodeScreenBounds(Node node) {
+		if (node instanceof Instance instance && instance.hasAABB()) {
+			Hitbox g = instance.getGlobalAABB();
+			if (g == null) return null;
+			var tl = editWorld.worldToScreen(g.getX(), g.getY());
+			var br = editWorld.worldToScreen(g.getX() + g.getWidth(), g.getY() + g.getHeight());
+			return new Hitbox(Math.round(tl.x), Math.round(tl.y),
+					Math.round(br.x) - Math.round(tl.x),
+					Math.round(br.y) - Math.round(tl.y));
 		}
-		
-		if (activeTool == EditorTool.SCALE && handleInstance == null) {
-			dragging = false;
-			return;
+		if (node instanceof GuiComponent comp) {
+			return comp.getAbsoluteBounds();
 		}
-		
+		return null;
+	}
+
+	/**
+	 * Gizmo hit-test against a screen-space Hitbox (used for both Instance and GuiComponent).
+	 */
+	private HandleType detectHandleAtBounds(Hitbox bounds, int screenX, int screenY) {
+		int x0 = bounds.getX();
+		int y0 = bounds.getY();
+		int x1 = x0 + bounds.getWidth();
+		int y1 = y0 + bounds.getHeight();
+		int cx = (x0 + x1) / 2;
+		int cy = (y0 + y1) / 2;
+		int tr = 12;
+		int gap = 16;
+
+		if (activeTool == EditorTool.MOVE) {
+			int topTip    = y0 - gap - 10;
+			int bottomTip = y1 + gap + 10;
+			int leftTip   = x0 - gap - 10;
+			int rightTip  = x1 + gap + 10;
+
+			if (hitVLine(screenX, screenY, cx, y0 - gap, topTip,    tr, tr)) return HandleType.TOP;
+			if (hitVLine(screenX, screenY, cx, y1 + gap, bottomTip, tr, tr)) return HandleType.BOTTOM;
+			if (hitHLine(screenX, screenY, leftTip,  x0 - gap, cy, tr, tr))   return HandleType.LEFT;
+			if (hitHLine(screenX, screenY, x1 + gap, rightTip, cy, tr, tr))   return HandleType.RIGHT;
+			if (isPointInHandle(screenX, screenY, cx, cy, 8)) return HandleType.CENTER;
+			return HandleType.NONE;
+		}
+
+		if (activeTool == EditorTool.SCALE) {
+			if (isPointInHandle(screenX, screenY, x0, y0, tr)) return HandleType.TOP_LEFT;
+			if (isPointInHandle(screenX, screenY, x1, y0, tr)) return HandleType.TOP_RIGHT;
+			if (isPointInHandle(screenX, screenY, x1, y1, tr)) return HandleType.BOTTOM_RIGHT;
+			if (isPointInHandle(screenX, screenY, x0, y1, tr)) return HandleType.BOTTOM_LEFT;
+			if (isPointInHandle(screenX, screenY, cx, y0, tr)) return HandleType.TOP;
+			if (isPointInHandle(screenX, screenY, x1, cy, tr)) return HandleType.RIGHT;
+			if (isPointInHandle(screenX, screenY, cx, y1, tr)) return HandleType.BOTTOM;
+			if (isPointInHandle(screenX, screenY, x0, cy, tr)) return HandleType.LEFT;
+			if (isPointInHandle(screenX, screenY, cx, cy, 8))  return HandleType.CENTER;
+		}
+
+		return HandleType.NONE;
+	}
+
+	/**
+	 * Start a gizmo-based drag for GuiComponents.
+	 */
+	private void startGuiGizmoDrag(int screenX, int screenY) {
 		dragging = true;
-		dragStartWorld = screenToWorldPoint(screenX, screenY);
-		dragStartLocations.clear();
+		dragStartScreen.setLocation(screenX, screenY);
+		uiDragStartPositions.clear();
+		uiDragStartSizes.clear();
+		dragStartPositions.clear();
 		dragStartSizes.clear();
-		
-		for (Node selectedNode : explorerPanel.getSelectedNodes()) {
-			if (selectedNode instanceof Instance instance) {
-				dragStartLocations.put(instance, new Point(instance.getX(), instance.getY()));
-				
+
+		for (Node node : selectedEditorNodes) {
+			if (node instanceof GuiComponent comp) {
+				// Store position AND size for both move and scale
+				uiDragStartPositions.put(node, comp.getPosition());
+				uiDragStartSizes.put(node, new Dimension(comp.getWidth(), comp.getHeight()));
+			}
+			if (node instanceof Instance instance) {
+				dragStartPositions.put(instance, new Point(instance.getX(), instance.getY()));
 				if (instance.hasAABB()) {
 					dragStartSizes.put(instance, new Dimension(instance.getAABBWidth(), instance.getAABBHeight()));
 				}
 			}
 		}
 	}
-	
+
+	// =========================================================================
+	//  DRAG START – snap screen point, record world positions + sizes
+	// =========================================================================
+	private void startDragging(int screenX, int screenY) {
+		dragging = true;
+		dragStartScreen.setLocation(screenX, screenY);
+		dragStartPositions.clear();
+		dragStartSizes.clear();
+
+		for (Node selectedNode : selectedEditorNodes) {
+			if (selectedNode instanceof Instance instance) {
+				dragStartPositions.put(instance, new Point(instance.getX(), instance.getY()));
+				if (instance.hasAABB()) {
+					dragStartSizes.put(instance, new Dimension(instance.getAABBWidth(), instance.getAABBHeight()));
+				}
+			}
+		}
+	}
+
+	// Scale sensitivity — makes ratio-based scale feel natural at any size
+	private static final float SCALE_SENSITIVITY = 0.6f;
+
+	// =========================================================================
+	//  DRAG – screen delta → apply per tool/handle (GuiComponent + Instance)
+	// =========================================================================
 	private void handleEditorMouseDragged(int screenX, int screenY) {
+		if (!dragging && !uiDragging) return;
+
+		// ---------- 1. UI dragging (SELECT tool only) ----------
 		if (uiDragging) {
-			int deltaX = screenX - uiDragStartScreen.x;
-			int deltaY = screenY - uiDragStartScreen.y;
-			
+			int uiDX = screenX - uiDragStartScreen.x;
+			int uiDY = screenY - uiDragStartScreen.y;
 			for (var entry : uiDragStartPositions.entrySet()) {
 				Node node = entry.getKey();
-				if (!(node instanceof me.ramazanenescik04.diken.gui.component.GuiComponent comp)) continue;
+				if (!(node instanceof GuiComponent comp)) continue;
 				if (comp.isRemoved()) continue;
-				
 				UDim2 startPos = entry.getValue();
-				int newOffsetX = snapValue(startPos.x.offset + deltaX);
-				int newOffsetY = snapValue(startPos.y.offset + deltaY);
-				comp.setPosition(new UDim2(startPos.x.scale, newOffsetX, startPos.y.scale, newOffsetY));
+				comp.setPosition(new UDim2(startPos.x.scale, startPos.x.offset + uiDX,
+						startPos.y.scale, startPos.y.offset + uiDY));
 			}
 			return;
 		}
-		
+
+		// ---------- 2. Gizmo operation (not uiDragging) ----------
 		if (!dragging) return;
-		
-		Point currentWorld = screenToWorldPoint(screenX, screenY);
-		int deltaX = currentWorld.x - dragStartWorld.x;
-		int deltaY = currentWorld.y - dragStartWorld.y;
-		
-		if (activeTool == EditorTool.MOVE) {
-			for (var entry : dragStartLocations.entrySet()) {
+
+		int screenDX = screenX - dragStartScreen.x;
+		int screenDY = screenY - dragStartScreen.y;
+		float zoom = Math.max(0.25f, editWorld.getCamera().getZoom());
+		int worldDX = Math.round(screenDX / zoom);
+		int worldDY = Math.round(screenDY / zoom);
+
+		// --- SELECT / CENTER → free move ---
+		if (activeTool == EditorTool.SELECT || activeHandle == HandleType.CENTER) {
+			// Move GuiComponents (screen space)
+			for (var entry : uiDragStartPositions.entrySet()) {
+				Node node = entry.getKey();
+				if (!(node instanceof GuiComponent comp)) continue;
+				if (comp.isRemoved()) continue;
+				UDim2 startPos = entry.getValue();
+				comp.setPosition(new UDim2(startPos.x.scale, startPos.x.offset + screenDX,
+						startPos.y.scale, startPos.y.offset + screenDY));
+			}
+			// Move Instances (world space)
+			for (var entry : dragStartPositions.entrySet()) {
 				Instance instance = entry.getKey();
 				Point start = entry.getValue();
-				instance.setLocation(snapValue(start.x + deltaX), snapValue(start.y + deltaY));
+				instance.setLocation(start.x + worldDX, start.y + worldDY);
 			}
-		} else if (activeTool == EditorTool.SCALE) {
+			return;
+		}
+
+		// --- MOVE tool → axis-constrained move ---
+		if (activeTool == EditorTool.MOVE) {
+			int sx = 0, sy = 0, wx = 0, wy = 0;
+			switch (activeHandle) {
+				case TOP: case BOTTOM: sy = screenDY; wy = worldDY; break;
+				case LEFT: case RIGHT: sx = screenDX; wx = worldDX; break;
+				default: break;
+			}
+			for (var entry : uiDragStartPositions.entrySet()) {
+				Node node = entry.getKey();
+				if (!(node instanceof GuiComponent comp)) continue;
+				if (comp.isRemoved()) continue;
+				UDim2 startPos = entry.getValue();
+				comp.setPosition(new UDim2(startPos.x.scale, startPos.x.offset + sx,
+						startPos.y.scale, startPos.y.offset + sy));
+			}
+			for (var entry : dragStartPositions.entrySet()) {
+				Instance instance = entry.getKey();
+				Point start = entry.getValue();
+				instance.setLocation(start.x + wx, start.y + wy);
+			}
+			return;
+		}
+
+		// --- SCALE tool → ratio-based scale + anchor ---
+		if (activeTool == EditorTool.SCALE && activeHandle != HandleType.NONE) {
+			float edgeLenX = 0, edgeLenY = 0;
+			HandleType h = activeHandle;
+			edgeLenX = (h == HandleType.LEFT || h == HandleType.RIGHT) ? 0 : 1;
+			edgeLenY = (h == HandleType.TOP || h == HandleType.BOTTOM) ? 0 : 1;
+			switch (h) {
+				case TOP_LEFT: case BOTTOM_LEFT: case LEFT: edgeLenX = -1; break;
+				case TOP_RIGHT: case BOTTOM_RIGHT: case RIGHT: edgeLenX = 1; break;
+				default: break;
+			}
+			switch (h) {
+				case TOP_LEFT: case TOP_RIGHT: case TOP: edgeLenY = -1; break;
+				case BOTTOM_LEFT: case BOTTOM_RIGHT: case BOTTOM: edgeLenY = 1; break;
+				default: break;
+			}
+			boolean scaleX = h == HandleType.TOP_LEFT || h == HandleType.TOP_RIGHT
+					|| h == HandleType.BOTTOM_LEFT || h == HandleType.BOTTOM_RIGHT
+					|| h == HandleType.LEFT || h == HandleType.RIGHT;
+			boolean scaleY = h == HandleType.TOP_LEFT || h == HandleType.TOP_RIGHT
+					|| h == HandleType.BOTTOM_LEFT || h == HandleType.BOTTOM_RIGHT
+					|| h == HandleType.TOP || h == HandleType.BOTTOM;
+
+			// GuiComponents: ratio-based scale using stored start sizes
+			for (var entry : uiDragStartPositions.entrySet()) {
+				Node node = entry.getKey();
+				if (!(node instanceof GuiComponent comp)) continue;
+				if (comp.isRemoved()) continue;
+				Dimension startSize = uiDragStartSizes.get(node);
+				if (startSize == null) continue;
+				UDim2 startPos = entry.getValue();
+
+				int sX = startPos.x.offset;
+				int sY = startPos.y.offset;
+				int sW = startSize.width;
+				int sH = startSize.height;
+				int minSize = 1;
+
+				float ratioX = (sW > 0) ? (float)screenDX / sW * SCALE_SENSITIVITY : 0;
+				float ratioY = (sH > 0) ? (float)screenDY / sH * SCALE_SENSITIVITY : 0;
+
+				int newW = sW, newH = sH, newX = sX, newY = sY;
+
+				if (scaleX) {
+					int deltaW = Math.round(edgeLenX * ratioX * sW);
+					newW = Math.max(minSize, sW + deltaW);
+					if (edgeLenX < 0) newX = sX + sW - newW;
+				}
+				if (scaleY) {
+					int deltaH = Math.round(edgeLenY * ratioY * sH);
+					newH = Math.max(minSize, sH + deltaH);
+					if (edgeLenY < 0) newY = sY + sH - newH;
+				}
+
+				comp.setPosition(new UDim2(startPos.x.scale, newX, startPos.y.scale, newY));
+				comp.setSize(new UDim2(0, newW, 0, newH));
+			}
+
+			// Instances — ratio-based scale per-instance
 			for (var entry : dragStartSizes.entrySet()) {
 				Instance instance = entry.getKey();
-				Dimension start = entry.getValue();
-				instance.setAABBSize(snapSize(start.width + deltaX), snapSize(start.height + deltaY));
+				Dimension startSize = entry.getValue();
+				Point startPos = dragStartPositions.get(instance);
+				if (startPos == null) startPos = new Point(instance.getX(), instance.getY());
+
+				int startW = startSize.width;
+				int startH = startSize.height;
+				int startX = startPos.x;
+				int startY = startPos.y;
+				int minSize = 1;
+
+				float ratioX = (startW > 0) ? (float)worldDX / startW * SCALE_SENSITIVITY : 0;
+				float ratioY = (startH > 0) ? (float)worldDY / startH * SCALE_SENSITIVITY : 0;
+
+				int newW = startW, newH = startH, newX = startX, newY = startY;
+
+				if (scaleX) {
+					int deltaW = Math.round(edgeLenX * ratioX * startW);
+					newW = Math.max(minSize, startW + deltaW);
+					if (edgeLenX < 0) newX = startX + startW - newW;
+				}
+				if (scaleY) {
+					int deltaH = Math.round(edgeLenY * ratioY * startH);
+					newH = Math.max(minSize, startH + deltaH);
+					if (edgeLenY < 0) newY = startY + startH - newH;
+				}
+
+				instance.setLocation(newX, newY);
+				instance.setAABBSize(newW, newH);
 			}
 		}
 	}
 	
+	/**
+	 * Axis-constrained scale like Godot 2D viewport.
+	 * Drag a corner → scale X and Y, keep opposite corner anchored.
+	 * Drag an edge midpoint → scale only that axis, keep opposite edge anchored.
+	 */
+	private void applyAxisScale(Instance instance, Point startPos, Dimension startSize, int worldDX, int worldDY) {
+		int startX = startPos.x;
+		int startY = startPos.y;
+		int startW = startSize.width;
+		int startH = startSize.height;
+		
+		int newW = startW, newH = startH;
+		int newX = startX, newY = startY;
+		int minSize = 1;
+		
+		switch (activeHandle) {
+			// --- Corners: scale both axes, anchor opposite corner ---
+			case TOP_LEFT:
+				newW = Math.max(minSize, startW - worldDX);
+				newH = Math.max(minSize, startH - worldDY);
+				newX = startX + startW - newW;
+				newY = startY + startH - newH;
+				break;
+			case TOP_RIGHT:
+				newW = Math.max(minSize, startW + worldDX);
+				newH = Math.max(minSize, startH - worldDY);
+				newX = startX;
+				newY = startY + startH - newH;
+				break;
+			case BOTTOM_LEFT:
+				newW = Math.max(minSize, startW - worldDX);
+				newH = Math.max(minSize, startH + worldDY);
+				newX = startX + startW - newW;
+				newY = startY;
+				break;
+			case BOTTOM_RIGHT:
+				newW = Math.max(minSize, startW + worldDX);
+				newH = Math.max(minSize, startH + worldDY);
+				newX = startX;
+				newY = startY;
+				break;
+			
+			// --- Midpoints: scale one axis, anchor opposite edge ---
+			case TOP:
+				newH = Math.max(minSize, startH - worldDY);
+				newY = startY + startH - newH;
+				break;
+			case BOTTOM:
+				newH = Math.max(minSize, startH + worldDY);
+				break;
+			case LEFT:
+				newW = Math.max(minSize, startW - worldDX);
+				newX = startX + startW - newW;
+				break;
+			case RIGHT:
+				newW = Math.max(minSize, startW + worldDX);
+				break;
+			
+			// CENTER/NONE handled elsewhere
+			default:
+				break;
+		}
+		
+		instance.setLocation(newX, newY);
+		instance.setAABBSize(newW, newH);
+	}
+	
+	// =========================================================================
+	//  MOUSE RELEASE
+	// =========================================================================
 	private void handleEditorMouseReleased() {
-		uiDragging = false;
+		boolean wasDragging = dragging || uiDragging;
 		middleDragging = false;
-		uiDragStartPositions.clear();
-		if (!dragging) return;
 		
 		dragging = false;
-		dragStartLocations.clear();
+		uiDragging = false;
+		uiDragStartPositions.clear();
+		dragStartPositions.clear();
 		dragStartSizes.clear();
-		explorerPanel.refreshSelection();
-	}
-	
-	private Instance findInstanceAtScreen(int screenX, int screenY) {
-		Point worldPoint = screenToWorldPoint(screenX, screenY);
-		Instance selected = null;
 		
-		List<Node> allNodes = editWorld.getAllNodes();
-		for (Node node : allNodes) {
-			if (!(node instanceof Instance instance)) continue;
-			
-			Hitbox globalBox = instance.getGlobalAABB();
-			if (globalBox == null || !globalBox.contains(worldPoint.x, worldPoint.y)) continue;
-			
-			if (selected == null || instance.getZIndex() >= selected.getZIndex()) {
-				selected = instance;
+		if (wasDragging) {
+			updateProperties();
+			if (dragging || uiDragging) {
+				// only refresh if it was instance drag
+				try { explorerPanel.refreshSelection(); } catch (Exception ignore) {}
 			}
 		}
 		
-		return selected;
+		// Reset drag completely
+		dragging = false;
+		uiDragging = false;
+	}
+	
+	// =========================================================================
+	//  HIT-TEST HELPER – find instance under screen point (with handle margin)
+	// =========================================================================
+	private Instance findInstanceIncludingHandlesAtScreen(int screenX, int screenY, int marginPx) {
+		List<Node> allNodes = editWorld.getAllNodes();
+		Instance bestMatch = null;
+		int bestZ = Integer.MIN_VALUE;
+		
+		for (Node node : allNodes) {
+			if (!(node instanceof Instance instance)) continue;
+			if (!instance.hasAABB()) continue;
+			
+			Hitbox globalBox = instance.getGlobalAABB();
+			if (globalBox == null) continue;
+			
+			var tl = editWorld.worldToScreen(globalBox.getX(), globalBox.getY());
+			var br = editWorld.worldToScreen(globalBox.getX() + globalBox.getWidth(), globalBox.getY() + globalBox.getHeight());
+			int sx0 = Math.round(tl.x) - marginPx;
+			int sy0 = Math.round(tl.y) - marginPx;
+			int sx1 = Math.round(br.x) + marginPx;
+			int sy1 = Math.round(br.y) + marginPx;
+			
+			if (screenX >= sx0 && screenX <= sx1 && screenY >= sy0 && screenY <= sy1) {
+				if (instance.getZIndex() >= bestZ) {
+					bestZ = instance.getZIndex();
+					bestMatch = instance;
+				}
+			}
+		}
+		
+		return bestMatch;
+	}
+	
+	private void selectNode(Node node) {
+		if (!selectedEditorNodes.contains(node)) {
+			selectedEditorNodes = new ArrayList<>();
+			selectedEditorNodes.add(node);
+			explorerPanel.selectNode(node);
+		}
+	}
+	
+	// =========================================================================
+	//  HANDLE DETECTION – match screen point to gizmo handle
+	// =========================================================================
+	private HandleType detectHandle(Instance instance, int screenX, int screenY) {
+		Hitbox globalBox = instance.getGlobalAABB();
+		if (globalBox == null) return HandleType.NONE;
+
+		var topLeft = editWorld.worldToScreen(globalBox.getX(), globalBox.getY());
+		var bottomRight = editWorld.worldToScreen(globalBox.getX() + globalBox.getWidth(), globalBox.getY() + globalBox.getHeight());
+		int x0 = Math.round(topLeft.x);
+		int y0 = Math.round(topLeft.y);
+		int x1 = Math.round(bottomRight.x);
+		int y1 = Math.round(bottomRight.y);
+		int cx = (x0 + x1) / 2;
+		int cy = (y0 + y1) / 2;
+
+		// Touch radius for handles — needs to be generous for small instances
+		int tr = 12;
+		// Gap from box edge to arrow (must match drawSelectionOverlay)
+		int gap = 16;
+
+		if (activeTool == EditorTool.MOVE) {
+			// Hit-test arrows extending outward from the box EDGES
+			// (matching drawSelectionOverlay positions)
+
+			// Top arrow: shaft from (cx, y0-gap) to (cx, topTip = y0-gap-10)
+			int topTip = y0 - gap - 10;
+			if (hitVLine(screenX, screenY, cx, y0 - gap, topTip, tr, tr)) return HandleType.TOP;
+
+			// Bottom arrow
+			int bottomTip = y1 + gap + 10;
+			if (hitVLine(screenX, screenY, cx, y1 + gap, bottomTip, tr, tr)) return HandleType.BOTTOM;
+
+			// Left arrow
+			int leftTip = x0 - gap - 10;
+			if (hitHLine(screenX, screenY, leftTip, x0 - gap, cy, tr, tr)) return HandleType.LEFT;
+
+			// Right arrow
+			int rightTip = x1 + gap + 10;
+			if (hitHLine(screenX, screenY, x1 + gap, rightTip, cy, tr, tr)) return HandleType.RIGHT;
+
+			// Center square (6x6 drawn, detect with radius)
+			if (isPointInHandle(screenX, screenY, cx, cy, 8)) return HandleType.CENTER;
+
+			return HandleType.NONE;
+		}
+
+		if (activeTool == EditorTool.SCALE) {
+			// 8 squares on AABB boundary + center
+			if (isPointInHandle(screenX, screenY, x0, y0, tr)) return HandleType.TOP_LEFT;
+			if (isPointInHandle(screenX, screenY, x1, y0, tr)) return HandleType.TOP_RIGHT;
+			if (isPointInHandle(screenX, screenY, x1, y1, tr)) return HandleType.BOTTOM_RIGHT;
+			if (isPointInHandle(screenX, screenY, x0, y1, tr)) return HandleType.BOTTOM_LEFT;
+			if (isPointInHandle(screenX, screenY, cx, y0, tr)) return HandleType.TOP;
+			if (isPointInHandle(screenX, screenY, x1, cy, tr)) return HandleType.RIGHT;
+			if (isPointInHandle(screenX, screenY, cx, y1, tr)) return HandleType.BOTTOM;
+			if (isPointInHandle(screenX, screenY, x0, cy, tr)) return HandleType.LEFT;
+			// Center
+			if (isPointInHandle(screenX, screenY, cx, cy, 8)) return HandleType.CENTER;
+		}
+
+		return HandleType.NONE;
+	}
+
+	/** Hit-test a vertical line segment from (x, yA) to (x, yB) with horizontal tolerance. */
+	private boolean hitVLine(int px, int py, int x, int yA, int yB, int horizR, int vertR) {
+		int yTop = Math.min(yA, yB) - vertR;
+		int yBot = Math.max(yA, yB) + vertR;
+		return px >= x - horizR && px <= x + horizR && py >= yTop && py <= yBot;
+	}
+
+	/** Hit-test a horizontal line segment from (xA, y) to (xB, y) with vertical tolerance. */
+	private boolean hitHLine(int px, int py, int xA, int xB, int y, int horizR, int vertR) {
+		int xLeft  = Math.min(xA, xB) - horizR;
+		int xRight = Math.max(xA, xB) + horizR;
+		return py >= y - vertR && py <= y + vertR && px >= xLeft && px <= xRight;
+	}
+
+	private boolean isPointInHandle(int px, int py, int hx, int hy, int halfHandle) {
+		return px >= hx - halfHandle && px <= hx + halfHandle
+				&& py >= hy - halfHandle && py <= hy + halfHandle;
+	}
+	
+	// =========================================================================
+	//  COORDINATE HELPERS
+	// =========================================================================
+	private Point screenToWorldPoint(int screenX, int screenY) {
+		var worldPoint = editWorld.screenToWorld(screenX, screenY);
+		return new Point(Math.round(worldPoint.x), Math.round(worldPoint.y));
+	}
+	
+	private void updateProperties() {
+		Node selected = explorerPanel.getSelectedNode();
+		if (selected != null) {
+			final Node sel = selected;
+			javax.swing.SwingUtilities.invokeLater(() -> propertiesPanel.inspect(sel));
+		}
 	}
 	
 	private Node findUIComponentAtScreen(int screenX, int screenY) {
@@ -527,7 +1002,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		int bestZ = Integer.MIN_VALUE;
 		
 		for (Node child : uiService.getDescendants()) {
-			if (!(child instanceof me.ramazanenescik04.diken.gui.component.GuiComponent comp)) continue;
+			if (!(child instanceof GuiComponent comp)) continue;
 			if (!comp.isVisible()) continue;
 			
 			var bounds = comp.getAbsoluteBounds();
@@ -542,46 +1017,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		return bestMatch;
 	}
 	
-	private Instance findScaleHandleAtScreen(int screenX, int screenY) {
-		if (activeTool != EditorTool.SCALE) return null;
-		
-		for (Node node : selectedEditorNodes) {
-			if (node instanceof Instance instance && isInScaleHandle(instance, screenX, screenY)) {
-				return instance;
-			}
-		}
-		
-		return null;
-	}
-	
-	private boolean isInScaleHandle(Instance instance, int screenX, int screenY) {
-		Hitbox globalBox = instance.getGlobalAABB();
-		if (globalBox == null) return false;
-		
-		var bottomRight = editWorld.worldToScreen(globalBox.getX() + globalBox.getWidth() - 1, globalBox.getY() + globalBox.getHeight() - 1);
-		int x = Math.round(bottomRight.x);
-		int y = Math.round(bottomRight.y);
-		int halfHandle = handleSize / 2;
-		
-		return screenX >= x - halfHandle && screenX <= x + halfHandle
-				&& screenY >= y - halfHandle && screenY <= y + halfHandle;
-	}
-	
-	private Point screenToWorldPoint(int screenX, int screenY) {
-		var worldPoint = editWorld.screenToWorld(screenX, screenY);
-		return new Point(Math.round(worldPoint.x), Math.round(worldPoint.y));
-	}
-	
-	private int snapValue(int value) {
-		if (gridSize <= 0) return value;
-		return Math.round((float) value / gridSize) * gridSize;
-	}
-	
-	private int snapSize(int value) {
-		if (gridSize <= 0) return Math.max(1, value);
-		return Math.max(gridSize, snapValue(value));
-	}
-	
+	// =========================================================================
+	//  RENDER – gizmo overlay
+	// =========================================================================
 	public void renderOverlay(Bitmap bitmap) {
 		if (isPlayTestMode || explorerPanel == null) return;
 		
@@ -590,30 +1028,159 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		}
 		
 		for (Node node : selectedEditorNodes) {
-			if (node instanceof Instance instance) {
+			if (node instanceof Instance instance && instance.hasAABB()) {
 				drawSelectionOverlay(bitmap, instance);
+			} else if (node instanceof GuiComponent comp) {
+				drawGuiSelectionOverlay(bitmap, comp);
 			}
 		}
 	}
 
+	private void drawGuiSelectionOverlay(Bitmap bitmap, GuiComponent comp) {
+		Hitbox bounds = comp.getAbsoluteBounds();
+		if (bounds == null) return;
+		
+		int x0 = bounds.getX(), y0 = bounds.getY();
+		int x1 = x0 + bounds.getWidth() - 1, y1 = y0 + bounds.getHeight() - 1;
+		
+		bitmap.box(x0, y0, x1, y1, selectionColor);
+
+		// Gizmo handles for UI components (same as Instance)
+		int cx = (x0 + x1) / 2;
+		int cy = (y0 + y1) / 2;
+		int hs = handleSize / 2;   // half-size for square handles = 8
+		int gap = 16;
+
+		switch (activeTool) {
+			case SELECT:
+				break;
+
+			case MOVE: {
+				int red   = 0xffff3333;
+				int green = 0xff33ff33;
+
+				int leftTipX  = x0 - gap - 10;
+				int rightTipX = x1 + gap + 10;
+				drawArrow(bitmap, x0 - gap, cy, leftTipX,  cy, red);
+				drawArrow(bitmap, x1 + gap, cy, rightTipX, cy, red);
+
+				int topTipY    = y0 - gap - 10;
+				int bottomTipY = y1 + gap + 10;
+				drawArrow(bitmap, cx, y0 - gap, cx, topTipY,    green);
+				drawArrow(bitmap, cx, y1 + gap, cx, bottomTipY, green);
+
+				bitmap.fill(cx - 4, cy - 4, cx + 4, cy + 4, handleColor);
+				bitmap.box (cx - 4, cy - 4, cx + 4, cy + 4, 0xff000000);
+				break;
+			}
+
+			case SCALE: {
+				int[][] pts = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1},
+				               {cx, y0}, {x1, cy}, {cx, y1}, {x0, cy}};
+				for (int[] p : pts) {
+					bitmap.fill(p[0] - hs, p[1] - hs, p[0] + hs, p[1] + hs, scaleHandleColor);
+					bitmap.box (p[0] - hs, p[1] - hs, p[0] + hs, p[1] + hs, scaleHandleBorderColor);
+				}
+
+				bitmap.fill(cx - 3, cy - 3, cx + 3, cy + 3, scaleHandleColor);
+				bitmap.box (cx - 3, cy - 3, cx + 3, cy + 3, scaleHandleBorderColor);
+				break;
+			}
+		}
+	}
+	
 	private void drawSelectionOverlay(Bitmap bitmap, Instance instance) {
 		Hitbox globalBox = instance.getGlobalAABB();
 		if (globalBox == null) return;
-		
+
 		var topLeft = editWorld.worldToScreen(globalBox.getX(), globalBox.getY());
 		var bottomRight = editWorld.worldToScreen(globalBox.getX() + globalBox.getWidth(), globalBox.getY() + globalBox.getHeight());
 		int x0 = Math.round(topLeft.x);
 		int y0 = Math.round(topLeft.y);
 		int x1 = Math.round(bottomRight.x);
 		int y1 = Math.round(bottomRight.y);
-		
+
+		// Always draw selection border
 		bitmap.box(x0, y0, x1, y1, selectionColor);
-		
-		if (activeTool == EditorTool.SCALE) {
-			int halfHandle = handleSize / 2;
-			bitmap.fill(x1 - halfHandle, y1 - halfHandle, x1 + halfHandle, y1 + halfHandle, handleColor);
-			bitmap.box(x1 - halfHandle, y1 - halfHandle, x1 + halfHandle, y1 + halfHandle, selectionColor);
+
+		int cx = (x0 + x1) / 2;
+		int cy = (y0 + y1) / 2;
+		int hs = handleSize / 2;   // half-size for square handles = 8
+
+		// Arrow shaft goes from box edge to tip (gap outside box, must match detectHandle)
+		int gap = 16;
+
+		switch (activeTool) {
+			case SELECT:
+				// Only the blue border, nothing else
+				break;
+
+			case MOVE: {
+				// Four colored arrows extending outward from the box center
+				int red   = 0xffff3333;
+				int green = 0xff33ff33;
+
+				// --- X-axis (red) ---
+				int leftTipX  = x0 - gap - 10;
+				int rightTipX = x1 + gap + 10;
+				drawArrow(bitmap, x0 - gap, cy, leftTipX,  cy, red);
+				drawArrow(bitmap, x1 + gap, cy, rightTipX, cy, red);
+
+				// --- Y-axis (green) ---
+				int topTipY    = y0 - gap - 10;
+				int bottomTipY = y1 + gap + 10;
+				drawArrow(bitmap, cx, y0 - gap, cx, topTipY,    green);
+				drawArrow(bitmap, cx, y1 + gap, cx, bottomTipY, green);
+
+				// Center square (yellow)
+				bitmap.fill(cx - 4, cy - 4, cx + 4, cy + 4, handleColor);
+				bitmap.box (cx - 4, cy - 4, cx + 4, cy + 4, 0xff000000);
+				break;
+			}
+
+			case SCALE: {
+				// 8 white squares with black border on corners + edge midpoints
+				int[][] pts = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1},
+				               {cx, y0}, {x1, cy}, {cx, y1}, {x0, cy}};
+				for (int[] p : pts) {
+					bitmap.fill(p[0] - hs, p[1] - hs, p[0] + hs, p[1] + hs, scaleHandleColor);
+					bitmap.box (p[0] - hs, p[1] - hs, p[0] + hs, p[1] + hs, scaleHandleBorderColor);
+				}
+
+				// Center dot
+				bitmap.fill(cx - 3, cy - 3, cx + 3, cy + 3, scaleHandleColor);
+				bitmap.box (cx - 3, cy - 3, cx + 3, cy + 3, scaleHandleBorderColor);
+				break;
+			}
 		}
+	}
+
+	/**
+	 * Draws a single arrow: shaft from (x1,y1) → (x2,y2), arrowhead at (x2,y2).
+	 * Arrowhead orientation is computed from the shaft direction.
+	 */
+	private void drawArrow(Bitmap bitmap, int x1, int y1, int x2, int y2, int color) {
+		// Shaft
+		bitmap.drawLine(x1, y1, x2, y2, color, 3);
+
+		// Arrowhead direction
+		int dx = x2 - x1;
+		int dy = y2 - y1;
+		int sign = (Math.abs(dx) >= Math.abs(dy)) ? ((dx > 0) ? 1 : -1) : ((dy > 0) ? 1 : -1);
+		int s = 7; // arrowhead size
+		int tipX = x2, tipY = y2;
+
+		int[] xp, yp;
+		if (Math.abs(dx) >= Math.abs(dy)) {
+			// Horizontal arrowhead ← →
+			xp = new int[]{tipX, tipX - sign * s, tipX - sign * s};
+			yp = new int[]{tipY, tipY - 5, tipY + 5};
+		} else {
+			// Vertical arrowhead ↑ ↓
+			xp = new int[]{tipX, tipX - 5, tipX + 5};
+			yp = new int[]{tipY, tipY - sign * s, tipY - sign * s};
+		}
+		bitmap.fillPolygon(xp, yp, 3, color);
 	}
 	
 	private void drawGridOverlay(Bitmap bitmap) {
@@ -706,7 +1273,6 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	private JToolBar generateToolbar() {
 		var toolbarBuilder = new Toolbar.Builder();
 		
-		// File Manager
 		var basicFileToolbar = toolbarBuilder.newToolbar("BasicFileTools");
 		
 		toolbarBuilder.addButton(basicFileToolbar, "newWorld", 10, 0, "studio.toolbar.newWorld", this::newWorld);
@@ -743,6 +1309,10 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		toolbarBuilder.addButton(basicObjectTools, "createFolder", 6, 1, "studio.toolbar.createFolder",
 				() -> addNodeToSelected(new Folder()));
 		
+		var scriptTools = toolbarBuilder.newToolbar("ScriptTools");
+		toolbarBuilder.addButton(scriptTools, "newScript", 12, 1, "studio.toolbar.newScript",
+				() -> codeEditorPanel.newScript());
+		
 		return toolbarBuilder.getJToolBar();
 	}
 	
@@ -776,7 +1346,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		JToggleButton button = new JToggleButton();
 		button.setToolTipText(tooltip);
 		button.setIcon(imageIcon);
-		button.addActionListener(_ -> activeTool = tool);
+		button.addActionListener(e -> activeTool = tool);
 		return button;
 	}
 

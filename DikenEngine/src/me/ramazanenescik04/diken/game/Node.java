@@ -431,7 +431,7 @@ public abstract class Node implements Cloneable {
 	}
 	
 	public String getName() {
-		return new String(name);
+		return name;
 	}
 	
 	public UUID getNetId() {

@@ -21,7 +21,7 @@ public abstract class BaseEditor extends JPanel {
 	
 	public String title;
 	protected boolean closeable = true;
-	private EditorTabPanel tabPanel;
+	protected EditorTabPanel tabPanel;
 	
 	public BaseEditor(String title) {
 		this.title = title;
@@ -35,7 +35,7 @@ public abstract class BaseEditor extends JPanel {
         JPanel tabHeader = new JPanel(new BorderLayout(4, 0));
         tabHeader.setOpaque(false);
 
-        JLabel titleLabel = new JLabel(Lang.get(title));
+        JLabel titleLabel = new JLabel(title);
         tabHeader.add(titleLabel, BorderLayout.CENTER);
 
         JButton closeButton = new JButton("x");
