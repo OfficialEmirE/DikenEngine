@@ -5,9 +5,9 @@ import me.ramazanenescik04.diken.resource.IResource;
 
 public class NodeResource<T extends IResource> {
 	private String key = "empty";
-	private boolean keyLoaded = false;
+	private volatile boolean keyLoaded = false;
 	private EnumResource resourceType;
-	private T value;
+	private volatile T value;
 	
 	public NodeResource(String defaultKey, EnumResource resource) {
 		this.resourceType = resource;

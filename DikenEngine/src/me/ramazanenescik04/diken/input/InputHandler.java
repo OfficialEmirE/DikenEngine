@@ -119,7 +119,7 @@ public class InputHandler implements MouseListener, MouseMotionListener, MouseWh
     public void mouseReleased(MouseEvent e) {
         mousePressed = false;
 
-        notifyMouse(INPUT_RELEASED, e.getX(), e.getY(), e.getButton());
+        notifyMouse(INPUT_RELEASED, e.getX(), e.getY(), e.getButton() - 1);
         lastMouseButton = -1;
     }
 

@@ -91,6 +91,8 @@ public class Sky extends Instance {
 	}
 
 	public void syncToCamera(World world, DikenEngine engine) {
+		// Keep matching zoom-adjusted scene size for backward compat;
+		// World.render() now draws sky directly onto mainBitmap so it's screen-fixed anyway.
 		float activeZoom = Math.max(0.1f, world.camera.getZoom());
         int sceneWidth = Math.max(1, Math.round(engine.getScaledWidth() / activeZoom));
         int sceneHeight = Math.max(1, Math.round(engine.getScaledHeight() / activeZoom));
