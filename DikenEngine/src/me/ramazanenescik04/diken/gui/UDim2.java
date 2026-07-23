@@ -4,14 +4,13 @@ import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.gui.hitbox.IHitbox;
 
 /**
- * Represents the `GPos2` type within the DikenEngine `gui` package.
+ * Represents the `UDim2` type within the DikenEngine `gui` package.
  */
 public class UDim2 implements java.io.Serializable, Cloneable {
 	private static final long serialVersionUID = 7092023545513922157L;
 	
 	// Hızlı kullanmak için :D
-	// Default: centered 200x60 — sensible for most UI components
-	public static final UDim2 defaultV = new UDim2(0.5, -100, 0.5, -30);
+	public static final UDim2 defaultV = new UDim2(0, 32, 0, 16);
 	public static final UDim2 fullscreen = new UDim2(1, 0, 1, 0);
 	public static final UDim2 zero = new UDim2(0, 0, 0, 0);
 	
@@ -21,6 +20,11 @@ public class UDim2 implements java.io.Serializable, Cloneable {
 	public UDim2(double scaleX, int offsetX, double scaleY, int offsetY) {
 		this.x = new UDim(scaleX, offsetX);
 		this.y = new UDim(scaleY, offsetY);
+	}
+	
+
+	public static UDim2 of(double scaleX, int offsetX, double scaleY, int offsetY) {
+		return new UDim2(scaleX, offsetX, scaleY, offsetY);
 	}
 	
 	public UDim2(UDim x, UDim y) {

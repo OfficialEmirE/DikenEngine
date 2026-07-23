@@ -19,6 +19,7 @@ import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.studio.StudioTreeRenderer;
 import me.ramazanenescik04.diken.studio.StudioUtils;
+import me.ramazanenescik04.diken.studio.builders.Toolbar;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.JPopupMenu;
@@ -137,6 +138,13 @@ public class ExplorerPanel extends DockablePanel {
 		    	ExplorerPanel.this.keyPressed(ctrl, e.getKeyCode(), e.getKeyChar());
 		    }
 		});
+		
+		Toolbar.Builder builder = new Toolbar.Builder();
+        
+        var defaultToolbar = builder.newToolbar("default");
+        builder.addButton(defaultToolbar, "refresh", 2, 15, Lang.get("resources.refresh"), this::rebuildExplorer);
+		
+		builder.convertCButton(dock);
 	}
 	
 	public void keyPressed(boolean ctrl, int key, char character) {

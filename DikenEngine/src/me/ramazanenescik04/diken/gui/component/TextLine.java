@@ -20,7 +20,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `TextLine` type within the DikenEngine `gui.compoment` package.
  */
 public class TextLine extends GuiComponent {
-	
+	public boolean drawBackground = true;
 	private boolean isFocused = false;
 	private boolean editable = true;
 	
@@ -160,9 +160,11 @@ public class TextLine extends GuiComponent {
 	@Override
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
-		bitmap.clear(bgColor);
-		
-		bitmap.box(0, 0, getWidth() - 1, getHeight() - 1, isFocused() ? 0xffffff00 : 0xffffffff);
+		if (this.drawBackground) {
+			bitmap.clear(bgColor);
+			
+			bitmap.box(0, 0, getWidth() - 1, getHeight() - 1, isFocused() ? 0xffffff00 : 0xffffffff);
+		}
 		
 		//Render Text Lines
 		for (int i = 0; i < textLines.size(); i++) {
@@ -204,21 +206,24 @@ public class TextLine extends GuiComponent {
 	public void autoSetSize() {
 		String[] array = this.textLines.toArray(new String[0]);
 		
-		int w = TextRenderer.stringBitmapAverageWidth(array, font);
 		int h = TextRenderer.stringBitmapAverageHeight(array, font) * (array.length + 2);
 		
-		this.setSize(w, h);
+		if (h >= this.getHeight()) this.textLines.removeFirst();
 	}
 	
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("textLine", "TextLine", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(14, 2));
 		
-		var settingCategory = SettingCategory
-				.createSettingCategory(key)
-				.addSetting(new Setting<Boolean>("Focused", this.isFocused, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setFocused))
-				.addSetting(new Setting<Boolean>("Editable", this.editable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setEditable));
-		
+		var settingCategory = SettingCategory.createSettingCategory(key)
+				.addSetting(new Setting<Boolean>("Focused", this.isFocused, Boolean.class, EnumSettingType.CHECK_BOX)
+						.addChangeListener(this::setFocused))
+				.addSetting(new Setting<Boolean>("Editable", this.editable, Boolean.class, EnumSettingType.CHECK_BOX)
+						.addChangeListener(this::setEditable))
+				.addSetting(
+						new Setting<>("Draw Background", this.drawBackground, Boolean.class, EnumSettingType.CHECK_BOX)
+								.addChangeListener(e -> this.drawBackground = e));
+
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;

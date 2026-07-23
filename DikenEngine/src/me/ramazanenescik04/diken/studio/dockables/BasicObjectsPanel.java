@@ -90,7 +90,7 @@ public class BasicObjectsPanel extends DockablePanel {
         }
         item.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(35, 35, 35)),
-            new EmptyBorder(6, 10, 6, 10)
+            new EmptyBorder(6, 22, 6, 10)
         ));
         item.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 

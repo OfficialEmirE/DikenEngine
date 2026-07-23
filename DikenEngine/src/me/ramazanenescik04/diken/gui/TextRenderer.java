@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.gui;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -18,49 +19,31 @@ public class TextRenderer {
 			font = DikenEngine.getEngine().defaultFont;
 		}
 		
-		if (text == null || text.isEmpty()) return;
-		
-		// Single-line fast path (most common case)
-		int nl = text.indexOf('\n');
-		if (nl < 0) {
-			renderSingleLine(text, bitmap, x, y, color, font);
-			return;
-		}
-		
-		// Multi-line: split once and render
-		String[] texts = text.split("\n", -1);
-		int lineHeight = 0;
-		for (int i = 0; i < texts.length; i++) {
-			if (texts[i] != null && !texts[i].isEmpty()) {
-				lineHeight = stringBitmapAverageHeight(texts[i], font) + 2;
-				break;
-			}
-		}
-		if (lineHeight <= 0) lineHeight = 10;
+		List<String> lines = text.lines().toList();
+	    
+	    // Height of a single line (approximate)
+	    int lineHeight = stringBitmapAverageHeight(new String[] {text}, font) + 2; // Add a small padding
 	    
 	    int currentColor = color;
-	    for (int i = 0; i < texts.length; i++) {
-	        renderSingleLine(texts[i], bitmap, x, y + i * lineHeight, currentColor, font);
-	    }
-	}
-	
-	private static void renderSingleLine(String text, Bitmap bitmap, int x, int y, int color, UniFont font) {
-		if (text == null || text.isEmpty()) return;
-		
-		int currentColor = color;
-	    int w = 0;
-	    
-	    for (int j = 0; j < text.length(); j++) {
-	        ColorCode colorCode = readColorCode(text, j);
-	        if (colorCode != null) {
-	            currentColor = colorCode.color;
-	            j = colorCode.endIndex;
-	            continue;
-	        }
+	    for (int i = 0; i < lines.size(); i++) {
+	        String lineText = lines.get(i);
+	        int w = 0;
 	        
-	        Bitmap btp = UniFont.getBitmapChar(text.charAt(j), font);
-	        bitmap.blendDraw(btp, x + w, y, currentColor);
-	        w += btp.w;
+	        for (int j = 0; j < lineText.length(); j++) {
+	        	ColorCode colorCode = readColorCode(lineText, j);
+	        	if (colorCode != null) {
+	        		currentColor = colorCode.color;
+	        		j = colorCode.endIndex;
+	        		continue;
+	        	}
+	        	
+	            Bitmap btp = UniFont.getBitmapChar(lineText.charAt(j), font);
+	            
+	            // Render character
+	            bitmap.blendDraw(btp, x + w, y + (i * lineHeight), currentColor);
+	            
+	            w += ((btp.w));
+	        }
 	    }
 	}
 	
@@ -95,7 +78,6 @@ public class TextRenderer {
 	}
 	
 	public static int stringBitmapWidth(String text, UniFont font) {
-		if (text == null || text.isEmpty()) return 0;
 		int w = 0;
 		for (int i = 0; i < text.length(); i++) {
 			ColorCode colorCode = readColorCode(text, i);

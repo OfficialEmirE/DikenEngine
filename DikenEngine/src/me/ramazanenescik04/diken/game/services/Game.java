@@ -31,6 +31,12 @@ public class Game extends AbstractService {
 		loadNodeData(in);
 	}
 
+	@Override
+	public void setName(String name) {
+		OnPropertyChanged.FireEvent("name", this.name, name);
+		this.name = name;
+	}
+
 	public Object HttpSend(String url, String requestMethod, Object data) {
 		try {
 			var httpClient = HttpClient.newHttpClient();

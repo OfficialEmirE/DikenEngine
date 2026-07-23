@@ -40,7 +40,7 @@ public class Light extends Instance {
     public Light(String name) {
         super(name);
         this.solid = false;
-        this.setVisible(true);
+        this.setRenderType(RenderType.RenderAll);
     }
 
     public Light(String name, int x, int y) {

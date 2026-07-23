@@ -2,6 +2,7 @@ package me.ramazanenescik04.diken.gui.component;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -34,7 +35,9 @@ public class TextField extends GuiComponent {
 	private boolean isFocused;
 	private boolean isPressingControl;
 	private boolean isNumberField = false;
-	private Consumer<String> textChanced;
+	
+	private Consumer<String> textChanged;
+	private Runnable pressedEnter;
 
 	public TextField(UDim2 position, UDim2 size) {
 		this("", position, size);
@@ -53,8 +56,21 @@ public class TextField extends GuiComponent {
 	}
 	
 	public TextField setTextChanged(Consumer<String> consumer) {
-		this.textChanced = consumer;
+		this.textChanged = consumer;
 		return this;
+	}
+	
+	public Consumer<String> getTextChanged() {
+		return textChanged;
+	}
+	
+	public TextField setPressedEnter(Runnable consumer) {
+		this.pressedEnter = consumer;
+		return this;
+	}
+	
+	public Runnable getPressedEnter() {
+		return pressedEnter;
 	}
 
 	public Bitmap render() {
@@ -83,8 +99,8 @@ public class TextField extends GuiComponent {
 	
 	public void setText(String text) {
 		this.text = text;
-		if (textChanced != null) {
-			textChanced.accept(text);
+		if (textChanged != null) {
+			textChanged.accept(text);
 		}
 	}
 	
@@ -101,55 +117,118 @@ public class TextField extends GuiComponent {
 		isPressingControl = engine.input.isKeyDown(KeyEvent.VK_CONTROL);
 	}
 
-	public void keyPressed(char var1, int var2) {
-		if (isFocused) {
-			if (isPressingControl && var2 == KeyEvent.VK_V) {
-				String clipboardText = "";
-				try {
-					clipboardText = Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor).toString();
-				} catch (Exception e) {
-					DikenEngine.errorLog("Paste Clipboard Failed: ", e);
-				}
-				if (clipboardText != null) {
-					text += clipboardText;
-					if (textChanced != null) {
-						textChanced.accept(text);
-					}
-				}
-			} else if (isPressingControl && var2 == KeyEvent.VK_C) {
-				try {
-					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new java.awt.datatransfer.StringSelection(text), null);
-				} catch (Exception e) {
-					DikenEngine.errorLog("Copy Clipboard Failed: ", e);
-				}
-		    } else if (var2 == KeyEvent.VK_BACK_SPACE) {
-				if (text.length() > 0) {
-					text = text.substring(0, text.length() - 1);
-				}
-				
-				if (textChanced != null) {
-					textChanced.accept(text);
-				}
-			} else if (var2 == KeyEvent.VK_ENTER) {
-				isFocused = false;
-			} else if (var2 == KeyEvent.VK_ESCAPE) {
-				isFocused = false;
-			} else if (var2 == KeyEvent.VK_DELETE) {
-				text = "";
-				if (textChanced != null) {
-					textChanced.accept(text);
-				}
-			} else if (isNumberField && (Character.isDigit(var1) || var1 == '.' || var1 == '-')) {
-				text += var1;
-				if (textChanced != null) {
-					textChanced.accept(text);
-				}
-			} else if (!isNumberField) {
-				text += var1;
-				if (textChanced != null) {
-					textChanced.accept(text);
-				}
+	public void keyPressed(char character, int keyCode) {
+		if (!isFocused) {
+			return;
+		}
+
+		if (isPressingControl) {
+			if (handleClipboardShortcut(keyCode)) {
+				return;
 			}
+		}
+
+		switch (keyCode) {
+			case KeyEvent.VK_BACK_SPACE -> removeLastCharacter();
+			case KeyEvent.VK_ENTER -> confirmInput();
+			case KeyEvent.VK_ESCAPE -> cancelInput();
+			case KeyEvent.VK_DELETE -> clearText();
+			default -> addCharacter(character);
+		}
+	}
+
+	private boolean handleClipboardShortcut(int keyCode) {
+		return switch (keyCode) {
+			case KeyEvent.VK_V -> {
+				pasteClipboard();
+				yield true;
+			}
+			case KeyEvent.VK_C -> {
+				copyClipboard();
+				yield true;
+			}
+			default -> false;
+		};
+	}
+
+	private void pasteClipboard() {
+		try {
+			var clipboard = Toolkit.getDefaultToolkit()
+					.getSystemClipboard();
+
+			var data = clipboard.getData(DataFlavor.stringFlavor);
+
+			if (data != null) {
+				text += data.toString();
+				notifyTextChanged();
+			}
+
+		} catch (Exception e) {
+			DikenEngine.errorLog("Paste Clipboard Failed: ", e);
+		}
+	}
+
+	private void copyClipboard() {
+		try {
+			var clipboard = Toolkit.getDefaultToolkit()
+					.getSystemClipboard();
+
+			clipboard.setContents(
+					new StringSelection(text),
+					null
+			);
+
+		} catch (Exception e) {
+			DikenEngine.errorLog("Copy Clipboard Failed: ", e);
+		}
+	}
+
+	private void removeLastCharacter() {
+		if (!text.isEmpty()) {
+			text = text.substring(0, text.length() - 1);
+			notifyTextChanged();
+		}
+	}
+
+	private void clearText() {
+		text = "";
+		notifyTextChanged();
+	}
+
+	private void confirmInput() {
+		isFocused = false;
+
+		if (pressedEnter != null) {
+			pressedEnter.run();
+		}
+	}
+
+	private void cancelInput() {
+		isFocused = false;
+	}
+
+	private void addCharacter(char character) {
+		if (isNumberField) {
+			if (!Character.isDigit(character) 
+					&& character != '.' 
+					&& character != '-') {
+				return;
+			}
+		} else {
+			if (!DikenEngine.getEngine()
+					.defaultFont
+					.hasChar(character)) {
+				return;
+			}
+		}
+
+		text += character;
+		notifyTextChanged();
+	}
+
+	private void notifyTextChanged() {
+		if (textChanged != null) {
+			textChanged.accept(text);
 		}
 	}
 
@@ -178,14 +257,6 @@ public class TextField extends GuiComponent {
 
 	public void setNumberField(boolean isNumberField) {
 		this.isNumberField = isNumberField;
-	}
-
-	public Consumer<String> getTextChanced() {
-		return textChanced;
-	}
-
-	public void setTextChanced(Consumer<String> textChanced) {
-		this.textChanced = textChanced;
 	}
 
 	@Override

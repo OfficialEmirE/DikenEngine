@@ -31,7 +31,14 @@ public abstract class Instance extends Node {
     
     protected boolean solid = true;
     protected boolean anchored = false;
-    private boolean visible = true;
+    private RenderType renderType = RenderType.RenderAll;
+    
+    public enum RenderType {
+    	InVisible,
+    	OnlyRenderThis,
+    	OnlyRenderChildrens,
+    	RenderAll
+    }
 
     public Instance() {
         this("Instance");
@@ -65,9 +72,17 @@ public abstract class Instance extends Node {
     		this.aabb.setRotation(rotation);
     	}
     	
-        if (!visible) return;
+        if (renderType == RenderType.InVisible) return;
+        
+        boolean renderSelf =
+                renderType == RenderType.RenderAll ||
+                renderType == RenderType.OnlyRenderThis;
 
-        if (shouldRenderSelf(viewport)) {
+        boolean renderChildren =
+                renderType == RenderType.RenderAll ||
+                renderType == RenderType.OnlyRenderChildrens;
+
+        if (renderSelf && shouldRenderSelf(viewport)) {
             Bitmap myTexture = render();
 
             if (myTexture != null) {
@@ -99,7 +114,9 @@ public abstract class Instance extends Node {
             }
         }
 
-        super.draw(btp, viewport);
+        if (renderChildren) {
+            super.draw(btp, viewport);
+        }
     }
 
     @Override
@@ -169,11 +186,15 @@ public abstract class Instance extends Node {
 	}
 	
 	public boolean isVisible() {
-		return visible;
+		return renderType != RenderType.InVisible;
 	}
 	
-	public void setVisible(boolean visible) {
-		this.visible = visible;
+	public RenderType getRenderType() {
+		return renderType;
+	}
+	
+	public void setRenderType(RenderType renderType) {
+		this.renderType = renderType;
 	}
     
     public float getRotation() {
@@ -262,13 +283,14 @@ public abstract class Instance extends Node {
         var key = new SettingCategory.SettingKey("instance", "Instance", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1));
         var settingCategory = SettingCategory
                 .createSettingCategory(key)
-                .addSetting(new Setting<Integer>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setX))
-                .addSetting(new Setting<Integer>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setY))
-                .addSetting(new Setting<Float>("Rotation", rotation, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setRotation))
-                .addSetting(new Setting<Boolean>("Visible", visible, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setVisible))
-				.addSetting(new Setting<Boolean>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setSolid))
-				.addSetting(new Setting<Boolean>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setAnchored))
-				.addSetting(new Setting<Integer>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor));
+                .addSetting(new Setting<>("X", x, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setX))
+                .addSetting(new Setting<>("Y", y, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setY))
+                .addSetting(new Setting<>("Rotation", rotation, Float.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setRotation))
+				.addSetting(new Setting<>("RenderType", this.renderType, RenderType.values(), RenderType.class,
+						EnumSettingType.LIST_SELECT).addChangeListener(this::setRenderType))
+				.addSetting(new Setting<>("Solid", solid, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setSolid))
+				.addSetting(new Setting<>("Anchored", anchored, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setAnchored))
+				.addSetting(new Setting<>("Color", color, Integer.class, EnumSettingType.COLOR_PICKER).addChangeListener(this::setColor));
         
         if (this.aabb != null) {
 			settingCategory.addSetting(new Setting<Integer>("Width", aabb.getWidth(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
@@ -277,10 +299,10 @@ public abstract class Instance extends Node {
 			.addSetting(new Setting<Integer>("Height", aabb.getHeight(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setHeight(val);
 			}))
-			.addSetting(new Setting<Integer>("Offset X", aabb.getX(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+			.addSetting(new Setting<Integer>("OffsetX", aabb.getX(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setX(val);
 			}))
-			.addSetting(new Setting<Integer>("Offset Y", aabb.getY(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
+			.addSetting(new Setting<Integer>("OffsetY", aabb.getY(), Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(val -> {
 				if (aabb != null) aabb.setY(val);
 			}));
 		}
@@ -301,7 +323,7 @@ public abstract class Instance extends Node {
 		copy.color = this.color;
 		copy.solid = this.solid;
 		copy.anchored = this.anchored;
-		copy.visible = this.visible;
+		copy.renderType = this.renderType;
 		
 		if (this.aabb != null) {
     		copy.aabb = (Hitbox) this.aabb.getBounds();
@@ -329,7 +351,7 @@ public abstract class Instance extends Node {
 		out.writeInt(color);
 		out.writeBoolean(solid);
 		out.writeBoolean(anchored);
-		out.writeBoolean(visible);
+		out.writeUTF(renderType.name());
 	}
 
 	@Override
@@ -349,7 +371,6 @@ public abstract class Instance extends Node {
 		this.color = in.readInt();
 		this.solid = in.readBoolean();
 		this.anchored = in.readBoolean();
-		this.visible = in.readBoolean();
+		this.renderType = RenderType.valueOf(in.readUTF());
 	}
-
 }

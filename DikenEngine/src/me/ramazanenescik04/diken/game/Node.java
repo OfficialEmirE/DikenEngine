@@ -431,7 +431,7 @@ public abstract class Node implements Cloneable {
 	}
 	
 	public String getName() {
-		return new String(name);
+		return (name);
 	}
 	
 	public UUID getNetId() {
@@ -655,11 +655,15 @@ public abstract class Node implements Cloneable {
     }
 	
 	public static void saveNode(Node current, DataOutputStream outStream) throws IOException {
+		List<Node> filteredChildren = current.children.stream()
+	            .filter(child -> child.isArchiveable())
+	            .toList();
+		
     	outStream.writeUTF(current.getClass().getName());
-    	outStream.writeInt(current.children.size());
+    	outStream.writeInt(filteredChildren.size());
     	current.saveNodeData(outStream);
     	
-    	for (Node node : current.children) {
+    	for (Node node : filteredChildren) {
     		saveNode(node, outStream);
     	}
     }
@@ -685,6 +689,9 @@ public abstract class Node implements Cloneable {
             
             // Şimdi orijinal liste (this.children) hala dolu, güvenle dönebiliriz:
             for (Node child : this.children) {
+            	if (!child.isArchiveable())
+            		continue;
+            	
                 newNode.addChild(child.copy()); 
             }
 

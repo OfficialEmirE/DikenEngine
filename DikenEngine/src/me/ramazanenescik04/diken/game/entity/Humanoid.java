@@ -112,11 +112,11 @@ public class Humanoid extends Part {
 	
 	public Tool setSelectedTool(Tool tool) {
 		if (tool != null) {
-			tool.setVisible(true);
+			this.setRenderType(RenderType.RenderAll);
 		}
 		Tool oldTool = this.selectedTool;
 		if (oldTool != null) {
-			oldTool.setVisible(false);
+			this.setRenderType(RenderType.InVisible);
 		}
 		return this.selectedTool = tool;
 	}

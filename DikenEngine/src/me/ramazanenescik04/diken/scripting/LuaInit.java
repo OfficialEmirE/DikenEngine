@@ -7,6 +7,7 @@ import java.util.*;
 import org.luaj.vm2.Globals;
 import org.luaj.vm2.LuaTable;
 
+import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.NodeResource;
 import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.event.Signal;
@@ -44,6 +45,7 @@ public class LuaInit {
 		var lightEnum = (Light.LightType.class);
 		var partEnum = (Part.Surface.class);
 		
+		
 		Map<String, Class<? extends Enum<?>>> enumList = new HashMap<>();
 		enumList.put("CameraType", cameraEnum);
 		enumList.put("LightType", lightEnum);
@@ -52,6 +54,7 @@ public class LuaInit {
 		enumList.put("ImageType", spriteEnum);
 		enumList.put("ResourceType", resourceEnum);
 		enumList.put("TextPosition", Text.TextPosition.class);
+		enumList.put("RenderType", Instance.RenderType.class);
 		
 		return enumList;
 	}

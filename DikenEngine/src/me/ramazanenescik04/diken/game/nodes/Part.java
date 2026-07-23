@@ -7,7 +7,6 @@ import java.util.List;
 
 import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
-import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
@@ -114,15 +113,6 @@ public class Part extends Instance {
 	}
 
 	@Override
-	public Node copy() {
-		Part copy = (Part) super.copy();
-		if (copy != null) {
-			copy.surface = this.surface;
-		}
-		return copy;
-	}
-
-	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("part", "Part", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1));
 		
@@ -153,3 +143,4 @@ public class Part extends Instance {
 		this.surface = Surface.valueOf(in.readUTF());
 	}
 }
+

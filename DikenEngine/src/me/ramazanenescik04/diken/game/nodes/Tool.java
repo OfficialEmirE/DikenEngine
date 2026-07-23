@@ -72,7 +72,7 @@ public class Tool extends Instance {
 	public void onCollision(Node other) {
 		if (other instanceof Humanoid player && !isEquipped) {
 			Tool copyTool = (Tool) this.copy();
-			copyTool.setVisible(false);
+			this.setRenderType(RenderType.InVisible);
 			copyTool.icon = this.icon.clone();
 			copyTool.isEquipped = true;
 			player.findFirstChild("Tools").addChild(copyTool);

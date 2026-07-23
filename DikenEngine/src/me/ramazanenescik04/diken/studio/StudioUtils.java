@@ -16,6 +16,7 @@ import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.language.Lang;
+import me.ramazanenescik04.diken.studio.dockables.DockablePanel;
 
 public final class StudioUtils {
 	public static Setting<String> LOOK_AND_FEEL;
@@ -33,7 +34,7 @@ public final class StudioUtils {
                 .map(UIManager.LookAndFeelInfo::getName)
                 .toArray(String[]::new);
 
-        LOOK_AND_FEEL = new Setting<>("Look And Feel", lafNames.length > 0 ? lafNames[0] : "Metal",
+        LOOK_AND_FEEL = new Setting<>("Look And Feel", UIManager.getLookAndFeel().getName(),
                 lafNames, String.class, EnumSettingType.LIST_SELECT)
             .setDescription("Studio IDE arayüz temasını değiştirir.");
         LOOK_AND_FEEL.addChangeListener(StudioUtils::applyLookAndFeel);
@@ -76,6 +77,20 @@ public final class StudioUtils {
         }
         
         SettingsManager.registerCategory(keyMap, true);
+        
+        for (var entry : DockablePanel.panels.entrySet()) {
+        	var dockable = entry.getValue();
+        	var settingList = dockable.getDockableSettings();
+        	
+        	if (settingList.isEmpty())
+        		continue;
+        	
+        	SettingCategory dockableSettings = SettingCategory
+                    .createSettingCategory(entry.getKey(), dockable.getTitle(), 15, 1);
+        	
+        	dockableSettings.addSettings(settingList);
+            SettingsManager.registerCategory(dockableSettings, true);
+        }
 	}
 	
 	static void reloadGameSettings(World newWorld) {

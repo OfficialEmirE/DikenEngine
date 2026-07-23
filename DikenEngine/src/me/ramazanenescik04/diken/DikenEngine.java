@@ -24,6 +24,7 @@ import com.formdev.flatlaf.*;
 
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.InputService;
+import me.ramazanenescik04.diken.gui.DebugScreen;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
@@ -267,7 +268,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	@Override
 	public void run() {
 		try {			
-			log("DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ") Başlatılıyor");
+			log("Starting DikenEngine " + VERSION + " (Protocol: " + protocolVersion + ")");
 
 			defaultFont = UniFont.getFont("default_font");
 
@@ -346,6 +347,13 @@ public class DikenEngine implements Runnable, IInputListener {
 				this.config.setSetting("debug", !this.config.getSettingValue("debug", Boolean.class));
 			}
 			
+			if (key == KeyEvent.VK_F9 && this.theWorld != null && !studioMode) {
+				if (DebugScreen.instance.isOpen())
+					DebugScreen.instance.closeDebugScreen();
+				else
+					DebugScreen.instance.openDebugScreen(theWorld);
+			}
+			
 			if (key == KeyEvent.VK_F11) {
 				toggleFullscreen();
 			}
@@ -354,7 +362,6 @@ public class DikenEngine implements Runnable, IInputListener {
 		if (theWorld != null) {
 			theWorld.getService(InputService.class).keyHandled(inputMode, key, character);
 		}
-
 	}
 
 	private void toggleFullscreen() {

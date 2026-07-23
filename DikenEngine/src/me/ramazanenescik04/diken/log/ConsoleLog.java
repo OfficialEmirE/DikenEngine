@@ -54,6 +54,7 @@ public class ConsoleLog {
 		return new ArrayList<>(logs);
 	}
 	
+	@Deprecated
 	public static List<String> getLogsToString() {
 		List<String> list = new ArrayList<>();
 		for (LogText text : logs) {
@@ -98,9 +99,30 @@ public class ConsoleLog {
 		}
 	}
 	
-	public record LogText(LogType type, String log) {
+	public static class LogText {
+		public final String log;
+		public final LogType type;
+		private final String logResult;
+		
+		public LogText(LogType type, String log) {
+			this.log = log;
+			this.type = type;
+			this.logResult = "[%s] [%s] %s".formatted(
+					new SimpleDateFormat("HH:mm:ss").format(new Date()),
+					type.name(), 
+					log);
+		}
+		
 		public String toString() {
-			return "[%s] [%s] %s".formatted(new SimpleDateFormat("HH:mm:ss").format(new Date()), type.name(), log);
+			return logResult;
+		}
+
+		public LogType type() {
+			return type;
+		}
+		
+		public String log() {
+			return log;
 		}
 	}
 	

@@ -28,7 +28,6 @@ public class Text extends GuiComponent {
 	private int color;
 	private NodeResource<UniFont> font;
 	private TextPosition textPosition = TextPosition.Center;
-	private boolean sizeInitialized = false;
 	
 	public enum TextPosition {
 		NorthWest(0, 0),
@@ -52,13 +51,7 @@ public class Text extends GuiComponent {
 	}
 
 	public Text(String text, UDim2 position) {
-		super("Text", position, UDim2.zero);
-		
-		this.text = text;
-		this.color = 0xffffffff;
-		this.font = new NodeResource<>("default_font", EnumResource.FONT);
-		
-		autoSetSize();
+		this(text, position, UDim2.defaultV, 0xffffffff, "default_font");
 	}
 	
 	public Text(String text, UDim2 position, UDim2 size, int color, String font) {
@@ -68,18 +61,6 @@ public class Text extends GuiComponent {
 		this.color = color;
 		this.font = new NodeResource<>(font, EnumResource.FONT);
 	}
-	
-	private void autoSetSize() {
-		UniFont f = this.font.getResource();
-		if (f == null) {
-			f = DikenEngine.getEngine() != null ? DikenEngine.getEngine().defaultFont : UniFont.getFont("default_font");
-		}
-		int w = TextRenderer.stringBitmapWidth(text, f) + 4;
-		int h = TextRenderer.stringBitmapAverageHeight(text, f) + 4;
-		if (w < 16) w = 16;
-		if (h < 12) h = 12;
-		this.setSize(w, h);
-	}
 
 	public Text(DataInputStream in) throws IOException {
 		super(in);
@@ -87,38 +68,23 @@ public class Text extends GuiComponent {
 	}
 	
 	public Bitmap render() {
-		UniFont activeFont = this.font.getResource();
-		if (activeFont == null) {
-			activeFont = DikenEngine.getEngine() != null ? DikenEngine.getEngine().defaultFont : UniFont.getFont("default_font");
-		}
-		
-		if (activeFont == null) {
-			return super.render();
-		}
-		
-		if (!sizeInitialized) {
-			autoSetSize();
-			sizeInitialized = true;
-		}
-		
 	    Bitmap bitmap = super.render();
 	    
-	    String renderText = this.text;
-	    if (renderText == null || renderText.isEmpty()) {
+	    if (this.font.getResource() == null) {
 	    	return bitmap;
 	    }
 	    
 	    int containerWidth = this.getWidth();
 	    int containerHeight = this.getHeight();
 	    
-	    int textWidth = TextRenderer.stringBitmapWidth(renderText, activeFont);
-	    int textHeight = TextRenderer.stringBitmapAverageHeight(renderText, activeFont);
+	    int textWidth = TextRenderer.stringBitmapWidth(text, this.font.getResource());
+	    int textHeight = TextRenderer.stringBitmapAverageHeight(text, this.font.getResource());
 	    
 	    // Ham koordinatları hesapla
 	    int x = (int) (textPosition.x * containerWidth);
 	    int y = (int) (textPosition.y * containerHeight);
 	    
-	    // Hizalamayı düzelt
+	    // Hizalamayı düzelt (Yazının kutunun dışına taşmasını engelle)
 	    if (textPosition.x == 0.5) {
 	        x -= (textWidth / 2);
 	    } else if (textPosition.x == 1.0) {
@@ -131,7 +97,8 @@ public class Text extends GuiComponent {
 	        y -= textHeight;
 	    }
 	    
-	    bitmap.drawText(renderText, x, y, color, activeFont, false);
+	    // Doğru koordinatlarla çizdir
+	    bitmap.drawText(text, x, y, color, this.font.getResource(), false);
 	    
 	    return bitmap;
 	}
@@ -180,7 +147,7 @@ public class Text extends GuiComponent {
 	
 	public Text setColor(int color) {
 		this.color = color;
-		return this;
+		return null;
 	}
 	
 	public TextPosition getTextPosition() {

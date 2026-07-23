@@ -61,21 +61,21 @@ public class Camera extends AbstractService {
 					- (engine.getScaledWidth() / 2);
 			cameraPos.y = (followingInstance.getY() + followingInstance.getAABBHeight() / 2)
 					- (engine.getScaledHeight() / 2);
-	} else if (cameraType == CameraType.FREECAM) {		
+		} else if (cameraType == CameraType.FREECAM) {		
 			if (engine.input.isKeyDown(KeyEvent.VK_W)) {
-				cameraPos.y -= 8;
+				cameraPos.y -= 2;
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_A)) {
-				cameraPos.x -= 8;
+				cameraPos.x -= 2;
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_S)) {
-				cameraPos.y += 8;
+				cameraPos.y += 2;
 			}
 			
 			if (engine.input.isKeyDown(KeyEvent.VK_D)) {
-				cameraPos.x += 8;
+				cameraPos.x += 2;
 			}
 		}
 	}
