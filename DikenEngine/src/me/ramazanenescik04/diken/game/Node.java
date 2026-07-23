@@ -61,7 +61,7 @@ public abstract class Node implements Cloneable {
     protected String name;
     
     protected boolean debug = false;
-    protected boolean archiveable = true; // Kaydedilebilir mi?
+    protected boolean archivable = true; // Kaydedilebilir mi?
     protected boolean removed = false;
     protected int zIndex = 0;
 
@@ -550,13 +550,13 @@ public abstract class Node implements Cloneable {
 		this.debug = debug;
 	}
 	
-	public boolean isArchiveable() {
-		return archiveable;
+	public boolean isArchivable() {
+		return archivable;
 	}
 	
-	public void setArchiveable(boolean archiveable) {
-		OnPropertyChanged.FireEvent("archiveable", this.archiveable, archiveable);
-		this.archiveable = archiveable;
+	public void setArchivable(boolean archivable) {
+		OnPropertyChanged.FireEvent("archivable", this.archivable, archivable);
+		this.archivable = archivable;
 	}
 	
 	public void removeNode() {
@@ -592,7 +592,7 @@ public abstract class Node implements Cloneable {
 				.addSetting(new Setting<>("Name", name, String.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setName))
 				.addSetting(new Setting<>("Parent", parent, Node.class, EnumSettingType.OBJECT_SELECT).addChangeListener(this::setParent))
 				.addSetting(new Setting<>("Debug Renderer", debug, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setDebugRenderer))
-				.addSetting(new Setting<>("Archiveable", archiveable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setArchiveable))
+				.addSetting(new Setting<>("Archivable", archivable, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setArchivable))
 				.addSetting(new Setting<>("Z Index", zIndex, Integer.class, EnumSettingType.TEXT_FIELD).addChangeListener(this::setZIndex));
 		return s;
 	}
@@ -601,7 +601,7 @@ public abstract class Node implements Cloneable {
 		out.writeUTF(netId.toString());
 		out.writeUTF(name);
 		out.writeBoolean(debug);
-		out.writeBoolean(archiveable);
+		out.writeBoolean(archivable);
 		out.writeBoolean(removed);
 		out.writeInt(zIndex);
 	}
@@ -609,7 +609,7 @@ public abstract class Node implements Cloneable {
 	public void loadNodeData(DataInputStream in) throws IOException {
 		this.name = in.readUTF();
 		this.debug = in.readBoolean();
-		this.archiveable = in.readBoolean();
+		this.archivable = in.readBoolean();
 		this.removed = in.readBoolean();
 		this.zIndex = in.readInt();
 	}
@@ -656,7 +656,7 @@ public abstract class Node implements Cloneable {
 	
 	public static void saveNode(Node current, DataOutputStream outStream) throws IOException {
 		List<Node> filteredChildren = current.children.stream()
-	            .filter(child -> child.isArchiveable())
+	            .filter(child -> child.isArchivable())
 	            .toList();
 		
     	outStream.writeUTF(current.getClass().getName());
@@ -676,7 +676,7 @@ public abstract class Node implements Cloneable {
     protected void dispose() {}
     
     public Node copy() {
-    	if (!isArchiveable())
+    	if (!isArchivable())
     		return null;
     	
         try {
@@ -689,7 +689,7 @@ public abstract class Node implements Cloneable {
             
             // Şimdi orijinal liste (this.children) hala dolu, güvenle dönebiliriz:
             for (Node child : this.children) {
-            	if (!child.isArchiveable())
+            	if (!child.isArchivable())
             		continue;
             	
                 newNode.addChild(child.copy()); 

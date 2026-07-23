@@ -45,7 +45,7 @@ public class DebugScreen implements ListAdapter<LogText> {
 	
 	public void init(World theWorld) {
 		screenGui = new ScreenGui("DebugScreen");
-		screenGui.setArchiveable(false);
+		screenGui.setArchivable(false);
 		screenGui.OnUpdate.Connect(_ -> this.updateTitle());
 		
 		var panel = new Panel(startPos, UDim2.of(
