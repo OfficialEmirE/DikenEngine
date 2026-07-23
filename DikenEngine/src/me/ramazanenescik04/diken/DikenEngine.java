@@ -554,7 +554,7 @@ public class DikenEngine implements Runnable, IInputListener {
 			
 			JFileChooser fileChooser = new JFileChooser();
 	        fileChooser.setDialogTitle("Yükleyeceğin Dünyayı Seç");
-			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine World File", "dew"));
+			fileChooser.setFileFilter(new FileNameExtensionFilter("DikenEngine World File", "dwf"));
 
 	        int result = fileChooser.showOpenDialog(engine.engineWindow);
 	        if (result != JFileChooser.APPROVE_OPTION) {System.exit(1); return;}
