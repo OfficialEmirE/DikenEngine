@@ -7,9 +7,6 @@ A game engine designed for making 2D games in Java!
 > Support for versions 2.2.0 and below has been discontinued, and they do not have documentation. Please use version 3.0.0 as the minimum requirement.
 
 ### Steps for 3.0.0
-> [!IMPORTANT]
-> 3.0.0 Still under development. Not yet suitable for game development.
-
 In version 3.0.0, you can open and play `.dwf` files. 
 
 > [!TIP]
