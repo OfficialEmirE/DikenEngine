@@ -36,7 +36,7 @@ public class SettingCategory {
 	
 	public static SettingCategory createSettingCategory(String id, String category, Bitmap image) {
 		if (image == null) {
-			image = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1);
+			image = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(12, 3);
 		}
 		
 		return createSettingCategory(new SettingKey(id, category, image));

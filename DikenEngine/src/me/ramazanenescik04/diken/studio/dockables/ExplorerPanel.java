@@ -56,7 +56,7 @@ public class ExplorerPanel extends DockablePanel {
     private PickCallback pickCallback = null;
     private boolean ignoreNextSelectionEvent = false;
 
-	private boolean showHideServices;
+	private boolean showHideServices = false;
 
 	/**
 	 * Create the panel.

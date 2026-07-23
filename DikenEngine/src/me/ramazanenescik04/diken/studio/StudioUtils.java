@@ -17,6 +17,9 @@ import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.plugin.Plugin;
+import me.ramazanenescik04.diken.resource.ArrayBitmap;
+import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.studio.dockables.DockablePanel;
 
 public final class StudioUtils {
@@ -26,12 +29,21 @@ public final class StudioUtils {
     public static final Map<String, Integer> keyMapList = new LinkedHashMap<>();
     
     public static void registerPluginSettings(Plugin plugin) {
+    	var settingList = plugin.getPluginSettings();
+    	Bitmap pluginIcon = plugin.getIcon();
+    	
+    	if (settingList.isEmpty())
+    		return;
+    	
+    	if (pluginIcon == null)
+    		pluginIcon = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(6, 3);
+    	
     	var pluginSettings = SettingCategory.createSettingCategory(
     			plugin.info().pluginClass().getName(),
     			plugin.getName(),
-    			plugin.getIcon()
+    			pluginIcon
     	);
-    	pluginSettings.addSettings(plugin.getPluginSettings());
+    	pluginSettings.addSettings(settingList);
 		
 		SettingsManager.registerCategory(pluginSettings, true);
 	}

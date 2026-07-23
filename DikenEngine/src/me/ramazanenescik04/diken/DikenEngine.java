@@ -50,8 +50,8 @@ import me.ramazanenescik04.diken.tools.Utils;
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.1.0";
-	public static final int protocolVersion = 310;
+	public static final String VERSION = "3.1.1";
+	public static final int protocolVersion = 311;
 
 	private static DikenEngine instance;
 
