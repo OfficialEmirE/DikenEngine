@@ -72,6 +72,7 @@
   "studio.menubar.saveAs": "Save As...",
   "studio.menubar.toolsMenu": "Tools",
   "studio.menubar.windowsMenu": "Windows",
+  "studio.menubar.pluginManager": "Plugin Manager",
   "studio.none": "None",
   "studio.restartNote": "The newly set language requires a reboot to take effect across all interfaces.",
   "studio.restartRequired": "A restart is required!",

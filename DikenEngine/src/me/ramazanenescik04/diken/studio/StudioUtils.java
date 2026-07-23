@@ -16,6 +16,7 @@ import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.language.Lang;
+import me.ramazanenescik04.diken.plugin.Plugin;
 import me.ramazanenescik04.diken.studio.dockables.DockablePanel;
 
 public final class StudioUtils {
@@ -23,6 +24,17 @@ public final class StudioUtils {
     public static Setting<String> DOCKING_THEME;
     
     public static final Map<String, Integer> keyMapList = new LinkedHashMap<>();
+    
+    public static void registerPluginSettings(Plugin plugin) {
+    	var pluginSettings = SettingCategory.createSettingCategory(
+    			plugin.info().pluginClass().getName(),
+    			plugin.getName(),
+    			plugin.getIcon()
+    	);
+    	pluginSettings.addSettings(plugin.getPluginSettings());
+		
+		SettingsManager.registerCategory(pluginSettings, true);
+	}
 	
 	static void init(StudioPanel studioPanel, DikenEngine engine, JFrame engineWindow) {
 		var engineSettings = SettingCategory.createSettingCategory("engineSettings", "Engine Settings", 1, 3);

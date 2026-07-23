@@ -26,6 +26,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
@@ -43,6 +44,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.nodes.Decal;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
@@ -53,6 +55,8 @@ import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.input.IInputListener;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.language.Lang;
+import me.ramazanenescik04.diken.plugin.Plugin;
+import me.ramazanenescik04.diken.plugin.PluginManager;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -65,6 +69,7 @@ import me.ramazanenescik04.diken.studio.dialog.SettingsDialog;
 import me.ramazanenescik04.diken.studio.dockables.*;
 import me.ramazanenescik04.diken.studio.editors.GamePreview;
 import me.ramazanenescik04.diken.studio.editors.ObjectBrowserPanel;
+import me.ramazanenescik04.diken.studio.editors.PluginManagerPanel;
 import me.ramazanenescik04.diken.studio.editors.ScriptEditor;
 import me.ramazanenescik04.diken.tools.Utils;
 
@@ -75,11 +80,17 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	private RendererPanel gamePanel;
 	private DikenEngine engine;
 	
+	private JToolBar toolBar;
+	private JMenuBar menuBar;
+	
 	CControl control;
 	private File layoutFile = new File(Config.defaultConfigFile.getParentFile(), "layout.dat");
 	private File selectedWorldFile;
 	
 	private World editWorld;
+	
+	public final Event generatingToolbar = new Event();
+	public final Event generatingMenubar = new Event();
 	
 	private EditorTabPanel scriptTabPanel;
 	private ExplorerPanel explorerPanel;
@@ -197,15 +208,36 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		add(panel, BorderLayout.NORTH);
 		panel.setLayout(new BorderLayout(0, 0));
 		
-		var toolBar = generateToolbar();
+		toolBar = generateToolbar(false);
 		toolBar.setBackground(new Color(82, 82, 82));
 		panel.add(toolBar, BorderLayout.SOUTH);
 
-		JMenuBar menuBar = generateMenuBar(explorerPanel, scriptTabPanel);
+		menuBar = generateMenuBar(false);
 		panel.add(menuBar, BorderLayout.NORTH);	
 		
 		StudioUtils.init(this, engine, engineWindow);
 		SettingsManager.load();
+		
+		PluginManager.instance.allPluginsLoaded.Connect(_ -> {
+		    SwingUtilities.invokeLater(() -> {
+		        try {
+		            panel.remove(toolBar);
+		            panel.remove(menuBar);
+
+		            toolBar = generateToolbar(true);
+		            toolBar.setBackground(new Color(82, 82, 82));
+		            panel.add(toolBar, BorderLayout.SOUTH);
+
+		            menuBar = generateMenuBar(true);
+		            panel.add(menuBar, BorderLayout.NORTH);
+
+		            panel.revalidate();
+		            panel.repaint();
+		        } catch (Exception e) {
+		            e.printStackTrace();
+		        }
+		    });
+		});
 	}
 	
 	public void loadWorld(World world) {
@@ -607,7 +639,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		}
 	}
 	
-	private JToolBar generateToolbar() {
+	private JToolBar generateToolbar(boolean pluginMode) {
 		var toolbarBuilder = new Toolbar.Builder();
 		
 		// File Manager
@@ -646,6 +678,12 @@ public final class StudioPanel extends JPanel implements IInputListener {
 				() -> addNodeToSelected(new Decal()));
 		toolbarBuilder.addButton(basicObjectTools, "createFolder", 6, 1, "studio.toolbar.createFolder",
 				() -> addNodeToSelected(new Folder()));
+		
+		if (pluginMode) {
+			for (Plugin plugin : PluginManager.instance.getPlugins()) {
+				plugin.generateToolbar(toolbarBuilder);
+			}
+		}
 		
 		return toolbarBuilder.getJToolBar();
 	}
@@ -709,7 +747,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		return button;
 	}
 	
-	private JMenuBar generateMenuBar(ExplorerPanel explorerPanel, EditorTabPanel scriptTabPanel) {
+	private JMenuBar generateMenuBar(boolean pluginMode) {
 		var menubarBuilder = new Menubar.Builder();
 		
 		var fileMenu = menubarBuilder.newMenu("fileMenu", "studio.menubar.fileMenu");
@@ -720,7 +758,8 @@ public final class StudioPanel extends JPanel implements IInputListener {
 				KeyStroke.getKeyStroke('S', KeyEvent.CTRL_DOWN_MASK));
 		menubarBuilder.addMenuItem(fileMenu, "studio.menubar.saveAs", -1, -1, () -> this.saveWorld(true));
 		menubarBuilder.addMenuSeparator(fileMenu);
-		menubarBuilder.addMenuItem(fileMenu, "studio.menubar.export", 11, 0, this::exportProject);
+		var exportMenu = menubarBuilder.addMenuItem(fileMenu, "studio.menubar.export", 11, 0, () -> {});
+		menubarBuilder.setButtonEnabled(fileMenu, exportMenu, false);
 		menubarBuilder.addMenuSeparator(fileMenu);
 		menubarBuilder.addMenuItem(fileMenu, "studio.menubar.closeApp", 0, 0, this::stop,
 				KeyStroke.getKeyStroke(KeyEvent.VK_F4, KeyEvent.ALT_DOWN_MASK));
@@ -771,6 +810,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			});
 		});
 		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.resetCamera", 13, 3, () -> editWorld.camera.reset());
+		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.pluginManager", 6, 3, () -> scriptTabPanel.openEditor(new PluginManagerPanel()));
 		menubarBuilder.addMenuSeparator(toolsMenu);
 		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.gc", 5, 3, System::gc);
 		
@@ -789,6 +829,12 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			scriptTabPanel.openEditor(new ObjectBrowserPanel());
 		});
 		
+		if (pluginMode) {
+			for (Plugin plugin : PluginManager.instance.getPlugins()) {
+				plugin.generateMenubar(menubarBuilder);
+			}
+		}
+		
 		return menubarBuilder.getJMenuBar();
 	}
 
@@ -799,9 +845,5 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			selectedNode.addChild(n);
 			explorerPanel.rebuildExplorer();
 		}
-	}
-	
-	private void exportProject() {
-		//var exportProject = new ExportProject(engineWindow);
 	}
 }

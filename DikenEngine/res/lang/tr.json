@@ -72,6 +72,7 @@
   "studio.menubar.saveAs": "Farklı Kaydet",
   "studio.menubar.toolsMenu": "Araçlar",
   "studio.menubar.windowsMenu": "Pencereler",
+  "studio.menubar.pluginManager": "Eklenti Yöneticisi",
   "studio.none": "Yok",
   "studio.restartNote": "Yeni ayarlanan dilin tüm arayüzlerde geçerli olması için yeniden başlatma gereklidir.",
   "studio.restartRequired": "Yeniden başlatma gerekli!",

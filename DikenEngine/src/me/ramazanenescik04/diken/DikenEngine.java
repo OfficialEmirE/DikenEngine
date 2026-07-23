@@ -31,6 +31,8 @@ import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
+import me.ramazanenescik04.diken.plugin.ExamplePlugin;
+import me.ramazanenescik04.diken.plugin.PluginManager;
 import me.ramazanenescik04.diken.renderer.RenderWorker;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -48,8 +50,8 @@ import me.ramazanenescik04.diken.tools.Utils;
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.0.0";
-	public static final int protocolVersion = 300;
+	public static final String VERSION = "3.1.0";
+	public static final int protocolVersion = 310;
 
 	private static DikenEngine instance;
 
@@ -279,7 +281,12 @@ public class DikenEngine implements Runnable, IInputListener {
 	        renderWorker.start();
 
 			rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
-
+			
+			PluginManager.instance.loadLocalPlugin(ExamplePlugin.class, this, studioPanel);
+			PluginManager.instance.loadPlugins(this, studioPanel);
+			
+			PluginManager.instance.enableAll(this, studioPanel);
+			
 			long fixedUpdateTime = 1000000000L / 60;
 			long lastUpdateTime = System.nanoTime();
 			long lastFPSTime = System.currentTimeMillis();
@@ -316,6 +323,8 @@ public class DikenEngine implements Runnable, IInputListener {
 
 			config.saveConfig();
 			engineWindow.dispose();
+			
+			PluginManager.instance.disableAll();
 
 			ConsoleLog.saveLogs();
 			System.gc();
