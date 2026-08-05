@@ -13,6 +13,7 @@ import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
@@ -153,6 +154,8 @@ public abstract class Node implements Cloneable {
     }
 
     public void removeChild(Node child) {
+    	if (child == null) return;
+    	
     	OnRemoveChild.FireEvent(child); // 3. Lifecycle Event
     	
         if (children.remove(child)) {
@@ -195,6 +198,7 @@ public abstract class Node implements Cloneable {
     	OnPropertyChanged.FireEvent("Parent", this.parent, newParent);
     	OnParentChanged.FireEvent(this.parent, newParent);
     	notifyAncestors(OnParentChangedDescendant, this.parent, newParent);
+    	
     	if (newParent == null) {
     		this.parent.removeChild(this);
     	} else {

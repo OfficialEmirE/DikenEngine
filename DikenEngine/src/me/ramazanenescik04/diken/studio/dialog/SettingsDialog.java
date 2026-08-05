@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.swing.*;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.language.Lang;
@@ -55,7 +56,10 @@ public class SettingsDialog extends JDialog {
 			int option = JOptionPane.showConfirmDialog(this, Lang.get("studio.windows.settings.resetSettingWarning"),
 					"Confirm Reset Config", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 			if (option == JOptionPane.YES_OPTION) {
-				panel.stop();
+				if (panel == null)
+					DikenEngine.getEngine().stop();
+				else
+					panel.stop();
 				
 				SettingsManager.removeConfig();
 	            dispose();

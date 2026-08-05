@@ -6,6 +6,7 @@ import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
@@ -42,7 +43,9 @@ public class Decal extends ImageNode {
 			return null;
 		}
 		
-		return texture.resize(parentBitmap.w, parentBitmap.h);
+		Bitmap scaledTexture = FrameBitmapPool.newBitmap(parentBitmap.w, parentBitmap.h);
+		texture.scaleInto(scaledTexture);
+		return scaledTexture;
 	}
 	
 	@Override

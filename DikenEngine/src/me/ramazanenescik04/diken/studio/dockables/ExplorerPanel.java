@@ -11,10 +11,10 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.AbstractService;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.studio.StudioTreeRenderer;

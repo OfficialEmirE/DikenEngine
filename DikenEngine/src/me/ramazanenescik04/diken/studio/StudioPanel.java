@@ -92,13 +92,12 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	public final Event generatingToolbar = new Event();
 	public final Event generatingMenubar = new Event();
 	
-	private EditorTabPanel scriptTabPanel;
-	private ExplorerPanel explorerPanel;
-	private PropertiesPanel propertiesPanel;
-	private ConsolePanel consolePanel;
-	private BasicObjectsPanel objectsPanel;
-	private ResourcesPanel resourcesPanel;
-	private AssistantPanel assistantPanel;
+	public EditorTabPanel scriptTabPanel;
+	public ExplorerPanel explorerPanel;
+	public PropertiesPanel propertiesPanel;
+	public ConsolePanel consolePanel;
+	public BasicObjectsPanel objectsPanel;
+	public ResourcesPanel resourcesPanel;
 	
 	public int selectionColor = 0xff33aaff;
 	public int handleColor = 0xffffffff;
@@ -160,7 +159,6 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		propertiesPanel = new PropertiesPanel(explorerPanel, engineWindow);
 		consolePanel = new ConsolePanel();
 		objectsPanel = new BasicObjectsPanel(explorerPanel::addNodeToSelected);
-		assistantPanel = new AssistantPanel();
 		scriptTabPanel = new EditorTabPanel();
 		scriptTabPanel.openEditor(new GamePreview(gamePanel));
 		resourcesPanel = new ResourcesPanel(editWorld, scriptTabPanel, engineWindow);
@@ -187,7 +185,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		CGrid grid = new CGrid(control);
         grid.add(1, 0, 3, 3, scriptTabPanel.getDockable());
         grid.add(1, 3, 3, 1, consolePanel.getDockable());
-        grid.add(4, 0, 1, 2, explorerPanel.getDockable(), assistantPanel.getDockable());
+        grid.add(4, 0, 1, 2, explorerPanel.getDockable());
         grid.add(4, 2, 1, 2, propertiesPanel.getDockable());
         grid.add(0, 0, 1, 4, objectsPanel.getDockable());
         grid.add(0, 4, 1, 2, resourcesPanel.getDockable());
@@ -265,6 +263,10 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		this.scriptTabPanel.reloadWorld(world, true);
 		
 		this.isPlayTestMode = true;
+		PluginManager.instance.getPlugins().forEach(e -> {
+			if (e.isEnabled())
+				e.playTestMode(true);
+		});
 	}
 	
 	public void stopPlayTest() {
@@ -278,6 +280,10 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		this.scriptTabPanel.reloadWorld(world, false);
 		
 		this.isPlayTestMode = false;
+		PluginManager.instance.getPlugins().forEach(e -> {
+			if (e.isEnabled())
+				e.playTestMode(false);
+		});
 	}
 
 	public void stop() {
@@ -311,19 +317,19 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		
 		if (!isPlayTestMode && !ctrl && engine.input.isMouseOnScreen()) {
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goForward"))) {
-				editWorld.camera.addY(-2);
+				editWorld.getCamera().addY(-2);
 			}
 			
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goLeft"))) {
-				editWorld.camera.addX(-2);
+				editWorld.getCamera().addX(-2);
 			}
 			
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goBack"))) {
-				editWorld.camera.addY(+2);
+				editWorld.getCamera().addY(+2);
 			}
 			
 			if (engine.input.isKeyDown(StudioUtils.keyMapList.get("goRight"))) {
-				editWorld.camera.addX(2);
+				editWorld.getCamera().addX(2);
 			}
 		}
 	}
@@ -351,8 +357,8 @@ public final class StudioPanel extends JPanel implements IInputListener {
 				if (x == 0) x = 1; 
 				if (y == 0) y = 1;
 				
-				this.editWorld.camera.setX((x / i) - (this.engine.getScaledWidth() / 2));
-				this.editWorld.camera.setY((y / i) - (this.engine.getScaledHeight() / 2));
+				this.editWorld.getCamera().setX((x / i) - (this.engine.getScaledWidth() / 2));
+				this.editWorld.getCamera().setY((y / i) - (this.engine.getScaledHeight() / 2));
 			}
 			
 			explorerPanel.keyPressed(engine.input.isKeyDown(KeyEvent.VK_CONTROL), key, character);
@@ -390,8 +396,8 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		zoom = targetZoom;
 		editWorld.getCamera().setZoom(zoom);
 		
-		editWorld.camera.setX(Math.round(focusPoint.x - (x / zoom)));
-		editWorld.camera.setY(Math.round(focusPoint.y - (y / zoom)));
+		editWorld.getCamera().setX(Math.round(focusPoint.x - (x / zoom)));
+		editWorld.getCamera().setY(Math.round(focusPoint.y - (y / zoom)));
 	}
 
 	private void handleEditorMousePressed(int screenX, int screenY) {
@@ -809,7 +815,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 				}
 			});
 		});
-		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.resetCamera", 13, 3, () -> editWorld.camera.reset());
+		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.resetCamera", 13, 3, () -> editWorld.getCamera().reset());
 		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.pluginManager", 6, 3, () -> scriptTabPanel.openEditor(new PluginManagerPanel()));
 		menubarBuilder.addMenuSeparator(toolsMenu);
 		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.gc", 5, 3, System::gc);
@@ -845,5 +851,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			selectedNode.addChild(n);
 			explorerPanel.rebuildExplorer();
 		}
+	}
+	
+	public boolean isPlayTestMode() {
+		return isPlayTestMode;
 	}
 }

@@ -24,6 +24,7 @@ public class Game extends AbstractService {
 
 	public Game(String name) {
 		super(name);
+		this.setArchivable(true);
 	}
 
 	public Game(DataInputStream in) throws IOException {

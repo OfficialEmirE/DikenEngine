@@ -39,9 +39,7 @@ public class DebugScreen implements ListAdapter<LogText> {
 	private Text titleText;
 	private boolean isOpen = false;
 	
-	public DebugScreen() {
-		ConsoleLog.setListAdapter(this);
-	}
+	private DebugScreen() {}
 	
 	public void init(World theWorld) {
 		screenGui = new ScreenGui("DebugScreen");
@@ -125,11 +123,15 @@ public class DebugScreen implements ListAdapter<LogText> {
 		isOpen = true;
 		
 		theWorld.getService(UIService.class).addChild(screenGui);
+		
+		ConsoleLog.setListAdapter(this);
 	}
 	
 	public void closeDebugScreen() {
 		screenGui.removeNode();
 		isOpen = false;
+		
+		ConsoleLog.setListAdapter(null);
 	}
 
 	public boolean isOpen() {
@@ -179,14 +181,16 @@ public class DebugScreen implements ListAdapter<LogText> {
 		}
 	}
 	
-	private void printText(LogText item) { 
-		if (item.type() == LogType.C_ERR || item.type() == LogType.S_ERR) {
-			textLine.add("§ff0000" + item.toString());
-		} else if(item.type() == LogType.C_WARN || item.type() == LogType.S_WARN) {
-			textLine.add("§ffff00" + item.toString());
-		} else {
-			textLine.add(item.toString());
-		}
+	private void printText(LogText item) {
+		item.toString().lines().forEach(e -> {
+			if (item.type() == LogType.C_ERR || item.type() == LogType.S_ERR) {
+				textLine.add("§ff0000" + e);
+			} else if(item.type() == LogType.C_WARN || item.type() == LogType.S_WARN) {
+				textLine.add("§ffff00" + e);
+			} else {
+				textLine.add(e);
+			}
+		});;
 		
 		textLine.autoSetSize();
 	}

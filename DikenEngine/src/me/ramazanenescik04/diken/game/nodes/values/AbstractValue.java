@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -124,8 +124,8 @@ public abstract class AbstractValue<T> extends Node {
 			case OBJECT_SELECT -> {
 				out.writeUTF(nodeObjectID);
 			}
-			case UNKNOWN -> {
-			}
+			case TEXT -> {}
+			case UNKNOWN -> {}
 		}
 	}
 
@@ -154,6 +154,7 @@ public abstract class AbstractValue<T> extends Node {
 	        case OBJECT_SELECT -> {
 	        	nodeObjectID = in.readUTF();
 	        }
+	        case TEXT -> {}
 	        case UNKNOWN -> {}
 	    }
 	}

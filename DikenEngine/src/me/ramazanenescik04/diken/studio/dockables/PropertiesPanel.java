@@ -1,7 +1,7 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.language.Lang;

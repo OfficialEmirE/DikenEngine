@@ -3,8 +3,8 @@ package me.ramazanenescik04.diken.game.nodes.values;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 
 public class ObjectValue extends AbstractValue<Node> {
 	public ObjectValue() {

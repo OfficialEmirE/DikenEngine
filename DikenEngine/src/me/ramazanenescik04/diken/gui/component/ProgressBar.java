@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.TextRenderer;
@@ -55,11 +55,17 @@ public class ProgressBar extends GuiComponent {
         
         bitmap.draw(progressBar, 1, 1);
         
-        bitmap.drawText(text.isEmpty() ? value + "%" : text, 4, height / 2 - TextRenderer.stringBitmapAverageHeight(text, DikenEngine.getEngine().defaultFont) / 2, false);
+        bitmap.drawText(
+        		text.isEmpty() ? value + "%" : text,
+        		4,
+        		height / 2 - TextRenderer.stringBitmapAverageHeight(
+        				text,
+        				DikenEngine.getEngine().defaultFont) / 2,
+        		false
+        );
 		
 		return bitmap;
 	}
-	
 	
 	public int getValue() {
 		return value;

@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
@@ -91,7 +91,7 @@ public class Sky extends Instance {
 	}
 
 	public void syncToCamera(World world, DikenEngine engine) {
-		float activeZoom = Math.max(0.1f, world.camera.getZoom());
+		float activeZoom = Math.max(0.1f, world.getCamera().getZoom());
         int sceneWidth = Math.max(1, Math.round(engine.getScaledWidth() / activeZoom));
         int sceneHeight = Math.max(1, Math.round(engine.getScaledHeight() / activeZoom));
 		this.width = sceneWidth + 20;

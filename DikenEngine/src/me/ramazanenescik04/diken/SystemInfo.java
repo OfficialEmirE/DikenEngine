@@ -123,6 +123,11 @@ public class SystemInfo {
 	        return UNKNOWN;
 	    }
 	}
+	
+	public static final SystemInfo instance = new SystemInfo();
+	
+	private SystemInfo.OS _os;
+	private SystemInfo.Architecture _arch;
 
 	private SystemInfo() {
 		String osName = System.getProperty("os.name");
@@ -131,11 +136,6 @@ public class SystemInfo {
         _os = OS.detect(osName);
         _arch = Architecture.detect(archName);
 	}
-	
-	public static SystemInfo instance = new SystemInfo();
-	
-	private SystemInfo.OS _os;
-	private SystemInfo.Architecture _arch;
 	
 	public final SystemInfo.OS getOS() {
 		return _os;

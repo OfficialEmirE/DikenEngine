@@ -57,6 +57,8 @@ public abstract class Plugin {
     
     public void generateMenubar(Menubar.Builder builder) {};
     
+    public void playTestMode(boolean b) {}
+    
     public List<Setting<?>> getPluginSettings() {
         return List.of();
     }

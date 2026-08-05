@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import javax.swing.JFrame;
+
 /**
  * Represents the `Utils` type within the DikenEngine `tools` package.
  */
@@ -137,5 +139,20 @@ public class Utils {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * @apiNote işlem bittikten sonra ne olursa olsun {@link JFrame#dispose()} edilmelidir!
+	 * @return {@link javax.swing.JDialog}'u pencere gibi davranabilmesi için gizli bir frame verir
+	 */
+	public static JFrame getInvisibleFrame() {
+		JFrame frame = new JFrame();
+		frame.setUndecorated(true);
+		frame.setSize(0, 0);
+		frame.setLocationRelativeTo(null);
+		frame.setFocusable(false);
+		frame.setVisible(true);
+		
+		return frame;
 	}
 }

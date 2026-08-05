@@ -9,18 +9,18 @@ import java.util.List;
 import java.util.UUID;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.services.AbstractService;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
+import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Camera extends AbstractService {
-	
 	public enum CameraType {
 		NONE,
 		FOLLOW,
@@ -57,10 +57,9 @@ public class Camera extends AbstractService {
 		}
 		
 		if (cameraType == CameraType.FOLLOW && followingInstance != null) {
-			cameraPos.x = (followingInstance.getX() + followingInstance.getAABBWidth() / 2)
-					- (engine.getScaledWidth() / 2);
-			cameraPos.y = (followingInstance.getY() + followingInstance.getAABBHeight() / 2)
-					- (engine.getScaledHeight() / 2);
+			float activeZoom = Math.max(0.1f, getZoom());
+			updateFollowingPosition(Math.round(engine.getScaledWidth() / activeZoom),
+					Math.round(engine.getScaledHeight() / activeZoom));
 		} else if (cameraType == CameraType.FREECAM) {		
 			if (engine.input.isKeyDown(KeyEvent.VK_W)) {
 				cameraPos.y -= 2;
@@ -78,6 +77,23 @@ public class Camera extends AbstractService {
 				cameraPos.x += 2;
 			}
 		}
+	}
+
+	/**
+	 * Aligns the followed instance with the center of the world viewport.
+	 */
+	public void updateFollowingPosition(int viewportWidth, int viewportHeight) {
+		if (cameraType != CameraType.FOLLOW || followingInstance == null) {
+			return;
+		}
+
+		Hitbox bounds = followingInstance.getGlobalAABB();
+		if (bounds == null) {
+			return;
+		}
+
+		cameraPos.x = bounds.getX() + bounds.getWidth() / 2 - viewportWidth / 2;
+		cameraPos.y = bounds.getY() + bounds.getHeight() / 2 - viewportHeight / 2;
 	}
 	
 	// API's

@@ -1,6 +1,8 @@
-package me.ramazanenescik04.diken.game;
+package me.ramazanenescik04.diken.game.setting;
 
 import java.util.Arrays;
+
+import me.ramazanenescik04.diken.game.Node;
 
 // --- Enum ---
 public enum EnumSettingType {
@@ -14,6 +16,11 @@ public enum EnumSettingType {
 	RESOURCE_SELECT(String.class),
 	LIST_SELECT(Enum.class, String.class, Integer.class),
 	OBJECT_SELECT(Node.class),
+	/**
+	 * @apiNote Sadece SettingDialog'da Help gibi yerlerde kullanılması için eklendi.
+	 * ilerde silinilebilir!
+	 */
+	TEXT(Object.class),
 	UNKNOWN(Object.class);
 	
 	public Class<?>[] allowedClasses;

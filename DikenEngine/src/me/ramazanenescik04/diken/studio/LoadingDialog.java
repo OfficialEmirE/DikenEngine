@@ -28,16 +28,25 @@ public class LoadingDialog extends JDialog {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final int WIDTH = 430;
-	private static final int HEIGHT = 277;
+	private static final int WIDTH = 430, HEIGHT = 277;
+	private static final int C_WIDTH = 430, C_HEIGHT = 80;
 
 	private final JLabel statusLabel;
 	private final JProgressBar progressBar;
 
 	public LoadingDialog() {
+		this(false);
+	}
+	
+	public LoadingDialog(boolean compact) {
 		setTitle(Lang.get("loading.dikenengine"));
-		setUndecorated(true);
-		setSize(WIDTH, HEIGHT);
+		if (compact) {
+			setSize(C_WIDTH, C_HEIGHT);
+		} else {
+			setUndecorated(true);
+			setSize(WIDTH, HEIGHT);
+		}
+		
 		setLocationRelativeTo(null);
 		setAlwaysOnTop(true);
 
@@ -74,7 +83,8 @@ public class LoadingDialog extends JDialog {
 		namePanel.add(versionLabel);
 		headerPanel.add(namePanel);
 
-		content.add(headerPanel, BorderLayout.NORTH);
+		if (!compact)
+			content.add(headerPanel, BorderLayout.NORTH);
 
 		JPanel footerPanel = new JPanel();
 		footerPanel.setOpaque(false);

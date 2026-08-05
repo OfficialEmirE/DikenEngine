@@ -50,8 +50,8 @@ import me.ramazanenescik04.diken.tools.Utils;
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.1.1";
-	public static final int protocolVersion = 311;
+	public static final String VERSION = "3.2.0";
+	public static final int protocolVersion = 320;
 
 	private static DikenEngine instance;
 
@@ -83,6 +83,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	
 	private int tmpW;
 	private int tmpH;
+	private String appliedLanguageDisplayName;
 
 	public DikenEngine(int width, int height, int scale) {
 		this(width, height, scale, false);
@@ -105,7 +106,8 @@ public class DikenEngine implements Runnable, IInputListener {
 		if (code != null && Lang.isLanguageAvailable(code)) {
 			Lang.setLanguage(code);
 		}
-
+		this.appliedLanguageDisplayName = this.config.getSettingValue("lang", String.class);
+		
 		this.width = tmpW = width;
 		this.height = tmpH = height;
 		this.baseWidth = width;
@@ -162,9 +164,6 @@ public class DikenEngine implements Runnable, IInputListener {
 		this.engineWindow.setVisible(true);
 		this.rendererPanel.requestFocusInWindow();
 		
-		if (this.loadingDialog != null)
-			this.loadingDialog.dispose();
-		
 		if (this.studioMode && this.studioPanel != null)
 			this.studioPanel.newWorld();
 		
@@ -214,8 +213,20 @@ public class DikenEngine implements Runnable, IInputListener {
 		return scale;
 	}
 	
+	/**
+	 * @see DikenEngine#isStudioMode()
+	 * @apiNote eğerki studio modunda açılmamışsa null olarak döner.
+	 * @return Studio'yu dödürür
+	 */
 	public StudioPanel getStudio() {
 		return studioPanel;
+	}
+	
+	/**
+	 * @return DikenEngine'nin Penceresini Döndürür.
+	 */
+	public JFrame getWindow() {
+		return engineWindow;
 	}
 
 	private int getInternalRenderWidth() {
@@ -230,6 +241,10 @@ public class DikenEngine implements Runnable, IInputListener {
 		return this.config.getSetting("fixedInternalResolution", Boolean.class).getValue();
 	}
 	
+	/**
+	 * Oyun motorunu tam ekran yapar
+	 * @param bool (bende bilmiyom :p)
+	 */
 	public void setFullscreen(boolean bool) {
 		this.fullscreen = !bool;
 		this.toggleFullscreen();
@@ -247,6 +262,9 @@ public class DikenEngine implements Runnable, IInputListener {
 		this.engineWindow.setTitle(title);
 	}
 	
+	/**
+	 * @return Studio Modunda başlatılıp başlatılmadığını bildirir
+	 */
 	public boolean isStudioMode() {
 		return this.studioMode;
 	}
@@ -282,13 +300,24 @@ public class DikenEngine implements Runnable, IInputListener {
 
 			rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
 			
+			if (this.loadingDialog != null) {
+				this.loadingDialog.setStatus("Loading Plugins");
+				this.loadingDialog.setProgress(50);
+			}
+			
 			PluginManager.instance.loadLocalPlugin(ExamplePlugin.class, this, studioPanel);
 			PluginManager.instance.loadPlugins(this, studioPanel);
 			
 			PluginManager.instance.enableAll(this, studioPanel);
 			
+			if (this.loadingDialog != null)
+				this.loadingDialog.dispose();
+			
+			this.listeners.forEach(l -> l.engineStarted());
+			
 			long fixedUpdateTime = 1000000000L / 60;
 			long lastUpdateTime = System.nanoTime();
+			long lastFrameTime = lastUpdateTime;
 			long lastFPSTime = System.currentTimeMillis();
 			double accumulator = 0;
 			int frames = 0;
@@ -298,14 +327,21 @@ public class DikenEngine implements Runnable, IInputListener {
 				accumulator += updateDelta;
 				lastUpdateTime = currentTime;
 
-				while (accumulator >= fixedUpdateTime) {
+				// Uzun bir duraklamadan sonra sonsuz catch-up döngüsüne girme.
+				accumulator = Math.min(accumulator, fixedUpdateTime * 5);
+				int updates = 0;
+				while (accumulator >= fixedUpdateTime && updates < 5) {
 					tick();
 					accumulator -= fixedUpdateTime;
+					updates++;
 				}
 
-				Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
-				renderWorker.queueFrame(frameBitmap);
-				frames++;
+				if (currentTime - lastFrameTime >= fixedUpdateTime) {
+					Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
+					renderWorker.queueFrame(frameBitmap);
+					lastFrameTime = currentTime;
+					frames++;
+				}
 
 				if (System.currentTimeMillis() - lastFPSTime >= 1000) {
 					currentFPS = frames;
@@ -442,17 +478,15 @@ public class DikenEngine implements Runnable, IInputListener {
 			studioPanel.tick();
 		}
 		
-		// FPS DÜŞÜRÜCÜ 6700
-		Map<String, String> available = Lang.getAvailableLanguages();
-        String currentDisplayName = available.getOrDefault(Lang.getCurrentLanguage(), "English");
-        
-		if (!currentDisplayName.equals(this.config.getSettingValue("lang", String.class))) {
-	        Map<String, String> nameToCode = new LinkedHashMap<>();
-	        for (var entry : available.entrySet()) {
-	            nameToCode.put(entry.getValue(), entry.getKey());
-	        }
+		String configuredLanguage = this.config.getSettingValue("lang", String.class);
+		if (!configuredLanguage.equals(appliedLanguageDisplayName)) {
+			Map<String, String> available = Lang.getAvailableLanguages();
+		        Map<String, String> nameToCode = new LinkedHashMap<>();
+		        for (var entry : available.entrySet()) {
+		            nameToCode.put(entry.getValue(), entry.getKey());
+		        }
 			
-			String code = nameToCode.get(this.config.getSettingValue("lang", String.class));
+			String code = nameToCode.get(configuredLanguage);
 			if (code != null && Lang.isLanguageAvailable(code)) {
 				Lang.setLanguage(code);
 				
@@ -462,6 +496,7 @@ public class DikenEngine implements Runnable, IInputListener {
 						Lang.get("studio.restartRequired"), 
 						JOptionPane.WARNING_MESSAGE);
 			}
+			appliedLanguageDisplayName = configuredLanguage;
 		}
 
 		if (this.cursorResource == null && rendererPanel.getCursor() != Cursor.getDefaultCursor()) {
@@ -517,21 +552,6 @@ public class DikenEngine implements Runnable, IInputListener {
 		ArrayBitmap checkBox = new ArrayBitmap();
 		checkBox.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/check_box.png"), 16, 16);
 		ResourceLocator.addResource("checkbox-array", checkBox);
-
-		ArrayBitmap bg_tiles = new ArrayBitmap();
-		bg_tiles.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/background_tiles.png"),
-				32, 32);
-		ResourceLocator.addResource("bgd-tiles", bg_tiles);
-
-		ArrayBitmap batteryImage = new ArrayBitmap();
-		batteryImage.bitmap = IOResource.loadResourceAndCut(DikenEngine.class.getResourceAsStream("/battery.png"), 16,
-				8);
-		ResourceLocator.addResource("battery-image", batteryImage);
-
-		ArrayBitmap win_icons = new ArrayBitmap();
-		win_icons.setArray(
-				IOResource.loadResourceAndCut(IOResource.createClassResource("/win_icons.png"), 16, 16));
-		ResourceLocator.addResource("win-icons", win_icons);
 
 		ResourceLocator.addResource("editor_icons", new ArrayBitmap(
 				IOResource.loadResourceAndCut(IOResource.createClassResource("/editor_icons.png"), 16, 16)));

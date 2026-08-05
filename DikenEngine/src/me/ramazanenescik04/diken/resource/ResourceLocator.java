@@ -1,12 +1,26 @@
 package me.ramazanenescik04.diken.resource;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
 
 public class ResourceLocator {
     private static final Map<ResourceKey, IResource> resMap = new ConcurrentHashMap<>();
     private static final ResourceKey lookupKey = new ResourceKey("diken", "dummy");
+    
+    public static void addResource(String resourceName, InputStream in, EnumResource resType) {
+        addResource(new ResourceKey(resourceName), in, resType);
+    }
+    
+    public static void addResource(ResourceKey key, InputStream in, EnumResource resType) {
+        var res = IOResource.loadResource(in, resType);
+        
+        if (res == null) {
+            res = IOResource.missingTexture;
+        }
+        resMap.put(key, res);
+    }
     
     public static void addResource(String resourceName, IResource res) {
         addResource(new ResourceKey(resourceName), res);
@@ -34,9 +48,11 @@ public class ResourceLocator {
         private final String gameID;
         private String resourceName;
         
-        public ResourceKey(String _resourceName) {
-            this.gameID = "diken";
-            this.resourceName = Objects.requireNonNull(_resourceName);
+        public ResourceKey(String resourceName) {
+        	Objects.requireNonNull(resourceName);
+        	
+        	this.gameID = "diken";
+            this.resourceName = resourceName;
         }
 
         public ResourceKey(String _gameID, String _resourceName) {

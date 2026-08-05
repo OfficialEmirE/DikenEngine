@@ -28,6 +28,7 @@ public final class SettingEditorFactory {
             case LIST_SELECT -> listSelect(setting);
             case RESOURCE_SELECT -> resourceSelect((Setting<String>) setting);
             case OBJECT_SELECT -> unsupported("studio.windows.settings.unsupportedObject");
+            case TEXT -> text((Setting<Object>) setting);
             case UNKNOWN -> unsupported("studio.windows.settings.unsupported");
         };
     }
@@ -156,6 +157,11 @@ public final class SettingEditorFactory {
     private static JComponent unsupported(String message) {
         JLabel label = new JLabel(Lang.get(message));
         label.setEnabled(false);
+        return label;
+    }
+    
+    private static JComponent text(Setting<Object> message) {
+        JLabel label = new JLabel(message.getValue().toString());
         return label;
     }
 }

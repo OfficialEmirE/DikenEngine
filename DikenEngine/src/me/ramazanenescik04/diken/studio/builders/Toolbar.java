@@ -5,7 +5,7 @@ import java.util.*;
 
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;	
+import javax.swing.JButton;
 import javax.swing.JToolBar;
 
 import bibliothek.gui.dock.common.DefaultSingleCDockable;
@@ -33,6 +33,10 @@ public class Toolbar {
 	
 	public String getToolbarID() {
 		return new String(toolbarID);
+	}
+	
+	public AbstractButton getButton(String key) {
+		return buttons.get(key);
 	}
 	
 	public List<AbstractButton> getButtons() {

@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.nodes.Light;
 import me.ramazanenescik04.diken.game.nodes.Sky;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;

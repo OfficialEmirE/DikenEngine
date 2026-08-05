@@ -11,8 +11,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.language.Lang;

@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.TextRenderer;
@@ -67,7 +67,9 @@ public class TextLine extends GuiComponent {
 	}
 	
 	public TextLine add(String textLine) {
-		this.textLines.add(textLine);
+		textLine.lines().forEach(e -> {
+			this.textLines.add(e);
+		});
 		return this;
 	}
 	

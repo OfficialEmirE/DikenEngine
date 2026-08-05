@@ -49,6 +49,10 @@ public class Menubar {
 		return new String(toolbarID);
 	}
 	
+	public JMenuItem getButton(String key) {
+		return buttons.get(key);
+	}
+	
 	public List<JMenuItem> getButtons() {
 		return new ArrayList<>(buttons.values());
 	}
@@ -63,7 +67,7 @@ public class Menubar {
 		}
 		
 		public Menubar getMenu(String id) {
-			return menubars.getOrDefault(id, newMenu(id, "Untitled Menu"));
+			return menubars.get(id);
 		}
 		
 		private String addMenuItem(Menubar toolbar, JMenuItem menu) {

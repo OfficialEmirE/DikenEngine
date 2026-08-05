@@ -9,6 +9,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -34,6 +36,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
+import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.tools.Pair;
 import me.ramazanenescik04.diken.gui.UniFont;
@@ -56,7 +59,7 @@ public class World implements Cloneable {
     
     public transient Map<String, IResource> resources;
     
-    public final Camera camera = new Camera(this);
+    private Camera camera = new Camera(this);
     private Hitbox gameViewport, uiViewport;
 
     public World(String gameName, Game rootNode) {
@@ -142,7 +145,9 @@ public class World implements Cloneable {
 
     // --- Render ---
 
-    public void render(Bitmap mainBitmap) {
+    public synchronized void render(Bitmap mainBitmap) {
+		mainBitmap.clear(0x00000000);
+
     	var width = this.engine.getScaledWidth();
     	var height = this.engine.getScaledHeight();
     	
@@ -155,6 +160,7 @@ public class World implements Cloneable {
         float activeZoom = Math.max(0.1f, camera.getZoom());
         int sceneWidth = Math.max(1, Math.round(width / activeZoom));
         int sceneHeight = Math.max(1, Math.round(height / activeZoom));
+        camera.updateFollowingPosition(sceneWidth, sceneHeight);
         Bitmap sceneBitmap = FrameBitmapPool.newBitmap(sceneWidth, sceneHeight);
         
         if (this.gameViewport == null) {
@@ -175,7 +181,8 @@ public class World implements Cloneable {
         if (sceneWidth == width && sceneHeight == height) {
             worldBitmap = sceneBitmap;
         } else {
-            worldBitmap = sceneBitmap.resize(width, height);
+            worldBitmap = FrameBitmapPool.newBitmap(width, height);
+            sceneBitmap.scaleInto(worldBitmap);
         }
         
         mainBitmap.draw(worldBitmap, 0, 0);
@@ -184,7 +191,7 @@ public class World implements Cloneable {
 
     // --- Update & Collision ---
 
-    public void tick(DikenEngine engine) {
+    public synchronized void tick(DikenEngine engine) {
     	if (this.engine == null)
     		this.engine = engine;
     	
@@ -281,6 +288,12 @@ public class World implements Cloneable {
 		}
     }
     
+    public static void saveWorld(World theWorld, OutputStream outputStream) throws IOException {
+    	try (DataOutputStream outStream = new DataOutputStream(new GZIPOutputStream(outputStream))) {
+    		writeWorld(theWorld, outStream);
+		}
+    }
+    
     public static byte[] saveWorldToBytes(World theWorld) throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         try (DataOutputStream outStream = new DataOutputStream(new GZIPOutputStream(stream))) {
@@ -291,6 +304,12 @@ public class World implements Cloneable {
     
     public static World loadWorld(File outputFile) throws IOException, ReflectiveOperationException {
     	try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(new FileInputStream(outputFile)))) {
+    		return readWorld(outStream);
+		}
+    }
+    
+    public static World loadWorld(InputStream inputStream) throws IOException, ReflectiveOperationException {
+    	try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(inputStream))) {
     		return readWorld(outStream);
 		}
     }
@@ -408,8 +427,16 @@ public class World implements Cloneable {
 		
 		IResource res = resources.get(key);
 		
-		if (res == null && this.root.allowThirdPartyResources && (key.startsWith("http://") || key.startsWith("https://"))) {
-			res = HttpLoadResource(expectedType, key);
+		if (res == null) {
+			if (this.root.allowThirdPartyResources && (key.startsWith("http://") || key.startsWith("https://"))) {
+				res = HttpLoadResource(expectedType, key);
+			} else if (key.contains(":")) {
+				var splitted = key.split(":");
+				
+				res = ResourceLocator.getResource(
+						new ResourceLocator.ResourceKey(splitted[0], splitted[1])
+				);
+			}
 		}
 		
 		if (res != null && !res.resourceIs(expectedType))
@@ -504,6 +531,9 @@ public class World implements Cloneable {
 		copyWorld.resources = new LinkedHashMap<String, IResource>(this.resources);
 		copyWorld.resources.values().forEach(this::reloadResources);
 		copyWorld.lastUpdateTime = System.currentTimeMillis();
+		copyWorld.camera = copyRoot
+				.findFirstChildOfClass(Workspace.class)
+				.findFirstChildOfClass(Camera.class);
 		copyWorld.camera.setZoom(this.camera.getZoom());
 		copyWorld.root.sendReloadAllNodes(copyWorld.root);
 		return copyWorld;

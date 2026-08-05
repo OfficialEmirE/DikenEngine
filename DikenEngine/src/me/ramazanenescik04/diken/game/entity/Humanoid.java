@@ -7,13 +7,13 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.World;
-import me.ramazanenescik04.diken.game.Animation;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.nodes.Folder;
 import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.game.nodes.SpawnLocation;
 import me.ramazanenescik04.diken.game.nodes.Tool;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -32,6 +32,8 @@ public class Humanoid extends Part {
 	
 	transient int killTime = 0;
 	private transient Tool selectedTool;
+	
+	public final Event walking = new Event();
 	
 	public Humanoid() {
 		super(0, 0, 16, 16);
@@ -97,6 +99,9 @@ public class Humanoid extends Part {
 	}
 	
 	public void move(int deltaX, int deltaY) {
+		if (!isCanMove())
+			return;
+		
 	    // Gelen değişim miktarını hız ile çarpıyoruz
 	    int moveX = (int) (deltaX * speed);
 	    int moveY = (int) (deltaY * speed);
@@ -104,6 +109,10 @@ public class Humanoid extends Part {
 	    // Mevcut konumun üzerine ekliyoruz
 	    this.setX(this.getX() + moveX);
 	    this.setY(this.getY() + moveY);
+	    
+	    if (this.walking != null) {
+	    	this.walking.FireEvent(moveX, moveY);
+	    }
 	}
 	
 	public Tool getSelectedTool() {
@@ -121,22 +130,6 @@ public class Humanoid extends Part {
 		return this.selectedTool = tool;
 	}
 	
-	public Animation getIdleAnimation() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-	
-	public Animation getWalkAnimation() {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-	
-	public void setIdleAnimation(Animation animation) {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-	
-	public void setWalkAnimation(Animation animation) {
-		throw new UnsupportedOperationException("Not supported yet.");
-	}
-
 	public boolean isCanMove() {
 		return canMove;
 	}

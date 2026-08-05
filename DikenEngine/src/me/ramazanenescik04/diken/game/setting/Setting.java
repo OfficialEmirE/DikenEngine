@@ -7,8 +7,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Consumer;
 
-import me.ramazanenescik04.diken.game.EnumSettingType;
-
 /**
  * DikenEngine için geliştirilmiş evrensel ayar sınıfı.
  * @param <T> Ayarın tutacağı veri tipi (Boolean, String, Integer, Float vb.)

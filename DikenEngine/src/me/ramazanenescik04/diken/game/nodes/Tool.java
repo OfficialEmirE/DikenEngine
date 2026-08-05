@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
-import me.ramazanenescik04.diken.game.EnumSettingType;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;

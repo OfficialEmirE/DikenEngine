@@ -184,7 +184,9 @@ public class TextRenderer {
 			}
 		}
 		
-		long parsedColor = Long.parseLong(text.substring(hexStartIndex, hexEndIndex), 16);
+		var hex = text.substring(hexStartIndex, hexEndIndex);
+		
+		long parsedColor = Long.parseLong(hex, 16);
 		if (hexLength == RGB_HEX_LENGTH) {
 			parsedColor |= 0xff000000L;
 		}
@@ -196,15 +198,7 @@ public class TextRenderer {
 		return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
 	}
 
-	private static class ColorCode {
-		private final int color;
-		private final int endIndex;
-
-		private ColorCode(int color, int endIndex) {
-			this.color = color;
-			this.endIndex = endIndex;
-		}
-	}
+	private static record ColorCode(int color, int endIndex) {}
 
 	public static String wordWrapString(String message, int i, UniFont defaultFont) {
 		StringBuilder wrappedText = new StringBuilder();

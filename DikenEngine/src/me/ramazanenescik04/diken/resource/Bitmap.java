@@ -141,6 +141,30 @@ public class Bitmap implements IResource {
 	public Bitmap resize(int scale) {
 		return resize(w * scale, h * scale);
 	}
+
+	/**
+	 * Nearest-neighbour ölçeklemeyi yeni bir Bitmap ayırmadan verilen hedefe yazar.
+	 * Hedef bitmap frame havuzundan alınabildiği için render sırasında native buffer
+	 * tahsisi yapılmasını önler.
+	 */
+	public void scaleInto(Bitmap target) {
+		if (target == null || target.w <= 0 || target.h <= 0) {
+			throw new IllegalArgumentException("Target bitmap must have a positive size.");
+		}
+
+		ensurePixels();
+		target.ensurePixels();
+		for (int y = 0; y < target.h; y++) {
+			int sourceY = y * h / target.h;
+			int sourceRow = sourceY * w;
+			int targetRow = y * target.w;
+			for (int x = 0; x < target.w; x++) {
+				int sourceX = x * w / target.w;
+				target.pixels.put(targetRow + x, pixels.get(sourceRow + sourceX));
+			}
+		}
+		target.rewind();
+	}
 	
 	public Bitmap rotate(float degress) {
 		return rotate(degress, 0x00000000);
