@@ -16,6 +16,8 @@ import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class InputService extends Service {
+	private static boolean textTypeMode = false;
+	
 	// Keyboard listeners
 	public final Event OnKeyHandled = new Event();
 	public final Event OnKeyDown = new Event();
@@ -72,15 +74,29 @@ public class InputService extends Service {
 		cursor.setKey(cursorResource);
 	}
 	
+	public boolean isTextTypeMode() {
+		return textTypeMode;
+	}
+	
+	public static void setTextTypeMode(boolean b) {
+		textTypeMode = b;
+	}
+	
 	public boolean isKeyDown(int key) {
+		if (textTypeMode) return false;
+		
 		return engine.input.isKeyDown(key);
 	}
 	
 	public boolean isKeyPressed(int key) {
+		if (textTypeMode) return false;
+		
 		return engine.input.isKeyPressed(key);
 	}
 	
 	public boolean isKeyReleased(int key) {
+		if (textTypeMode) return false;
+		
 		return engine.input.isKeyReleased(key);
 	}
 

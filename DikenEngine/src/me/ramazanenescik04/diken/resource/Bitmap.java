@@ -879,7 +879,6 @@ public class Bitmap implements IResource {
 		return new Bitmap(sw, sh, pixels);
 	}
 
-    @Deprecated
 	public Bitmap opposite(boolean upMode) {
 		Bitmap bitmap = new Bitmap(w, h);
     	for (int y = 0; y < h; y++) {
@@ -888,11 +887,9 @@ public class Bitmap implements IResource {
             	int destX, destY;
 
             	if (upMode) {
-                	// Dikey ters çevirme (yukarı <-> aşağı)
                 	destX = x;
                 	destY = h - 1 - y;
             	} else {
-                	// Yatay ters çevirme (sol <-> sağ)
                 	destX = w - 1 - x;
                 	destY = y;
             	}
@@ -901,8 +898,6 @@ public class Bitmap implements IResource {
             	bitmap.pixels.put(destIndex, pixels.get(srcIndex));
         	}
     	}
-    	rewind();
-    	bitmap.rewind();
     	return bitmap;
 	}
 	

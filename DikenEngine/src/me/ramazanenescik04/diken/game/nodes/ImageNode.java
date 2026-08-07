@@ -8,6 +8,7 @@ import java.util.List;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.io.Tag.Compound;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -23,6 +24,8 @@ public abstract class ImageNode extends Instance {
 	protected transient Bitmap texture = new Bitmap(16, 16);
 	private transient boolean textureLoaded = false;
 	private String resourceID = "empty";
+	
+	private boolean xFlip = false;
 
 	public ImageNode() {
 		this("DONT-USE->ImageNode");
@@ -66,6 +69,9 @@ public abstract class ImageNode extends Instance {
 		if (!textureLoaded) {
 			this.texture = world.getResource(resourceID, EnumResource.IMAGE);
 			this.textureLoaded = true;
+			
+			if (this.xFlip)
+				this.texture = this.texture.opposite(false);
 		}
 	}
 
@@ -74,12 +80,24 @@ public abstract class ImageNode extends Instance {
 		textureLoaded = false;
 	}
 	
+	public boolean isxFlip() {
+		return xFlip;
+	}
+
+	public void setxFlip(boolean xFlip) {
+		this.xFlip = xFlip;
+		this.textureLoaded = false;
+	}
+
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("imageNode", "ImageNode", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(1, 1));
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture));
+				.addSetting(new Setting<>("Texture ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT)
+						.addChangeListener(this::setTexture))
+				.addSetting(new Setting<>("X Flip", xFlip, Boolean.class, EnumSettingType.CHECK_BOX)
+						.addChangeListener(this::setxFlip));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
@@ -97,6 +115,16 @@ public abstract class ImageNode extends Instance {
 		super.loadNodeData(in);
 		this.resourceID = in.readUTF();
 		this.textureLoaded = false;
+	}
+
+	@Override
+	public void saveNodeData(Compound tag) {
+		tag.putBoolean("xFlip", xFlip);
+	}
+
+	@Override
+	public void loadNodeData(Compound tag) {
+		this.xFlip = tag.getBoolean("xFlip", false);
 	}
 }
 

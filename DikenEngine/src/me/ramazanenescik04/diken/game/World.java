@@ -50,7 +50,9 @@ import me.ramazanenescik04.diken.renderer.FrameBitmapPool;
  */
 public class World implements Cloneable {
     private static final int MAX_COLLISION_PASSES = 6;
-    public static final int WORLD_IO_VERSION = 2;
+    
+    public static final int MIN_WORLD_IO_VERSION = 2;
+    public static final int WORLD_IO_VERSION = 3;
 
     public transient DikenEngine engine;
     
@@ -355,7 +357,7 @@ public class World implements Cloneable {
         }
         
         int worldVersion = outStream.readInt();
-        if (worldVersion < WORLD_IO_VERSION) {
+        if (worldVersion < MIN_WORLD_IO_VERSION) {
         	throw new IOException("Dünya yükleme sistemi, eski dünya dosyaları yüklemeyi desteklemiyor! (şimdilik)");
         }
     
@@ -379,7 +381,7 @@ public class World implements Cloneable {
             resources.put(key, resource);
         }
         
-        Game rootNode = (Game) Node.loadNode(outStream);
+        Game rootNode = (Game) Node.loadNode(outStream, worldVersion);
 		rootNode.sendReloadAllNodes(rootNode);
 		
 		World world = new World(gameName, rootNode);

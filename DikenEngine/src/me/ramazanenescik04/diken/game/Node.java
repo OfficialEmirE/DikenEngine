@@ -3,6 +3,7 @@ package me.ramazanenescik04.diken.game;
 import java.awt.Point;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import java.util.function.Predicate;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.io.Tag;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -199,7 +201,7 @@ public abstract class Node implements Cloneable {
     	OnParentChanged.FireEvent(this.parent, newParent);
     	notifyAncestors(OnParentChangedDescendant, this.parent, newParent);
     	
-    	if (newParent == null) {
+    	if (newParent == null && this.parent != null) {
     		this.parent.removeChild(this);
     	} else {
     		newParent.addChild(this);
@@ -618,9 +620,13 @@ public abstract class Node implements Cloneable {
 		this.zIndex = in.readInt();
 	}
 	
+	public void saveNodeData(Tag.Compound tag) {};
+	
+	public void loadNodeData(Tag.Compound tag) {};
+	
 	public static void exportNode(File file, Node node) throws IOException {
 		try (var out = new DataOutputStream(new java.io.FileOutputStream(file))) {
-			out.writeUTF("DikenEngine-NodeFile");
+			out.writeUTF("DikenEngine-NodeFile-2");
 			
 			saveNode(node, out);
 		}
@@ -629,15 +635,26 @@ public abstract class Node implements Cloneable {
 	public static Node importNode(File file) throws IOException {
 		try (var in = new DataInputStream(new java.io.FileInputStream(file))) {
 			String signature = in.readUTF();
-	        if (!signature.equals("DikenEngine-NodeFile")) {
-	            throw new IOException("DikenEngine NodeFile Dosyası Değil!");
-	        }
-	        
-	        return loadNode(in);
+
+			int version;
+
+			if ("DikenEngine-NodeFile".equals(signature)) {
+			    version = 3; //World.MIN_WORLD_IO_VERSION
+			} else if (signature.startsWith("DikenEngine-NodeFile-")) {
+			    try {
+			        version = Integer.parseInt(signature.substring("DikenEngine-NodeFile-".length()));
+			    } catch (NumberFormatException e) {
+			        throw new IOException("Geçersiz dosya sürümü!", e);
+			    }
+			} else {
+			    throw new IOException("DikenEngine NodeFile Dosyası Değil!");
+			}
+
+			return loadNode(in, version);
 		}
 	}
 	
-	public static Node loadNode(DataInputStream inStream) throws IOException {
+	public static Node loadNode(DataInputStream inStream, int ver) throws IOException {
         String className = inStream.readUTF();
         int childCount = inStream.readInt();
         
@@ -649,9 +666,26 @@ public abstract class Node implements Cloneable {
             throw new IOException("Node sınıfı yüklenemedi: " + className, e);
         }
         
+        //TODO: Her yeni world io sürümünde değiştir!
+        if (ver > 2) {
+        	int length = inStream.readInt();
+        	
+        	if (length < 0) {
+                throw new IOException("Geçersiz veri uzunluğu: " + length);
+            }
+
+            byte[] bytes = inStream.readNBytes(length);
+
+            if (bytes.length != length) {
+                throw new EOFException("Dosya beklenenden erken bitti.");
+            }
+        	
+        	node.loadNodeData(Tag.Compound.fromBytes(bytes));
+        }
+        
         // Çocukları recursive yükle
         for (int i = 0; i < childCount; i++) {
-            Node child = loadNode(inStream);
+            Node child = loadNode(inStream, ver);
             node.addChild(child); // ya da node.children.add(child)
         }
         
@@ -666,6 +700,13 @@ public abstract class Node implements Cloneable {
     	outStream.writeUTF(current.getClass().getName());
     	outStream.writeInt(filteredChildren.size());
     	current.saveNodeData(outStream);
+    	
+    	var compound = new Tag.Compound();
+    	current.saveNodeData(compound);
+    	
+    	byte[] bytes = compound.toBytes();
+    	outStream.writeInt(bytes.length);
+    	outStream.write(bytes);
     	
     	for (Node node : filteredChildren) {
     		saveNode(node, outStream);

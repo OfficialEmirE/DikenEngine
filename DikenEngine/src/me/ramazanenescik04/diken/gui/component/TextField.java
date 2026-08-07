@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -106,6 +107,7 @@ public class TextField extends GuiComponent {
 	
 	public void setFocused(boolean focused) {
 		this.isFocused = focused;
+		InputService.setTextTypeMode(focused);
 	}
 
 	public boolean isFocused() {
@@ -197,6 +199,7 @@ public class TextField extends GuiComponent {
 
 	private void confirmInput() {
 		isFocused = false;
+		InputService.setTextTypeMode(false);
 
 		if (pressedEnter != null) {
 			pressedEnter.run();
@@ -205,6 +208,7 @@ public class TextField extends GuiComponent {
 
 	private void cancelInput() {
 		isFocused = false;
+		InputService.setTextTypeMode(false);
 	}
 
 	private void addCharacter(char character) {
@@ -236,8 +240,10 @@ public class TextField extends GuiComponent {
 		if (button == 0) {
 			if (isTouch) {
 				this.isFocused = !this.isFocused;
+				InputService.setTextTypeMode(this.isFocused);
 			} else {
 				this.isFocused = false;
+				InputService.setTextTypeMode(false);
 			}
 		}
 	}
