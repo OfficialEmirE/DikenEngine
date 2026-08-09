@@ -1,23 +1,23 @@
-# DikenEngine Dokümantasyonu
+# DikenEngine Documentation
 
-Bu belge, depodaki mevcut DikenEngine 3.x kaynak koduna göre hazırlanmıştır. DikenEngine Java ile yazılmış 2D bir oyun motoru ve Studio editörüdür. Oyun sahnesi `Node` ağacından oluşur; Lua scriptleri bu ağacı çalışırken kontrol eder, Java pluginleri ise Studio'yu genişletir.
+This document describes the current DikenEngine 3.x source code. DikenEngine is a 2D game engine and Studio editor written in Java. A game scene is a `Node` tree; Lua scripts control the tree at runtime, while Java plugins extend Studio.
 
-## İçindekiler
+## Contents
 
-- [Kurulum ve çalıştırma](#kurulum-ve-çalıştırma)
-- [Proje ve çalışma modeli](#proje-ve-çalışma-modeli)
+- [Installation and execution](#installation-and-execution)
+- [Project and runtime model](#project-and-runtime-model)
 - [Lua API](#lua-api)
 - [Java plugin API](#java-plugin-api)
-- [Dünya ve dosya işlemleri](#dünya-ve-dosya-işlemleri)
-- [Kaynaklar ve notlar](#kaynaklar-ve-notlar)
+- [World and file operations](#world-and-file-operations)
+- [Resources and notes](#resources-and-notes)
 
-## Kurulum ve çalıştırma
+## Installation and execution
 
-### Gereksinimler
+### Requirements
 
-- Java 25 veya üzeri önerilir. Kaynak kodu virtual thread ve güncel Java sözdizimi kullanır.
-- Windows'ta `run.bat`, LWJGL native dosyalarını ve `DikenEngine/libs` altındaki JAR dosyalarını otomatik classpath'e ekler.
-- Linux ve macOS'ta aynı işlemler Java classpath'i elle verilerek yapılmalıdır. Native dosyalar `DikenEngine/res/natives/<OS>` altındadır.
+- Java 25 or newer is recommended. The source uses virtual threads and current Java syntax.
+- On Windows, `run.bat` automatically adds the LWJGL native files and JAR files under `DikenEngine/libs` to the classpath.
+- On Linux and macOS, provide the equivalent Java classpath manually. Native files are under `DikenEngine/res/natives/<OS>`.
 
 ### Windows
 
@@ -26,11 +26,11 @@ run.bat
 run.bat --studio
 ```
 
-Parametresiz komut oyunu başlatır. `--studio` Studio arayüzünü açar. Derleme çıktısı `DikenEngine/bin` klasörüne yazılır. `run.bat` her çalıştırıldığında `src` altındaki Java dosyalarını derler.
+Running without arguments starts the game. `--studio` opens the Studio interface. Build output is written to `DikenEngine/bin`. Each run compiles the Java files under `src`.
 
-### Elle derleme
+### Manual compilation
 
-Proje kökünden:
+From the project root:
 
 ```powershell
 $cp = "DikenEngine\res;" + ((Get-ChildItem DikenEngine\libs\*.jar).FullName -join ";")
@@ -39,26 +39,26 @@ javac -d DikenEngine\bin -cp $cp (Get-ChildItem DikenEngine\src -Recurse -Filter
 java -cp "$cp;DikenEngine\bin" me.ramazanenescik04.diken.DikenEngine --studio
 ```
 
-### `.dwf` dünyası
+### `.dwf` worlds
 
-3.0.0 ile `.dwf` dosyaları açılıp oynatılabilir. Studio'da kaynakları ve node ağacını oluşturup dünyayı kaydedin. Runtime tarafında dünya yükleme işlemi `World.loadWorld(...)` ile yapılır.
+Version 3.0.0 can open and play `.dwf` files. Create the scene and resources in Studio, then save the world. At runtime, use `World.loadWorld(...)` to load a world.
 
-## Proje ve çalışma modeli
+## Project and runtime model
 
-Kaynak kökü `DikenEngine/src/me/ramazanenescik04/diken` klasörüdür.
+The source root is `DikenEngine/src/me/ramazanenescik04/diken`.
 
-| Paket | Sorumluluk |
+| Package | Responsibility |
 |---|---|
-| `game` | `World`, `Node`, `Instance`, event, setting ve oyun modeli |
-| `game.nodes` | Kamera, parça, sprite, ses, ışık ve diğer sahne node'ları |
-| `game.services` | `Workspace`, `RunService`, input, UI, player ve lighting servisleri |
-| `gui` | Runtime GUI bileşenleri ve `UDim2` |
-| `resource` | Bitmap, ses, cursor ve kaynak kayıtları |
-| `scripting` | LuaJ, script yaşam döngüsü ve Lua bridge |
-| `plugin` | Studio plugin yükleme ve yaşam döngüsü |
-| `studio` | Editör panelleri, menüler, toolbar ve ayarlar |
+| `game` | `World`, `Node`, `Instance`, events, settings, and the game model |
+| `game.nodes` | Camera, part, sprite, audio, light, and other scene nodes |
+| `game.services` | `Workspace`, runtime, input, UI, player, and lighting services |
+| `gui` | Runtime GUI components and `UDim2` |
+| `resource` | Bitmap, audio, cursor, and resource serialization |
+| `scripting` | LuaJ integration, script lifecycle, and the Lua bridge |
+| `plugin` | Studio plugin loading and lifecycle |
+| `studio` | Editor panels, menus, toolbars, and settings |
 
-Her node bir parent ve child listesine sahiptir. Root node üzerinden tipik erişim:
+Every node has a parent and a child list. Typical access from the root:
 
 ```lua
 local workspace = game:GetService("Workspace")
@@ -66,50 +66,50 @@ local run = game:GetService("RunService")
 local part = workspace:FindFirstChild("Part")
 ```
 
-Lua proxy'si Java getter/metot adlarını doğrudan kullanır; ancak pratikte Java isimleri büyük-küçük harf duyarlıdır. `game.Workspace.Part` biçimi child adıyla arama yapar.
+The Lua proxy exposes Java getters, setters, fields, and methods. Java method names are case-sensitive. `game.Workspace.Part` searches for children by name.
 
 ## Lua API
 
-### Script yaşam döngüsü
+### Script lifecycle
 
-Bir `Script` node'unun `source` alanı çalıştırılır. Script içinde global `update` fonksiyonu varsa her engine update turunda çağrılır.
+The `source` field of a `Script` node is executed. If the script defines a global `update` function, it is called on every engine update:
 
 ```lua
 function update()
-    -- Her frame çağrılır.
+    -- Called every frame.
 end
 ```
 
-Script üzerindeki kaynak API'si:
+Script source API:
 
-| API | Açıklama |
+| API | Description |
 |---|---|
-| `script.source` | Lua kaynak metni |
-| `script.enabled` | Script çalıştırılabilir mi |
-| `script:getSource()` | Kaynağı döndürür |
-| `script:setSource(source)` | Kaynağı değiştirir |
-| `script:isEnabled()` | Etkinlik durumunu döndürür |
-| `script:setEnabled(enabled)` | Etkinlik durumunu değiştirir |
+| `script.source` | Lua source text |
+| `script.enabled` | Whether the script can run |
+| `script:getSource()` | Returns the source |
+| `script:setSource(source)` | Changes the source |
+| `script:isEnabled()` | Returns the enabled state |
+| `script:setEnabled(enabled)` | Changes the enabled state |
 
-### Global Lua değerleri
+### Global Lua values
 
-`res/scripts/init.lua` tarafından kurulan global değerler:
+The following globals are installed by `res/scripts/init.lua`:
 
-| Global | Açıklama |
+| Global | Description |
 |---|---|
-| `game` | Dünya root node proxy'si |
-| `script` | Çalışan `Script` node proxy'si |
-| `Node` | `new` ve `clone` yardımcılarını içeren tablo |
-| `Enum` | Engine enum sınıflarını içeren Java proxy tablosu |
-| `UDim2` | `UDim2` Java sınıfı |
-| `KeyEvent`, `MouseEvent` | AWT input sınıfları |
-| `NodeResource`, `Point`, `Event`, `Signal` | Lua'ya açılan Java sınıfları |
-| `hex(value)` | `0x` önekli veya normal hexadecimal string'i sayıya çevirir |
-| `print(...)` | Engine console log'una yazar |
+| `game` | Proxy for the world root node |
+| `script` | Proxy for the running `Script` node |
+| `Node` | Table containing `new` and `clone` helpers |
+| `Enum` | Table containing engine enum proxies |
+| `UDim2` | The `UDim2` Java class |
+| `KeyEvent`, `MouseEvent` | AWT input classes |
+| `NodeResource`, `Point`, `Event`, `Signal` | Java classes exposed to Lua |
+| `hex(value)` | Converts a hexadecimal string, with or without a `0x` prefix, to a number |
+| `print(...)` | Writes to the engine console |
 
-`print` birden fazla argümanı boşlukla birleştirir. `print` yerine Java `DikenBridge:log` çağrılır.
+`print` joins multiple arguments with spaces and forwards the result to the Java engine log.
 
-### Node oluşturma ve kopyalama
+### Creating and cloning nodes
 
 ```lua
 local part = Node.new("Part")
@@ -120,148 +120,146 @@ local copy = Node.clone(part)
 copy.Parent = part.Parent
 ```
 
-- `Node.new(className)` `InstanceList` içinde simple class adına göre arar. Örnek adlar: `Part`, `Texture`, `SpriteSheet`, `Folder`, `Script`.
-- `Node.clone(object)` yalnızca kopyalanabilir/archivable node'larda çalışır.
-- Bulunamayan sınıf veya `nil` nesne için Java console'a hata yazılır ve `nil` dönebilir.
-- Child eklemek için `node:addChild(child)` veya `child.Parent = parent` kullanılabilir.
+- `Node.new(className)` searches `InstanceList` by simple class name. Examples include `Part`, `Texture`, `SpriteSheet`, `Folder`, and `Script`.
+- `Node.clone(object)` works only for cloneable/archivable nodes.
+- An unknown class or a `nil` object can produce `nil` and writes an error to the Java console.
+- Add a child with `node:addChild(child)` or `child.Parent = parent`.
 
-### Node temel API'si
+### Base Node API
 
-Aşağıdaki metotlar tüm `Node` türevlerine kalıtılır. Java proxy, getter/setter ve public field erişimini Lua'ya taşır. Lua tarafında Java camelCase adları kullanın.
+The following methods are inherited by all `Node` types. The Java proxy exposes public Java methods and fields to Lua.
 
-| API | Açıklama |
+| API | Description |
 |---|---|
-| `getName()`, `setName(name)` | Node adı |
-| `getParent()`, `setParent(parent)` | Parent erişimi |
-| `getRootNode()` | Ağacın root node'u |
-| `getChildren()` | Doğrudan child kopya listesi |
-| `addChild(child)` | Sona child ekler |
-| `insertChild(index, child)` | Belirli indekse child ekler |
-| `removeChild(child)` | Child'ı ayırır |
-| `replaceChild(old, new)` | Child değiştirir |
-| `getChildIndex(child)` | Child indeksini döndürür |
-| `isDescendantOf(other)` | Soy ağacı kontrolü |
-| `getDescendants()` | Tüm alt node'lar |
-| `findByName(name)` | İsim eşleşen node listesi |
-| `findByClass(clazz)` | Java class tipine göre arama |
-| `findByNetId(uuid)` | UUID ile arama |
-| `findFirstChild(name)` | Doğrudan child adına göre arama |
-| `findFirstChildByNetId(uuid)` | İlk UUID eşleşmesi |
-| `findFirstChildOfClass(clazz)` | İlk class eşleşmesi |
-| `getFullName()` | Root'tan itibaren noktalı ad |
-| `getGlobalX()`, `getGlobalY()` | Global koordinat |
+| `getName()`, `setName(name)` | Node name |
+| `getParent()`, `setParent(parent)` | Parent access |
+| `getRootNode()` | Root node of the tree |
+| `getChildren()` | Copy of the direct child list |
+| `addChild(child)` | Adds a child at the end |
+| `insertChild(index, child)` | Adds a child at an index |
+| `removeChild(child)` | Detaches a child |
+| `replaceChild(old, new)` | Replaces a child |
+| `getChildIndex(child)` | Returns a child index |
+| `isDescendantOf(other)` | Checks the hierarchy |
+| `getDescendants()` | Returns all descendants |
+| `findByName(name)` | Finds nodes by name |
+| `findByClass(clazz)` | Finds nodes by Java class |
+| `findByNetId(uuid)` | Finds nodes by UUID |
+| `findFirstChild(name)` | Finds the first child by name |
+| `findFirstChildByNetId(uuid)` | Finds the first UUID match |
+| `findFirstChildOfClass(clazz)` | Finds the first class match |
+| `getFullName()` | Dot-separated full name from the root |
+| `getGlobalX()`, `getGlobalY()` | Global coordinates |
 | `toPoint()` | Global `Point` |
-| `getNetId()` | UUID kimliği |
-| `isRemoved()` | Silinme durumu |
-| `removeNode()` | Node'ı kaldırılmak üzere işaretler ve `OnDestroy` ateşler |
-| `printTree(printConsole)` | Ağaç metni üretir |
-| `getZIndex()`, `setZIndex(value)` | Render sırası |
-| `isDebugRenderer()`, `setDebugRenderer(value)` | Debug hitbox çizimi |
-| `isArchivable()`, `setArchivable(value)` | Kopyalanabilir/kaydedilebilir durum |
+| `getNetId()` | UUID identity |
+| `isRemoved()` | Removal state |
+| `removeNode()` | Marks the node for removal and fires `OnDestroy` |
+| `getZIndex()`, `setZIndex(value)` | Render order |
+| `isDebugRenderer()`, `setDebugRenderer(value)` | Debug hitbox rendering |
+| `isArchivable()`, `setArchivable(value)` | Whether the node can be cloned/saved |
 
-Node event alanları: `OnAddChild`, `OnRemoveChild`, `OnInsertChild`, `OnReplaceChild`, `OnAddDescendant`, `OnRemoveDescendant`, `OnInsertDescendant`, `OnReplaceDescendant`, `OnParentChangedDescendant`, `OnUpdate`, `OnDispose`, `OnReload`, `OnDestroy`, `OnParentChanged`, `OnPropertyChanged`, `OnPreRender`, `OnPostRender`.
+Node event fields are `OnAddChild`, `OnRemoveChild`, `OnInsertChild`, `OnReplaceChild`, `OnAddDescendant`, `OnRemoveDescendant`, `OnInsertDescendant`, `OnReplaceDescendant`, `OnParentChangedDescendant`, `OnUpdate`, `OnDispose`, `OnReload`, `OnDestroy`, `OnParentChanged`, `OnPropertyChanged`, `OnPreRender`, and `OnPostRender`.
 
 ### Event API
 
 ```lua
 local signal = part.OnCollision:Connect(function(other)
-    print("Çarpışma", other)
+    print("Collision", other)
 end)
 
 part.OnCollision:FireEvent(other)
 part.OnCollision:Disconnect(signal)
 ```
 
-| API | Açıklama |
+| API | Description |
 |---|---|
-| `event:Connect(function(...))` | Lua callback bağlar, `Signal` döndürür |
-| `event:Disconnect(signal)` | Bağlantıyı kaldırır |
-| `event:FireEvent(...)` | Tüm listener'ları çağırır |
-| `BindableEvent:Connect(function(...))` | Sahneye eklenebilen event node'u |
-| `BindableEvent:FireEvent(...)` | BindableEvent listener'larını çağırır |
+| `event:Connect(function(...))` | Connects a Lua callback and returns a `Signal` |
+| `event:Disconnect(signal)` | Removes a connection |
+| `event:FireEvent(...)` | Calls all listeners |
+| `BindableEvent:Connect(function(...))` | Connects to a scene event node |
+| `BindableEvent:FireEvent(...)` | Calls the BindableEvent listeners |
 
 ### Instance API
 
-`Instance` tüm render edilebilir node'ların temelidir:
+`Instance` is the base class for renderable nodes:
 
-| API | Açıklama |
+| API | Description |
 |---|---|
-| `getX()`, `setX(x)`, `getY()`, `setY(y)` | Local konum |
-| `getGlobalX()`, `getGlobalY()` | Parent'lar dahil konum |
-| `setLocation(x, y)` | Local konumu birlikte ayarlar |
-| `getScaleX()`, `setScaleX(v)`, `getScaleY()`, `setScaleY(v)` | Ölçek |
-| `getRotation()`, `setRotation(degrees)` | Derece cinsinden dönüş |
+| `getX()`, `setX(x)`, `getY()`, `setY(y)` | Local position |
+| `getGlobalX()`, `getGlobalY()` | Position including parents |
+| `setLocation(x, y)` | Sets the local position |
+| `getScaleX()`, `setScaleX(v)`, `getScaleY()`, `setScaleY(v)` | Scale |
+| `getRotation()`, `setRotation(degrees)` | Rotation in degrees |
 | `getColor()`, `setColor(argb)` | ARGB tint |
-| `isSolid()`, `setSolid(value)` | Çarpışmaya katılma |
-| `isAnchored()`, `setAnchored(value)` | Fizik çözümünde sabitlik |
-| `getRenderType()`, `setRenderType(type)` | Render kapsamı |
-| `getAABB()`, `getGlobalAABB()`, `hasAABB()` | Hitbox erişimi |
-| `setAABB(width, height)` | Yerel AABB oluşturur |
-| `getAABBWidth()`, `getAABBHeight()` | AABB boyutu |
-| `setAABBSize(width, height)` | AABB boyutunu günceller |
-| `findInArea(area)` | Alan içindeki instance'lar |
-| `onCollision(other)` | Çarpışma callback'i |
+| `isSolid()`, `setSolid(value)` | Whether collision is enabled |
+| `isAnchored()`, `setAnchored(value)` | Whether physics keeps the instance fixed |
+| `getRenderType()`, `setRenderType(type)` | Render scope |
+| `getGlobalAABB()`, `hasAABB()` | Hitbox access |
+| `setAABB(width, height)` | Creates a local AABB |
+| `getAABBWidth()`, `getAABBHeight()` | AABB dimensions |
+| `setAABBSize(width, height)` | Updates AABB dimensions |
+| `findInArea(area)` | Finds instances in an area |
 
-`Enum.RenderType` değerleri: `InVisible`, `OnlyRenderThis`, `OnlyRenderChildrens`, `RenderAll`.
+`Enum.RenderType` values are `InVisible`, `OnlyRenderThis`, `OnlyRenderChildrens`, and `RenderAll`.
 
-### Oyun node'ları
+### Game nodes
 
-| Sınıf | Public API / temel alanlar |
+| Class | Public API / main fields |
 |---|---|
-| `Part` | `getSurface`, `setSurface`; `Surface` enum: `Top`, `Bottom`, `Left`, `Right`, `Front`, `Back` |
+| `Part` | `getSurface`, `setSurface`; `Surface` enum |
 | `Texture` | `getTexture`, `setTexture`, `getTextureBitmap` |
 | `ImageNode` | `getTexture`, `setTexture`, `getTextureBitmap` |
-| `Decal` | ImageNode API'si; parent instance yüzeyine texture çizer |
+| `Decal` | ImageNode API; renders a texture on a parent instance surface |
 | `SpriteSheet` | `getAnimationID`, `setAnimationID`, `getAnimation`, `isPlaying`, `setPlaying`, `getImageType`, `setImageType` |
 | `Audio` | `getSound`, `setSound`, `playAudio`, `isPlaying`, `setLoop`, `isLoop`, `setVolume`, `getVolume`, `setPosition`, `getPosition`, `setPitch`, `getPitch` |
 | `Light` | `getLightColor`, `setLightColor`, `getRadius`, `setRadius`, `getIntensity`, `setIntensity`, `getType`, `setType`, `getDirection`, `setDirection`, `getConeAngle`, `setConeAngle`, `isShadows`, `setShadows` |
 | `Camera` | `getCameraType`, `setCameraType`, `getFollowingInstance`, `setFollowingInstance`, `getPosition`, `setPosition`, `getX`, `setX`, `getY`, `setY`, `addX`, `addY`, `getZoom`, `setZoom`, `reset` |
 | `Sky` | `getTexture`, `setTexture`, `syncToCamera` |
 | `Tool` | `getIcon`, `setIcon`, `getIconBitmap` |
-| `Folder` | Sadece Node hiyerarşi API'si |
-| `Model` | Instance API'si ve child render gruplaması |
-| `SpawnLocation` | Part API'si; oyuncu spawn noktası |
+| `Folder` | Node hierarchy API |
+| `Model` | Instance API and child render grouping |
+| `SpawnLocation` | Part API; player spawn location |
 | `BooleanValue`, `FloatValue`, `IntegerValue`, `StringValue`, `ObjectValue` | `getValue`, `setValue`, `getTypeClass` |
 
-### Servisler
+### Services
 
-Servisler `game:GetService("ServisAdı")` ile alınır. Varsayılan world servisleri `Workspace`, `PlayerService`, `UIService`, `InputService`, `RunService`, `Lighting` ve `Game`'dir.
+Get services with `game:GetService("ServiceName")`. Default world services include `Workspace`, `PlayerService`, `UIService`, `InputService`, `RunService`, `Lighting`, and `Game`.
 
-| Servis | API |
+| Service | API |
 |---|---|
-| `Workspace` | `findInArea(area)`, Node/Instance API'si |
-| `RunService` | `isRunning`, `run`, `stop`, `restart`; `OnUpdate` event'i |
+| `Workspace` | `findInArea(area)` and the Node/Instance API |
+| `RunService` | `isRunning`, `run`, `stop`, `restart`; `OnUpdate` event |
 | `InputService` | `isKeyDown(key)`, `isKeyPressed(key)`, `isKeyReleased(key)`, `setCursor(resource)` |
 | `PlayerService` | `getUsername`, `setUsername`, `getCharacter`, `setCharacter` |
 | `Lighting` | `getSky`, `setSky`, `getAmbientColor`, `setAmbientColor`, `isLightingEnabled`, `setLightingEnabled` |
-| `UIService` | UI Node ağacını günceller ve çizer |
+| `UIService` | Updates and renders the UI node tree |
 | `Game` | `HttpSend(url, method, data)`, `HttpGet(url)`, `HttpPost(url, data)` |
 
-`InputService` event'leri: `OnKeyHandled`, `OnKeyDown`, `OnMouseHandled`, `OnMouseClicked`. Input callback argümanları engine'in input modu, key/mouse kodu, karakter ve buton değerleridir.
+`InputService` events are `OnKeyHandled`, `OnKeyDown`, `OnMouseHandled`, and `OnMouseClicked`. Callback arguments contain the engine input mode, key/mouse code, character, and button values.
 
 ### GUI API
 
-GUI node'ları `ScreenGui` altına eklenir. Ortak `GuiComponent` API'si:
+GUI nodes should be placed under `ScreenGui`. Common `GuiComponent` API:
 
-| API | Açıklama |
+| API | Description |
 |---|---|
-| `getPosition`, `setPosition(UDim2 veya x,y)` | UI konumu |
-| `getSize`, `setSize(UDim2 veya w,h)` | UI boyutu |
-| `getGlobalX`, `getGlobalY`, `getLocalX`, `getLocalY` | Piksel konumları |
-| `getWidth`, `getHeight`, `getAbsoluteBounds` | Hesaplanan boyut/bounds |
-| `setVisible`, `isVisible` | Görünürlük |
-| `setActive`, `isActive` | Input etkinliği |
-| `addGuiListener`, `removeGuiListener` | GUI listener yönetimi |
+| `getPosition`, `setPosition(UDim2 or x,y)` | UI position |
+| `getSize`, `setSize(UDim2 or w,h)` | UI size |
+| `getGlobalX`, `getGlobalY`, `getLocalX`, `getLocalY` | Pixel positions |
+| `getWidth`, `getHeight`, `getAbsoluteBounds` | Calculated dimensions and bounds |
+| `setVisible`, `isVisible` | Visibility |
+| `setActive`, `isActive` | Input activation |
+| `addGuiListener`, `removeGuiListener` | GUI listener management |
 
-GUI sınıfları ve kendilerine özgü API'ler:
+GUI-specific APIs:
 
-| Sınıf | API |
+| Class | API |
 |---|---|
 | `ScreenGui` | `isEnabled`, `setEnabled`, `create`, `createFramePool`, `drawBitmap`, `keyHandled`, `mouseHandled` |
 | `Panel` | `isClipsDescendants`, `setClipsDescendants`, `get/setBorderStyle`, `get/setBackgroundColor`, `get/setBorderColor`, `get/setBorderSize` |
 | `Text` | `get/setText`, `get/setColor`, `get/setTextPosition`, `get/setFont`, `calculateTextCoordinates` |
 | `TextField` | `get/setText`, `setTextChanged`, `setPressedEnter`, `setFocused`, `isFocused`, `setNumberic`, `isNumberField`, `setNumberField` |
-| `PasswordField` | TextField API'si |
+| `PasswordField` | TextField API |
 | `TextLine` | `get/setTextLines`, `add`, `remove`, `clear`, `get/setText`, `get/setFont`, `get/setColor`, `get/setBgColor`, `autoSetSize`, `get/setEditable`, `get/setFocused` |
 | `Button` | `get/setText`, `setTextColor`, `setButtonColor`, `setButtonIcon`, `getButtonIcon`, `setButtonIconLeft`, `isButtonIconLeft`, `setRunnable`, `isTouchingMouse` |
 | `ImageButton` | `getIcon`, `setIcon` |
@@ -273,7 +271,7 @@ GUI sınıfları ve kendilerine özgü API'ler:
 | `ColorPickBar` | `setConsumer`, `get/setSelectedColor` |
 | `AlphaPickBar` | `setConsumer`, `setSelectedAlpha`, `setBaseColor` |
 
-### `UDim2` ve enum'lar
+### `UDim2` and enums
 
 ```lua
 local size = UDim2.of(0, 320, 0, 180)
@@ -283,11 +281,11 @@ panel.Size = size
 panel.BorderStyle = Enum.BorderStyle.Line
 ```
 
-`UDim2` constructor: `UDim2(scaleX, offsetX, scaleY, offsetY)`. Hazır değerler: `UDim2.zero`, `UDim2.defaultV`, `UDim2.fullscreen`. `UDim2:clone()` ve `UDim2:getGlobalPosition(width, height)` kullanılabilir.
+`UDim2` constructor: `UDim2(scaleX, offsetX, scaleY, offsetY)`. Constants are `UDim2.zero`, `UDim2.defaultV`, and `UDim2.fullscreen`. Use `UDim2:clone()` and `UDim2:getGlobalPosition(width, height)` as needed.
 
-Lua'ya açılan enum tabloları:
+Lua enum tables:
 
-| Enum tablosu | Kaynak enum |
+| Enum table | Source enum |
 |---|---|
 | `Enum.CameraType` | `Camera.CameraType` |
 | `Enum.LightType` | `Light.LightType` |
@@ -300,18 +298,18 @@ Lua'ya açılan enum tabloları:
 
 ## Java plugin API
 
-Pluginler yalnızca Studio sürecinde yüklenir. Plugin ana sınıfı `me.ramazanenescik04.diken.plugin.Plugin` sınıfını extend etmeli ve public boş constructor sağlamalıdır.
+Plugins are loaded in the Studio process. The main plugin class must extend `me.ramazanenescik04.diken.plugin.Plugin` and provide a public no-argument constructor.
 
-### JAR yapısı
+### JAR layout
 
-JAR dosyasını proje kökündeki `plugins/` klasörüne koyun:
+Place the JAR in the `plugins/` directory at the project root:
 
 ```text
 plugins/
   ExamplePlugin.jar
 ```
 
-JAR root'unda `plugin.json` bulunmalıdır:
+The JAR root must contain `plugin.json`:
 
 ```json
 {
@@ -319,9 +317,9 @@ JAR root'unda `plugin.json` bulunmalıdır:
 }
 ```
 
-`PluginManager` her `.jar` dosyasını tarar, `mainClass` sınıfını yükler, `Plugin` alt sınıfı olduğunu doğrular ve public boş constructor ile örnekler.
+`PluginManager` scans every `.jar`, loads `mainClass`, verifies that it extends `Plugin`, and creates it with a public no-argument constructor.
 
-### Minimum plugin
+### Minimal plugin
 
 ```java
 package com.example;
@@ -346,35 +344,35 @@ public final class MyPlugin extends Plugin {
 }
 ```
 
-### `Plugin` sınıfı
+### `Plugin` class
 
-Zorunlu abstract metotlar:
+Required abstract methods:
 
-| Metot | Açıklama |
+| Method | Description |
 |---|---|
-| `getName()` | Görünen plugin adı |
-| `getVersion()` | Plugin sürümü |
-| `getAuthor()` | Yazar |
-| `getDescription()` | Açıklama |
-| `getIcon()` | `Bitmap` ikon; yoksa `null` |
-| `onEnable()` | Etkinleştirme callback'i; subclass'ta `protected` |
-| `onDisable()` | Devre dışı bırakma callback'i; subclass'ta `protected` |
+| `getName()` | Display name |
+| `getVersion()` | Plugin version |
+| `getAuthor()` | Author |
+| `getDescription()` | Description |
+| `getIcon()` | `Bitmap` icon, or `null` |
+| `onEnable()` | Enable callback; `protected` in subclasses |
+| `onDisable()` | Disable callback; `protected` in subclasses |
 
-Public yaşam döngüsü ve erişim metotları:
+Public lifecycle and access methods:
 
-| Metot | Açıklama |
+| Method | Description |
 |---|---|
-| `final enable(DikenEngine, StudioPanel)` | Engine/studio referanslarını set eder ve bir kez `onEnable` çağırır |
-| `final disable()` | Etkinse `onDisable` çağırır |
-| `isEnabled()` | Durum |
-| `info()` | `PluginInfo` metadata'sı |
-| `setInfo(PluginInfo)` | Manager tarafından atanır |
-| `generateToolbar(Toolbar.Builder)` | Toolbar üretme extension point'i |
-| `generateMenubar(Menubar.Builder)` | Menü üretme extension point'i |
-| `playTestMode(boolean)` | Play/test modu callback'i |
-| `getPluginSettings()` | Studio ayarları; varsayılan `List.of()` |
+| `final enable(DikenEngine, StudioPanel)` | Sets engine/studio references and calls `onEnable` once |
+| `final disable()` | Calls `onDisable` when enabled |
+| `isEnabled()` | Returns the state |
+| `info()` | Returns `PluginInfo` metadata |
+| `setInfo(PluginInfo)` | Assigned by the manager |
+| `generateToolbar(Toolbar.Builder)` | Toolbar extension point |
+| `generateMenubar(Menubar.Builder)` | Menu extension point |
+| `playTestMode(boolean)` | Play/test mode callback |
+| `getPluginSettings()` | Studio settings; defaults to `List.of()` |
 
-`enable` ve `disable` final olduğu için plugin doğrudan yaşam döngüsünü override edemez. Engine ve Studio referansları subclass tarafından `protected` `engine` ve `studio` alanlarından kullanılabilir.
+Because `enable` and `disable` are final, a plugin cannot override its lifecycle. The subclass can use the protected `engine` and `studio` fields.
 
 ### Toolbar builder
 
@@ -388,11 +386,11 @@ public void generateToolbar(Toolbar.Builder builder) {
 }
 ```
 
-`Toolbar` API'si: `addButton(key, AbstractButton)`, `removeButton(key)`, `getToolbarID()`, `getButton(key)`, `getButtons()`.
+`Toolbar` methods: `addButton(key, AbstractButton)`, `removeButton(key)`, `getToolbarID()`, `getButton(key)`, and `getButtons()`.
 
-`Toolbar.Builder` API'si: `newToolbar(id)`, `getToolbar(id)`, `addButton(toolbar, key, iconX, iconY, tooltip, Runnable, Object...)`, `setButtonChecked`, `getButtonChecked`, `getJToolBar()`, `convertCButton(DefaultSingleCDockable)`.
+`Toolbar.Builder` methods: `newToolbar(id)`, `getToolbar(id)`, `addButton(toolbar, key, iconX, iconY, tooltip, Runnable, Object...)`, `setButtonChecked`, `getButtonChecked`, `getJToolBar()`, and `convertCButton(DefaultSingleCDockable)`.
 
-İkon koordinatları `editor_icons` sprite kaynağından alınır. Tooltip metni `Lang.get` üzerinden çevrilir.
+Toolbar icons are read from the `editor_icons` sprite resource. Tooltip text is localized through `Lang.get`.
 
 ### Menubar builder
 
@@ -406,29 +404,29 @@ public void generateMenubar(Menubar.Builder builder) {
 }
 ```
 
-`Menubar` API'si: `addSeperator()`, `addButton(key, JMenuItem)`, `removeButton(key)`, `getName()`, `setName(name)`, `getMenubarID()`, `getButton(key)`, `getButtons()`.
+`Menubar` methods: `addSeperator()`, `addButton(key, JMenuItem)`, `removeButton(key)`, `getName()`, `setName(name)`, `getMenubarID()`, `getButton(key)`, and `getButtons()`.
 
-`Menubar.Builder` API'si: `newMenu`, `getMenu`, `addMenuItem`, `addMenuItemCheckBox`, `addMenuAccelerator`, `addMenuSeparator`, `setButtonChecked`, `getButtonChecked`, `setButtonEnabled`, `isButtonEnabled`, `getJMenuBar`, `getJPopupMenu`.
+`Menubar.Builder` methods: `newMenu`, `getMenu`, `addMenuItem`, `addMenuItemCheckBox`, `addMenuAccelerator`, `addMenuSeparator`, `setButtonChecked`, `getButtonChecked`, `setButtonEnabled`, `isButtonEnabled`, `getJMenuBar`, and `getJPopupMenu`.
 
-İkon parametreleri negatifse ikon eklenmez. `KeyStroke` overload'u menü accelerator'ı ekler.
+Negative icon coordinates disable icons. The `KeyStroke` overload adds a menu accelerator.
 
-### Plugin ayarları
+### Plugin settings
 
-`getPluginSettings()` içinde `Setting<?>` listesi döndürerek Studio ayar paneline ayar eklenir. `Setting` üzerinde kullanılan temel metotlar:
+Return a `List<Setting<?>>` from `getPluginSettings()` to add settings to the Studio settings panel:
 
 ```java
 Setting<Boolean> setting = new Setting<>(
     "Enabled", true, Boolean.class, EnumSettingType.CHECK_BOX
 ).addChangeListener(value -> {
-    // Yeni değer
+    // New value
 });
 ```
 
-Önemli `Setting` API'si: `getName`, `setName`, `getValue`, `setValue`, `getTypeClass`, `getSettingType`, `addChangeListener`, `getChangeListeners`, `isSaveable`, `setSaveable`.
+Important `Setting` methods include `getName`, `setName`, `getValue`, `setValue`, `getTypeClass`, `getSettingType`, `addChangeListener`, `getChangeListeners`, `isSaveable`, and `setSaveable`.
 
-### `PluginInfo` ve manager
+### `PluginInfo` and manager
 
-`PluginInfo` bir Java record'dur:
+`PluginInfo` is a Java record:
 
 ```java
 Class<? extends Plugin> pluginClass();
@@ -436,22 +434,22 @@ File pluginFile();
 URLClassLoader classLoader();
 ```
 
-`PluginManager.instance` singleton'ının public API'si:
+Public API of the `PluginManager.instance` singleton:
 
-| Metot/alan | Açıklama |
+| Method/field | Description |
 |---|---|
-| `loadPlugins(engine, studio)` | `./plugins/*.jar` dosyalarını yükler |
-| `loadLocalPlugin(pluginClass, engine, studio)` | Classpath içindeki plugin'i yükler |
-| `enableAll(engine, studio)` | Tüm pluginleri etkinleştirir; sonra `allPluginsLoaded` event'ini ateşler |
-| `disableAll()` | Pluginleri kapatır, URL classloader'ları kapatır ve listeyi temizler |
-| `getPlugins()` | Değiştirilemez plugin listesi |
-| `allPluginsLoaded` | Tüm pluginler etkinleştirildikten sonra ateşlenen `Event` |
+| `loadPlugins(engine, studio)` | Loads `./plugins/*.jar` files |
+| `loadLocalPlugin(pluginClass, engine, studio)` | Loads a plugin already on the classpath |
+| `enableAll(engine, studio)` | Enables all plugins, then fires `allPluginsLoaded` |
+| `disableAll()` | Disables plugins, closes URL classloaders, and clears the list |
+| `getPlugins()` | Unmodifiable plugin list |
+| `allPluginsLoaded` | `Event` fired after all plugins are enabled |
 
-Pluginler sıralı veya bağımlılık kontrollü yüklenmez; klasördeki JAR sırasına göre yüklenir. Hatalı bir plugin loglanır ve diğer pluginlerin yüklenmesi sürer.
+Plugins are loaded in filesystem order without dependency resolution. If one plugin fails, the error is logged and loading continues for the others.
 
-## Dünya ve dosya işlemleri
+## World and file operations
 
-Java tarafında world serialization API'si:
+Java world serialization API:
 
 ```java
 World world = World.loadWorld(file);
@@ -460,23 +458,23 @@ byte[] bytes = World.saveWorldToBytes(world);
 World copy = World.loadWorldFromBytes(bytes);
 ```
 
-Overload'lar `File`, `InputStream` ve `OutputStream` kabul eder. `.dwf` içeriği GZIP ile sıkıştırılmış binary node verisidir; dosyayı elle JSON olarak düzenlemeyin.
+Overloads accept `File`, `InputStream`, and `OutputStream`. `.dwf` files contain GZIP-compressed binary node data; do not edit them as JSON.
 
-Kaynaklar `ResourceLocator` ile yönetilir:
+Resources are managed through `ResourceLocator`:
 
 ```java
 IResource resource = ResourceLocator.getResource("background");
 ResourceLocator.addResource("my-resource", resource);
 ```
 
-Kaynak türleri `Bitmap`, `ArrayBitmap`, `SoundResource`, `CursorResource`, `UniFont` ve `EnumResource` tarafından desteklenir. Lua tarafı normalde node property'leri üzerinden resource ID string'i kullanır.
+Supported resource implementations include `Bitmap`, `ArrayBitmap`, `SoundResource`, `CursorResource`, `UniFont`, and `EnumResource`. Lua normally uses resource ID strings through node properties.
 
-## Kaynaklar ve notlar
+## Resources and notes
 
-- Lua entegrasyonu LuaJ 3.0.2 kullanır.
-- Scriptler ayrı virtual thread üzerinde başlar; `Script.stop()` thread'i keser ve Lua update callback'ini temizler.
-- Lua `update` fonksiyonunda uzun bloklayan işlemler runtime performansını etkileyebilir.
-- Event callback'leri bağlantı sırasına göre çağrılır. Aynı callback'i birden fazla bağlarsanız birden fazla çağrı alırsınız.
-- `setParent` için `nil` vermek mevcut kaynakta özel bir null-parent yolu kullanır; node ayırırken doğrudan `parent:removeChild(node)` tercih etmek daha güvenlidir.
-- `DikenEngine` Java 25 önerisiyle derlenir; bağımlılık JAR'ları `DikenEngine/libs` klasöründedir.
-- Bu belge kaynakta gerçekten bulunan public API'leri kapsar. Yeni bir public method eklendiğinde bu dosya da güncellenmelidir.
+- Lua integration uses LuaJ 3.0.2.
+- Scripts start on separate virtual threads. `Script.stop()` interrupts the thread and clears the Lua update callback.
+- Long blocking operations inside Lua `update` can affect runtime performance.
+- Event callbacks run in connection order. Connecting the same callback multiple times creates multiple calls.
+- The current `setParent` implementation has a special null-parent path. When detaching a node, prefer `parent:removeChild(node)`.
+- DikenEngine is intended to be compiled with Java 25 or newer. Dependency JARs are in `DikenEngine/libs`.
+- This document covers public APIs found in the source. Update it when adding a new public method.
