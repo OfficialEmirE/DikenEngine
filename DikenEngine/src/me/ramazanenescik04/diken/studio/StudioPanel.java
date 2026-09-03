@@ -66,6 +66,7 @@ import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.studio.builders.Menubar;
 import me.ramazanenescik04.diken.studio.builders.Toolbar;
 import me.ramazanenescik04.diken.studio.dialog.SettingsDialog;
+import me.ramazanenescik04.diken.studio.dialog.ThreadInfoDialog;
 import me.ramazanenescik04.diken.studio.dockables.*;
 import me.ramazanenescik04.diken.studio.editors.GamePreview;
 import me.ramazanenescik04.diken.studio.editors.ObjectBrowserPanel;
@@ -252,6 +253,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	}
 	
 	public void startPlayTest() {
+		if (isPlayTestMode)
+			return;
+		
 		var world = this.editWorld.copy();
 		this.engine.setWorld(world);
 		world.getRunService().run();
@@ -270,6 +274,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	}
 	
 	public void stopPlayTest() {
+		if (!isPlayTestMode)
+			return;
+		
 		this.engine.getWorld().getRunService().stop();
 		var world = this.editWorld;
 		this.engine.setWorld(world);
@@ -649,18 +656,18 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		var toolbarBuilder = new Toolbar.Builder();
 		
 		// File Manager
-		var basicFileToolbar = toolbarBuilder.newToolbar("BasicFileTools");
+		var basicFileToolbar = toolbarBuilder.create("BasicFileTools");
 		
 		toolbarBuilder.addButton(basicFileToolbar, "newWorld", 10, 0, "studio.toolbar.newWorld", this::newWorld);
 		toolbarBuilder.addButton(basicFileToolbar, "loadWorld", 9, 0, "studio.toolbar.loadWorld", this::loadWorld);
 		toolbarBuilder.addButton(basicFileToolbar, "saveWorld", 8, 0, "studio.toolbar.saveWorld", () -> this.saveWorld(false));
 		
-		var playTestButtons = toolbarBuilder.newToolbar("PlayTestTools");
+		var playTestButtons = toolbarBuilder.create("PlayTestTools");
 		
 		toolbarBuilder.addButton(playTestButtons, "startPlayTest", 3, 0, "studio.toolbar.startPlayTest", this::startPlayTest);
 		toolbarBuilder.addButton(playTestButtons, "stopPlayTest", 13, 0, "studio.toolbar.stopPlayTest", this::stopPlayTest);
 		
-		var instanceMovementTools = toolbarBuilder.newToolbar("InstanceMovementTools");
+		var instanceMovementTools = toolbarBuilder.create("InstanceMovementTools");
 		addMovementTools(instanceMovementTools);
 		
 		toolbarBuilder.addButton(instanceMovementTools, "deletePart", 0, 0, "studio.toolbar.deletePart", () -> {
@@ -673,10 +680,10 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			explorerPanel.rebuildExplorer();
 		});
 		
-		var gridTools = toolbarBuilder.newToolbar("GridTools");
+		var gridTools = toolbarBuilder.create("GridTools");
 		addGridButtons(gridTools);
 		
-		var basicObjectTools = toolbarBuilder.newToolbar("BasicObjectTools");
+		var basicObjectTools = toolbarBuilder.create("BasicObjectTools");
 		
 		toolbarBuilder.addButton(basicObjectTools, "createPart", 0, 1, "studio.toolbar.createPart",
 				() -> addNodeToSelected(new Part()));
@@ -691,7 +698,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			}
 		}
 		
-		return toolbarBuilder.getJToolBar();
+		return toolbarBuilder.convert();
 	}
 	
 	private void addMovementTools(Toolbar toolbar) {
@@ -707,9 +714,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		gridGroup.add(movePart);
 		gridGroup.add(scalePart);
 		
-		toolbar.addButton("selectPart", selectPart);
-		toolbar.addButton("movePart", movePart);
-		toolbar.addButton("scalePart", scalePart);
+		toolbar.add("selectPart", selectPart);
+		toolbar.add("movePart", movePart);
+		toolbar.add("scalePart", scalePart);
 	}
 	
 	private JToggleButton createMovementButton(int x, int y, String tooltip, EditorTool tool) {
@@ -741,9 +748,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		gridGroup.add(grid8Button);
 		gridGroup.add(grid16Button);
 		
-		toolbar.addButton("gridNone", noGridButton);
-		toolbar.addButton("grid8", grid8Button);
-		toolbar.addButton("grid16", grid16Button);
+		toolbar.add("gridNone", noGridButton);
+		toolbar.add("grid8", grid8Button);
+		toolbar.add("grid16", grid16Button);
 	}
 	
 	private JToggleButton createGridButton(String text, String tooltip, int size) {
@@ -819,6 +826,8 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.pluginManager", 6, 3, () -> scriptTabPanel.openEditor(new PluginManagerPanel()));
 		menubarBuilder.addMenuSeparator(toolsMenu);
 		menubarBuilder.addMenuItem(toolsMenu, "studio.menubar.gc", 5, 3, System::gc);
+		menubarBuilder.addMenuItem(toolsMenu, "Thread List", 6, 3, () -> 
+			new ThreadInfoDialog(engineWindow).setVisible(true));
 		
 		var helpMenu = menubarBuilder.newMenu("helpMenu", "studio.menubar.helpMenu");
 		menubarBuilder.addMenuItem(helpMenu, "studio.about", 12, 3, () -> 
@@ -829,7 +838,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
 		);
 		menubarBuilder.addMenuItem(helpMenu, "studio.menubar.docs", -1, -1, () -> 
-			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine"))
+			Utils.openPage(URI.create("https://github.com/OfficialEmirE/DikenEngine/blob/master/DOCS.md"))
 		);
 		menubarBuilder.addMenuItem(helpMenu, "studio.windows.objectBrowser", 9, 3, () -> {
 			scriptTabPanel.openEditor(new ObjectBrowserPanel());
@@ -841,7 +850,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			}
 		}
 		
-		return menubarBuilder.getJMenuBar();
+		return menubarBuilder.convert();
 	}
 
 	private void addNodeToSelected(Node n) {

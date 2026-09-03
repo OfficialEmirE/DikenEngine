@@ -141,7 +141,7 @@ public class ExplorerPanel extends DockablePanel {
 		
 		Toolbar.Builder builder = new Toolbar.Builder();
         
-        var defaultToolbar = builder.newToolbar("default");
+        var defaultToolbar = builder.create("default");
         builder.addButton(defaultToolbar, "refresh", 2, 15, Lang.get("resources.refresh"), this::rebuildExplorer);
 		
 		builder.convertCButton(dock);

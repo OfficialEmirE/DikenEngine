@@ -31,7 +31,6 @@ import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.log.ConsoleLog;
 import me.ramazanenescik04.diken.log.ConsoleLog.LogType;
-import me.ramazanenescik04.diken.plugin.ExamplePlugin;
 import me.ramazanenescik04.diken.plugin.PluginManager;
 import me.ramazanenescik04.diken.renderer.RenderWorker;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
@@ -50,8 +49,8 @@ import me.ramazanenescik04.diken.tools.Utils;
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.2.0";
-	public static final int protocolVersion = 320;
+	public static final String VERSION = "3.2.1";
+	public static final int protocolVersion = 321;
 
 	private static DikenEngine instance;
 
@@ -60,7 +59,7 @@ public class DikenEngine implements Runnable, IInputListener {
 	private StudioPanel studioPanel;
 	private boolean fullscreen;
 
-	private boolean running = false;
+	private volatile boolean running = false;
 	private RendererPanel rendererPanel = null;
 	private RenderWorker renderWorker;
 
@@ -305,7 +304,6 @@ public class DikenEngine implements Runnable, IInputListener {
 				this.loadingDialog.setProgress(50);
 			}
 			
-			PluginManager.instance.loadLocalPlugin(ExamplePlugin.class, this, studioPanel);
 			PluginManager.instance.loadPlugins(this, studioPanel);
 			
 			PluginManager.instance.enableAll(this, studioPanel);
@@ -349,7 +347,12 @@ public class DikenEngine implements Runnable, IInputListener {
 					lastFPSTime = System.currentTimeMillis();
 				}
 
-				Thread.sleep(1);
+				try {
+				    Thread.sleep(1);
+				} catch (InterruptedException e) {
+				    this.running = false;
+				    Thread.currentThread().interrupt();
+				}
 			}
 		} catch (Throwable e) {
 			e.printStackTrace();
@@ -363,7 +366,6 @@ public class DikenEngine implements Runnable, IInputListener {
 			PluginManager.instance.disableAll();
 
 			ConsoleLog.saveLogs();
-			System.gc();
 		}
 	}
 

@@ -15,26 +15,16 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
-public class Menubar {
+public class Menubar extends AbstractBuilder<JMenuItem> {
 	private String name;
-	private final String toolbarID;
-	private final Map<String, JMenuItem> buttons = new LinkedHashMap<>();
 	
-	public Menubar(String toolbarID, String name) {
-		this.toolbarID = toolbarID;
+	public Menubar(String menubarID, String name) {
+		super(menubarID);
 		this.name = name;
 	}
 	
 	public void addSeperator() {
-		this.buttons.put("Seperator-" + this.buttons.size(), new JMenu());
-	}
-	
-	public void addButton(String key, JMenuItem button) {
-		this.buttons.put(key, button);
-	}
-	
-	public void removeButton(String key) {
-		this.buttons.remove(key);
+		this.builders.put("Seperator-" + this.builders.size(), new JMenu());
 	}
 	
 	public String getName() {
@@ -44,37 +34,29 @@ public class Menubar {
 	public void setName(String name) {
 		this.name = name;
 	}
-
-	public String getMenubarID() {
-		return new String(toolbarID);
-	}
 	
-	public JMenuItem getButton(String key) {
-		return buttons.get(key);
-	}
-	
-	public List<JMenuItem> getButtons() {
-		return new ArrayList<>(buttons.values());
-	}
-	
-	public static final class Builder {
-		private Map<String, Menubar> menubars = new LinkedHashMap<>();
+	public static final class Builder extends AbstractBuilder.Builder<Menubar, JMenuBar> {
 		
+		@Override
+		public Menubar createT(String key) {
+			throw new IllegalArgumentException("please use Menubar.Builder.newMenu(String, String) method!");
+		}
+
 		public Menubar newMenu(String id, String name) {
 			var toolbar = new Menubar(id, name);
-			menubars.put(id, toolbar);
+			abstractBuilders.put(id, toolbar);
 			return toolbar;
 		}
 		
 		public Menubar getMenu(String id) {
-			return menubars.get(id);
+			return super.get(id);
 		}
 		
 		private String addMenuItem(Menubar toolbar, JMenuItem menu) {
 			Objects.requireNonNull(toolbar);
 			Objects.requireNonNull(menu);
 			
-			toolbar.addButton(menu.getName(), menu);
+			toolbar.add(menu.getName(), menu);
 			
 			return menu.getName();
 		}
@@ -112,7 +94,7 @@ public class Menubar {
 		}
 		
 		public void addMenuAccelerator(Menubar menubar, String key, KeyStroke text) {
-			menubar.buttons.get(key).setAccelerator(text);
+			menubar.builders.get(key).setAccelerator(text);
 		}
 		
 		public void addMenuSeparator(Menubar menubar) {
@@ -120,14 +102,14 @@ public class Menubar {
 		}
 		
 		public void setButtonChecked(Menubar toolbar, String key, boolean b) {
-			JMenuItem button = toolbar.buttons.get(key);
+			JMenuItem button = toolbar.builders.get(key);
 			if (button != null) {
 				button.setSelected(b);
 			}
 		}
 		
 		public boolean getButtonChecked(Menubar toolbar, String key) {
-			var button = toolbar.buttons.get(key);
+			var button = toolbar.builders.get(key);
 			if (button != null) {
 				return button.isSelected();
 			}
@@ -135,24 +117,24 @@ public class Menubar {
 		}
 		
 		public void setButtonEnabled(Menubar menu, String key, boolean b) {
-			JMenuItem button = menu.buttons.get(key);
+			JMenuItem button = menu.builders.get(key);
 			if (button != null) {
 				button.setEnabled(b);
 			}
 		}
 		
 		public boolean isButtonEnabled(Menubar menu, String key) {
-			var button = menu.buttons.get(key);
+			var button = menu.builders.get(key);
 			if (button != null) {
 				return button.isEnabled();
 			}
 			return false;
 		}
 
-		public JMenuBar getJMenuBar() {
+		public JMenuBar convert() {
 			var jToolBar = new JMenuBar();
 			
-			for (var toolbar : menubars.values()) {
+			for (var toolbar : abstractBuilders.values()) {
 				var menu = new JMenu(Lang.get(toolbar.getName()));
 				toolbar.getButtons().forEach(button -> {
 					if (button instanceof JMenu) {

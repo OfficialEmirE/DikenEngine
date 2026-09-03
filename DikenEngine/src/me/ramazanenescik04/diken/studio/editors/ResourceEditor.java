@@ -41,7 +41,7 @@ public abstract class ResourceEditor<R extends IResource> extends BaseEditor {
 		
 		setLayout(new BorderLayout(0, 0));
 		
-		var toolbar = builder.newToolbar("default");
+		var toolbar = builder.create("default");
 		builder.addButton(toolbar, "save", 8, 0, "studio.menubar.save", () -> {
 			if (resource.second != null) {
 				world.addResource(resource);
@@ -54,7 +54,7 @@ public abstract class ResourceEditor<R extends IResource> extends BaseEditor {
 	public void init(EditorTabPanel tabPanel) {
 		super.init(tabPanel);
 		
-		var toolBar = builder.getJToolBar();
+		var toolBar = builder.convert();
 		toolBar.setBackground(new Color(82, 82, 82));
 		add(toolBar, BorderLayout.NORTH);
 	}

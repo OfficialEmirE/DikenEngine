@@ -203,7 +203,7 @@ public abstract class Node implements Cloneable {
     	
     	if (newParent == null && this.parent != null) {
     		this.parent.removeChild(this);
-    	} else {
+    	} else if (newParent != null){
     		newParent.addChild(this);
     	}
     }

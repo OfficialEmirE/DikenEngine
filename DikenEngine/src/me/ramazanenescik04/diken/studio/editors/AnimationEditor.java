@@ -53,7 +53,7 @@ public class AnimationEditor extends ResourceEditor<Animation> implements Runnab
 	public AnimationEditor(World world, String resourceKey) {
 		super(Lang.get("studio.editor.animationEditor", resourceKey), world, resourceKey, new Animation(8));
 		
-		var toolbar = this.builder.newToolbar("animationToolbar");
+		var toolbar = this.builder.create("animationToolbar");
 		this.builder.addButton(toolbar, "loadImage", 9, 0, "studio.editor.animationEditor.load", this::addFrame);
 		this.builder.addButton(toolbar, "deleteImage", 0, 0, "studio.editor.animationEditor.delete", this::removeFrame);
 		this.builder.addButton(toolbar, "play", 3, 0, "studio.editor.animationEditor.play", this::playAnimation);

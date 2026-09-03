@@ -1,6 +1,7 @@
 local world, DikenBridge = ...
 
 Node = {}
+DikenEngine = {}
 
 local orijinalPrint = print
 
@@ -109,7 +110,7 @@ local function modifyMetatable(javaObj)
 
         if key == 'Parent' then
             if actualValue ~= nil then 
-				rawJava:setParent(actualChild)
+				rawJava:setParent(actualValue)
             end
         else
             -- Java nesnesindeki değeri doğrudan güvenle güncelle
@@ -145,6 +146,9 @@ hex = function(str)
     end
     return tonumber(str, 16)
 end
+
+DikenEngine.protocolVersion = DikenBridge:getProtocolVersion()
+DikenEngine.version = DikenBridge:getVersion()
 
 -- Node.new çıktısını otomatik sarmalıyoruz
 Node.new = function(className)

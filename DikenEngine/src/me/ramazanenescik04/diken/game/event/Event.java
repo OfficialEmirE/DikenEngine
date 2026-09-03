@@ -43,31 +43,53 @@ public class Event {
 	}
 	
 	public Signal Connect(LuaEventListenerJava listener) {
-		if (listener == null) return null;
+	    if (listener == null) return null;
 
 	    LuaValue luaFunctionWrapper = new VarArgFunction() {
 	        @Override
 	        public Varargs invoke(Varargs luaArgs) {
 	            int count = luaArgs.narg();
 	            Object[] javaArgs = new Object[count];
-	            
+
 	            for (int i = 1; i <= count; i++) {
 	                LuaValue arg = luaArgs.arg(i);
-	                
-	                if (arg.isuserdata()) {
-	                    javaArgs[i - 1] = arg.checkuserdata();
-	                } else {
-	                    javaArgs[i - 1] = arg.isnil() ? null : arg.tojstring();
-	                }
+	                javaArgs[i - 1] = toJavaObject(arg);
 	            }
-	            
+
 	            listener.onEvent(javaArgs);
-	            
-	            return LuaValue.NIL; 
+	            return LuaValue.NIL;
 	        }
 	    };
 
 	    return Connect(luaFunctionWrapper);
+	}
+
+	private Object toJavaObject(LuaValue arg) {
+	    if (arg.isnil()) {
+	        return null;
+	    }
+	    if (arg.isuserdata()) {
+	        return arg.checkuserdata();
+	    }
+	    if (arg.isboolean()) {
+	        return arg.toboolean();
+	    }
+	    if (arg.isint()) {
+	        return arg.toint();
+	    }
+	    if (arg.isnumber()) {
+	        return arg.todouble();
+	    }
+	    if (arg.istable()) {
+	        LuaValue javaRef = arg.get("_javaRef");
+	        if (!javaRef.isnil() && javaRef.isuserdata()) {
+	            return javaRef.checkuserdata();
+	        }
+	        // gerçek java karşılığı yoksa string'e düşme, olduğu gibi ver
+	        return arg;
+	    }
+	    // string ve geri kalan her şey
+	    return arg.tojstring();
 	}
 
 	public static interface LuaEventListenerJava {

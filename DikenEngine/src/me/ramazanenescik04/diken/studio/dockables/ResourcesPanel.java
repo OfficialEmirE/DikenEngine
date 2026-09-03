@@ -68,7 +68,7 @@ public class ResourcesPanel extends DockablePanel {
         // Toolbar
         Toolbar.Builder builder = new Toolbar.Builder();
         
-        var defaultToolbar = builder.newToolbar("default");
+        var defaultToolbar = builder.create("default");
         builder.addButton(defaultToolbar, "new", 10, 0, Lang.get("studio.menubar.new"), this::newResourceDialog);
         builder.addButton(defaultToolbar, "add", 9, 0, Lang.get("resources.add"), this::addResourceDialog);
         builder.addButton(defaultToolbar, "remove", 0, 0, Lang.get("resources.remove"), this::removeSelectedResource);

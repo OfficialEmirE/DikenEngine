@@ -11,6 +11,7 @@ import org.luaj.vm2.lib.jse.*;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -18,6 +19,9 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Script extends Node {
+	public static final Event scriptStarted = new Event();
+	public static final Event scriptStopped = new Event();
+	
 	public String source = "";
 	public boolean enabled = true;
 	
@@ -26,6 +30,7 @@ public class Script extends Node {
 	private transient Globals globals;
 	private transient volatile boolean isInitialized = false;
 	private transient volatile LuaValue luaUpdateFunction = null;
+	private transient volatile long runId = 0;
 	
 	public Script() {
 		this("Script");
@@ -39,29 +44,30 @@ public class Script extends Node {
 		super(in);
 		loadNodeData(in);
 	}
-	
+
 	public void initialize(World theWorld) {
 	    stop();
 
 	    if (!enabled || theWorld == null || source == null || source.isEmpty()) return;
 
 	    stopRequested = false;
-	    this.globals = JsePlatform.standardGlobals();
+	    final long myRunId = ++runId;
+	    final Globals localGlobals = JsePlatform.standardGlobals();
+	    this.globals = localGlobals;
 
-	    globals.load(new org.luaj.vm2.lib.DebugLib() {
-            private int counter = 0;
+	    localGlobals.load(new org.luaj.vm2.lib.DebugLib() {
+	        private int counter = 0;
 
-            @Override
-            public void onInstruction(int pc, Varargs v, int top) {
-                if (stopRequested || Thread.currentThread().isInterrupted()) {
-                    throw new LuaError("Script stopped: " + getName());
-                }
-                if ((++counter & 511) == 0) Thread.yield();
-                super.onInstruction(pc, v, top);
-            }
-        });
+	        @Override
+	        public void onInstruction(int pc, Varargs v, int top) {
+	            if (myRunId != runId || Thread.currentThread().isInterrupted()) {
+	                throw new LuaError("Script stopped: " + getName());
+	            }
+	            if ((++counter & 511) == 0) Thread.yield();
+	            super.onInstruction(pc, v, top);
+	        }
+	    });
 
-	    // Bunları da virtual thread'e al
 	    virtualThread = Thread.ofVirtual()
 	        .name("lua-script-" + getName())
 	        .start(() -> {
@@ -69,41 +75,46 @@ public class Script extends Node {
 	                LuaValue rootNode = CoerceJavaToLua.coerce(theWorld);
 	                LuaValue bridge = CoerceJavaToLua.coerce(new LuaBridge(this));
 
-	                globals.load(new String(
-	                    (Script.class.getResourceAsStream("/scripts/init.lua").readAllBytes())
+	                localGlobals.load(new String(
+	                    Script.class.getResourceAsStream("/scripts/init.lua").readAllBytes()
 	                )).call(rootNode, bridge);
 
-	                LuaInit.initClasses(globals);
-	                LuaInit.initEnums(globals);
+	                LuaInit.initClasses(localGlobals);
+	                LuaInit.initEnums(localGlobals);
 
-	                globals.load(source).call();
+	                localGlobals.load(source).call();
+	                scriptStarted.FireEvent(this);
 
-	                LuaValue fn = globals.get("update");
-	                luaUpdateFunction = fn.isnil() ? null : fn;
-	                isInitialized = true;
+	                LuaValue fn = localGlobals.get("update");
 
+	                if (myRunId == runId) { // hâlâ güncel çalışma mıyız?
+	                    luaUpdateFunction = fn.isnil() ? null : fn;
+	                    isInitialized = true;
+	                }
 	            } catch (LuaError e) {
-	                if (!stopRequested) {
+	                if (myRunId == runId && !stopRequested) {
 	                    DikenEngine.errorLog("Lua Error [" + getName() + "]: ", e);
 	                }
 	            } catch (Exception e) {
-	                DikenEngine.errorLog("Script Error [" + getName() + "]: ", e);
+	                if (myRunId == runId) {
+	                    DikenEngine.errorLog("Script Error [" + getName() + "]: ", e);
+	                }
 	            }
 	        });
 	}
 
-    public void stop() {
-        stopRequested = true;
-        isInitialized = false;
-        luaUpdateFunction = null;
+	public void stop() {
+	    stopRequested = true;
+	    runId++; // eski çalışmayı geçersiz kıl
+	    isInitialized = false;
+	    luaUpdateFunction = null;
 
-        if (virtualThread != null) {
-            virtualThread.interrupt();
-            virtualThread = null;
-        }
-
-        globals = null;
-    }
+	    if (virtualThread != null) {
+	        virtualThread.interrupt();
+	        virtualThread = null;
+	    }
+	    scriptStopped.FireEvent(this);
+	}
 
     @Override
     public void update(World world, DikenEngine engine) {

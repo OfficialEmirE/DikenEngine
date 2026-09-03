@@ -48,6 +48,14 @@ public class LuaBridge {
 	public Object getCurrentScript() {
 		return this.script;
 	}
+	
+	public int getProtocolVersion() {
+		return DikenEngine.protocolVersion;
+	}
+	
+	public String getVersion() {
+		return DikenEngine.VERSION;
+	}
 
 	public void log(String message) {
 	    DikenEngine.log(message);
