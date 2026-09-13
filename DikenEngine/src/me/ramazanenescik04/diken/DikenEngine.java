@@ -49,8 +49,8 @@ import me.ramazanenescik04.diken.tools.Utils;
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
 public class DikenEngine implements Runnable, IInputListener {
-	public static final String VERSION = "3.2.1";
-	public static final int protocolVersion = 321;
+	public static final String VERSION = "3.3.0";
+	public static final int protocolVersion = 330;
 
 	private static DikenEngine instance;
 
@@ -462,6 +462,7 @@ public class DikenEngine implements Runnable, IInputListener {
 		}
 		
 		if (this.config.getSettingValue("debug", Boolean.class)) {
+			bitmap.blendFill(0, 0, 100, 22, 0x41000000);
 			bitmap.drawText("DikenEngine " + VERSION, 2, 2, false);
 			bitmap.drawText("FPS: " + currentFPS, 2, 12, false);
 		}

@@ -30,6 +30,7 @@ public class DebugScreen implements ListAdapter<LogText> {
 	private long lastTitleUpdate;
 	private double cpu;
 	
+	// Game Debug
 	public UDim2 startPos = UDim2.of(0, 0, 0, 0);
 	public boolean allowCommands = true;
 	public boolean showDebugInfo = true;

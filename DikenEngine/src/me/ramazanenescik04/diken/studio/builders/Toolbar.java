@@ -33,19 +33,23 @@ public class Toolbar extends AbstractBuilder<AbstractButton> {
 			Objects.requireNonNull(toolbar);
 			Runnable runnable = Objects.requireNonNullElse(r, () -> {});
 			
-			// load icon
-			ImageIcon imageIcon;
-			try {
-				var image = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(x, y);
-				imageIcon = new ImageIcon(image.toImage());
-			} catch (Exception ignore) {
-				imageIcon = new ImageIcon(IOResource.missingTexture.toImage());
-			} 
+			ImageIcon imageIcon = null;
+			if (x >= 0 && y >= 0) {
+				try {
+					var image = ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(x, y);
+					imageIcon = new ImageIcon(image.toImage());
+				} catch (Exception ignore) {
+					imageIcon = new ImageIcon(IOResource.missingTexture.toImage());
+				}
+			}
 			
 			// init and add button
 			var button = new JButton();
 			button.setToolTipText(Lang.get(toolTip, args));
 			button.setIcon(imageIcon);
+			if (imageIcon == null) {
+				button.setText(Lang.get(toolTip, args));
+			}
 			button.addActionListener(_ -> runnable.run());
 			
 			toolbar.add(key, button);
@@ -82,7 +86,7 @@ public class Toolbar extends AbstractBuilder<AbstractButton> {
 		public void convertCButton(DefaultSingleCDockable dock) {
 			for (var toolbar : abstractBuilders.values()) {
 				toolbar.getButtons().forEach(jButton -> {
-					CButton button = new CButton(jButton.getText(), jButton.getIcon());
+					CButton button = new CButton(jButton.getToolTipText(), jButton.getIcon());
 					
 					ActionListener[] list = jButton.getActionListeners();
 					

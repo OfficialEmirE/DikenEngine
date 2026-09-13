@@ -29,6 +29,8 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.ToolTipManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.UndoManager;
 
 import bibliothek.gui.dock.common.CControl;
 import bibliothek.gui.dock.common.CGrid;
@@ -99,6 +101,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	public ConsolePanel consolePanel;
 	public BasicObjectsPanel objectsPanel;
 	public ResourcesPanel resourcesPanel;
+	public ToolboxPanel toolboxPanel;
 	
 	public int selectionColor = 0xff33aaff;
 	public int handleColor = 0xffffffff;
@@ -112,6 +115,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	
 	private boolean inputRegistered;
 	private boolean dragging;
+	private final UndoManager undoManager = new UndoManager();
 	
 	private Point dragStartWorld = new Point();
 	
@@ -157,12 +161,14 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		setPreferredSize(new Dimension(1280, 706));
 
 		explorerPanel = new ExplorerPanel(editWorld);
+		explorerPanel.setEditRecorder(undoManager::addEdit);
 		propertiesPanel = new PropertiesPanel(explorerPanel, engineWindow);
 		consolePanel = new ConsolePanel();
 		objectsPanel = new BasicObjectsPanel(explorerPanel::addNodeToSelected);
 		scriptTabPanel = new EditorTabPanel();
 		scriptTabPanel.openEditor(new GamePreview(gamePanel));
 		resourcesPanel = new ResourcesPanel(editWorld, scriptTabPanel, engineWindow);
+		toolboxPanel = new ToolboxPanel(editWorld, engineWindow);
 		explorerPanel.addSelectedNodeListener(new ExplorerPanel.SelectedNodeListener() {
 			@Override
 			public void onSelectedNode(Node node) {}
@@ -185,20 +191,21 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		
 		CGrid grid = new CGrid(control);
         grid.add(1, 0, 3, 3, scriptTabPanel.getDockable());
-        grid.add(1, 3, 3, 1, consolePanel.getDockable());
+        grid.add(1, 3, 2, 1, consolePanel.getDockable());
         grid.add(4, 0, 1, 2, explorerPanel.getDockable());
         grid.add(4, 2, 1, 2, propertiesPanel.getDockable());
-        grid.add(0, 0, 1, 4, objectsPanel.getDockable());
+        grid.add(0, 0, 1, 4, objectsPanel.getDockable(), toolboxPanel.getDockable());
         grid.add(0, 4, 1, 2, resourcesPanel.getDockable());
+        objectsPanel.requestFocus();
 
         control.getContentArea().deploy(grid);
         
         try {
         	if (!layoutFile.exists()) {
         		layoutFile.getParentFile().mkdir();
+        	} else {
+        		control.read(layoutFile);	
         	}
-        	
-			control.read(layoutFile);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -241,12 +248,14 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	
 	public void loadWorld(World world) {
 		this.editWorld = world;
+		undoManager.discardAllEdits();
 		this.engine.setWorld(world);
 		this.selectedEditorNodes = new ArrayList<>();
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
 		this.scriptTabPanel.reloadWorld(world, false);
+		this.toolboxPanel.reloadWorld(world);
 		StudioUtils.reloadGameSettings(world);
 		
 		System.gc();
@@ -259,12 +268,14 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		var world = this.editWorld.copy();
 		this.engine.setWorld(world);
 		world.getRunService().run();
+		world.getCamera().reset();
 		world.getCamera().setZoom(1.0f);
 		this.selectedEditorNodes = new ArrayList<>();
 		
 		this.explorerPanel.reloadWorld(world);
 		this.resourcesPanel.reloadWorld(world);
 		this.scriptTabPanel.reloadWorld(world, true);
+		this.toolboxPanel.reloadWorld(world);
 		
 		this.isPlayTestMode = true;
 		PluginManager.instance.getPlugins().forEach(e -> {
@@ -351,6 +362,16 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	@Override
 	public void keyHandled(int inputMode, int key, char character) {
 		if (inputMode == InputHandler.INPUT_PRESSED) {
+			boolean ctrl = engine.input.isKeyDown(KeyEvent.VK_CONTROL);
+			if (ctrl && key == KeyEvent.VK_Z) {
+				undo();
+				return;
+			}
+			if (ctrl && key == KeyEvent.VK_Y) {
+				redo();
+				return;
+			}
+
 			if (key == StudioUtils.keyMapList.get("goInstance")) {
 				int x = 0, y = 0, i = 0;
 				for (Node node : selectedEditorNodes) {
@@ -366,9 +387,10 @@ public final class StudioPanel extends JPanel implements IInputListener {
 				
 				this.editWorld.getCamera().setX((x / i) - (this.engine.getScaledWidth() / 2));
 				this.editWorld.getCamera().setY((y / i) - (this.engine.getScaledHeight() / 2));
+				return;
 			}
 			
-			explorerPanel.keyPressed(engine.input.isKeyDown(KeyEvent.VK_CONTROL), key, character);
+			explorerPanel.keyPressed(ctrl, key, character);
 		}
 	}
 	
@@ -467,6 +489,21 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		if (!dragging) return;
 		
 		dragging = false;
+		if (activeTool == EditorTool.MOVE) {
+			var before = new HashMap<>(dragStartLocations);
+			var after = new HashMap<Instance, Point>();
+			for (Instance instance : before.keySet()) {
+				after.put(instance, new Point(instance.getX(), instance.getY()));
+			}
+			addInstanceEdit("Move", before, after, (instance, value) -> instance.setLocation(value.x, value.y));
+		} else if (activeTool == EditorTool.SCALE) {
+			var before = new HashMap<>(dragStartSizes);
+			var after = new HashMap<Instance, Dimension>();
+			for (Instance instance : before.keySet()) {
+				after.put(instance, new Dimension(instance.getAABBWidth(), instance.getAABBHeight()));
+			}
+			addInstanceEdit("Scale", before, after, (instance, value) -> instance.setAABBSize(value.width, value.height));
+		}
 		dragStartLocations.clear();
 		dragStartSizes.clear();
 		explorerPanel.refreshSelection();
@@ -662,6 +699,10 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		toolbarBuilder.addButton(basicFileToolbar, "loadWorld", 9, 0, "studio.toolbar.loadWorld", this::loadWorld);
 		toolbarBuilder.addButton(basicFileToolbar, "saveWorld", 8, 0, "studio.toolbar.saveWorld", () -> this.saveWorld(false));
 		
+		var undoRedoToolbar = toolbarBuilder.create("UndoRedoTools");
+		toolbarBuilder.addButton(undoRedoToolbar, "undo", 0, 14, "studio.toolbar.undo", this::undo);
+		toolbarBuilder.addButton(undoRedoToolbar, "redo", 1, 14, "studio.toolbar.redo", this::redo);
+		
 		var playTestButtons = toolbarBuilder.create("PlayTestTools");
 		
 		toolbarBuilder.addButton(playTestButtons, "startPlayTest", 3, 0, "studio.toolbar.startPlayTest", this::startPlayTest);
@@ -671,13 +712,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		addMovementTools(instanceMovementTools);
 		
 		toolbarBuilder.addButton(instanceMovementTools, "deletePart", 0, 0, "studio.toolbar.deletePart", () -> {
-			explorerPanel.getSelectedNodes().forEach(e -> {
-				if (!(e instanceof AbstractService) && e != null) {
-					e.removeNode();
-				}
-			});
-			
-			explorerPanel.rebuildExplorer();
+			deleteSelectedNodes();
 		});
 		
 		var gridTools = toolbarBuilder.create("GridTools");
@@ -686,11 +721,11 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		var basicObjectTools = toolbarBuilder.create("BasicObjectTools");
 		
 		toolbarBuilder.addButton(basicObjectTools, "createPart", 0, 1, "studio.toolbar.createPart",
-				() -> addNodeToSelected(new Part()));
+				() -> explorerPanel.addNodeToSelected(new Part()));
 		toolbarBuilder.addButton(basicObjectTools, "createDecal", 1, 1, "studio.toolbar.createDecal",
-				() -> addNodeToSelected(new Decal()));
+				() -> explorerPanel.addNodeToSelected(new Decal()));
 		toolbarBuilder.addButton(basicObjectTools, "createFolder", 6, 1, "studio.toolbar.createFolder",
-				() -> addNodeToSelected(new Folder()));
+				() -> explorerPanel.addNodeToSelected(new Folder()));
 		
 		if (pluginMode) {
 			for (Plugin plugin : PluginManager.instance.getPlugins()) {
@@ -778,6 +813,11 @@ public final class StudioPanel extends JPanel implements IInputListener {
 				KeyStroke.getKeyStroke(KeyEvent.VK_F4, KeyEvent.ALT_DOWN_MASK));
 		
 		var editMenu = menubarBuilder.newMenu("editMenu", "studio.menubar.editMenu");
+		menubarBuilder.addMenuItem(editMenu, "studio.menubar.undo", 0, 14, this::undo,
+				KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK));
+		menubarBuilder.addMenuItem(editMenu, "studio.menubar.redo", 1, 14, this::redo,
+				KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK));
+		menubarBuilder.addMenuSeparator(editMenu);
 		menubarBuilder.addMenuItem(editMenu, "studio.menubar.preferences", 1, 3,
 				() -> new SettingsDialog(engineWindow, this).setVisible(true));
 		
@@ -853,13 +893,99 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		return menubarBuilder.convert();
 	}
 
-	private void addNodeToSelected(Node n) {
-		var selectedNode = explorerPanel.getSelectedNode();
-		
-		if (selectedNode != null) {
-			selectedNode.addChild(n);
-			explorerPanel.rebuildExplorer();
+	private void deleteSelectedNodes() {
+		var nodes = new ArrayList<Node>();
+		for (Node node : explorerPanel.getSelectedNodes()) {
+			if (node == null || node instanceof AbstractService || node.getParent() == null) continue;
+			if (nodes.stream().noneMatch(node::isDescendantOf)) {
+				nodes.add(node);
+			}
 		}
+		if (nodes.isEmpty()) return;
+
+		var parents = new ArrayList<Node>();
+		var indexes = new ArrayList<Integer>();
+		for (Node node : nodes) {
+			Node parent = node.getParent();
+			parents.add(parent);
+			indexes.add(parent.getChildIndex(node));
+			parent.removeChild(node);
+		}
+
+		undoManager.addEdit(new AbstractUndoableEdit() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getPresentationName() {
+				return "Delete";
+			}
+
+			@Override
+			public void undo() {
+				super.undo();
+				for (int i = 0; i < nodes.size(); i++) {
+					parents.get(i).insertChild(indexes.get(i), nodes.get(i));
+				}
+				explorerPanel.rebuildExplorer();
+			}
+
+			@Override
+			public void redo() {
+				super.redo();
+				for (Node node : nodes) {
+					Node parent = node.getParent();
+					if (parent != null) parent.removeChild(node);
+				}
+				explorerPanel.rebuildExplorer();
+			}
+		});
+
+		explorerPanel.rebuildExplorer();
+	}
+
+	public void undo() {
+		if (undoManager.canUndo()) {
+			undoManager.undo();
+		}
+	}
+
+	public void redo() {
+		if (undoManager.canRedo()) {
+			undoManager.redo();
+		}
+	}
+
+	private <T> void addInstanceEdit(String name, Map<Instance, T> before, Map<Instance, T> after,
+			InstanceValueSetter<T> setter) {
+		if (before.equals(after)) return;
+
+		undoManager.addEdit(new AbstractUndoableEdit() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getPresentationName() {
+				return name;
+			}
+
+			@Override
+			public void undo() {
+				super.undo();
+				before.forEach(setter::set);
+				explorerPanel.refreshSelection();
+			}
+
+			@Override
+			public void redo() {
+				super.redo();
+				after.forEach(setter::set);
+				explorerPanel.refreshSelection();
+			}
+		});
+	}
+
+	@FunctionalInterface
+	private interface InstanceValueSetter<T> {
+		void set(Instance instance, T value);
 	}
 	
 	public boolean isPlayTestMode() {

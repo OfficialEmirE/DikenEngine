@@ -17,6 +17,8 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
+import org.json.JSONObject;
+
 /**
  * Represents the `Utils` type within the DikenEngine `tools` package.
  */
@@ -129,6 +131,10 @@ public class Utils {
 					""".formatted(e.getMessage());
 		}
 		return response.body();
+	}
+	
+	public static JSONObject getWebDataToJSON(String uri) {
+		return new JSONObject(getWebData(uri));
 	}
 	
 	public static void openPage(URI uri) {

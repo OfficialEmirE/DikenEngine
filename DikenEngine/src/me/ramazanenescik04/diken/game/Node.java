@@ -626,7 +626,7 @@ public abstract class Node implements Cloneable {
 	
 	public static void exportNode(File file, Node node) throws IOException {
 		try (var out = new DataOutputStream(new java.io.FileOutputStream(file))) {
-			out.writeUTF("DikenEngine-NodeFile-2");
+			out.writeUTF("DikenEngine-NodeFile-" + World.WORLD_IO_VERSION);
 			
 			saveNode(node, out);
 		}
@@ -639,7 +639,7 @@ public abstract class Node implements Cloneable {
 			int version;
 
 			if ("DikenEngine-NodeFile".equals(signature)) {
-			    version = 3; //World.MIN_WORLD_IO_VERSION
+			    version = World.MIN_WORLD_IO_VERSION;
 			} else if (signature.startsWith("DikenEngine-NodeFile-")) {
 			    try {
 			        version = Integer.parseInt(signature.substring("DikenEngine-NodeFile-".length()));
@@ -667,7 +667,7 @@ public abstract class Node implements Cloneable {
         }
         
         //TODO: Her yeni world io sürümünde değiştir!
-        if (ver > 2) {
+        if (ver > World.MIN_WORLD_IO_VERSION) {
         	int length = inStream.readInt();
         	
         	if (length < 0) {

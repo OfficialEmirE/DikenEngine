@@ -1,6 +1,8 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
 import javax.swing.JMenuItem;
+import javax.swing.undo.AbstractUndoableEdit;
+import javax.swing.undo.UndoableEdit;
 import java.awt.BorderLayout;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -30,6 +32,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.swing.JScrollPane;
 import java.awt.Color;
@@ -55,6 +58,7 @@ public class ExplorerPanel extends DockablePanel {
     
     private PickCallback pickCallback = null;
     private boolean ignoreNextSelectionEvent = false;
+	private Consumer<UndoableEdit> editRecorder = _ -> {};
 
 	private boolean showHideServices = false;
 
@@ -183,7 +187,11 @@ public class ExplorerPanel extends DockablePanel {
 		
 		this.rebuildExplorer();
 	}
-	
+
+	public void setEditRecorder(Consumer<UndoableEdit> editRecorder) {
+		this.editRecorder = editRecorder == null ? _ -> {} : editRecorder;
+	}
+
 	public DefaultMutableTreeNode createStudioObject(DefaultMutableTreeNode parentNode, Node node) {
         DefaultMutableTreeNode newNode = new DefaultMutableTreeNode(node);
 
@@ -357,16 +365,36 @@ public class ExplorerPanel extends DockablePanel {
 	private void handleDelete(DefaultMutableTreeNode selectedNode) {
 	    if (selectedNode == null || isServiceOrRoot(selectedNode)) return;
 	    if (!(selectedNode.getUserObject() instanceof Node gameNode)) return;
-	    
-	    gameNode.removeNode();
-	    
-	    DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-	    DefaultMutableTreeNode parent = (DefaultMutableTreeNode) selectedNode.getParent();
-	    model.removeNodeFromParent(selectedNode);
-	    
-	    if (parent != null) {
-	        tree.setSelectionPath(new TreePath(parent.getPath()));
-	    }
+
+	    Node parent = gameNode.getParent();
+	    if (parent == null) return;
+	    int childIndex = parent.getChildIndex(gameNode);
+	    parent.removeChild(gameNode);
+
+	    editRecorder.accept(new AbstractUndoableEdit() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getPresentationName() {
+				return "Delete " + gameNode.getName();
+			}
+
+			@Override
+			public void undo() {
+				super.undo();
+				parent.insertChild(childIndex, gameNode);
+				rebuildExplorer();
+			}
+
+			@Override
+			public void redo() {
+				super.redo();
+				parent.removeChild(gameNode);
+				rebuildExplorer();
+			}
+		});
+
+	    rebuildExplorer();
 	}
 
 	public void rebuildExplorer() {
@@ -743,6 +771,8 @@ public class ExplorerPanel extends DockablePanel {
 	}
 	
 	public void addNodeToSelected(Node newNode) {
+		if (newNode == null) return;
+
 	    Node target = getSelectedNode();
 	    
 	    DefaultMutableTreeNode selectedTreeNode = 
@@ -760,6 +790,31 @@ public class ExplorerPanel extends DockablePanel {
 	    } finally {
 	        suppressRebuild = false;
 	    }
+	    int childIndex = target.getChildIndex(newNode);
+	    Node parent = target;
+	    editRecorder.accept(new AbstractUndoableEdit() {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public String getPresentationName() {
+				return "Create " + newNode.getName();
+			}
+
+			@Override
+			public void undo() {
+				super.undo();
+				parent.removeChild(newNode);
+				rebuildExplorer();
+			}
+
+			@Override
+			public void redo() {
+				super.redo();
+				parent.insertChild(childIndex, newNode);
+				rebuildExplorer();
+				selectNode(newNode);
+			}
+		});
 	    
 	    SwingUtilities.invokeLater(() -> {
 	        rebuildExplorer();
