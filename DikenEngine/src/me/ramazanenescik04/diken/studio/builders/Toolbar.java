@@ -21,7 +21,7 @@ public class Toolbar extends AbstractBuilder<AbstractButton> {
 	}
 	
 	public static final class Builder extends AbstractBuilder.Builder<Toolbar, JToolBar> {
-		public Toolbar createT(String id) {
+		protected Toolbar createT(String id) {
 			return new Toolbar(id);
 		}
 		

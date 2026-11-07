@@ -22,6 +22,8 @@ import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.studio.StudioTreeRenderer;
 import me.ramazanenescik04.diken.studio.StudioUtils;
 import me.ramazanenescik04.diken.studio.builders.Toolbar;
+import me.ramazanenescik04.diken.studio.dialog.NodeEIDialog;
+import me.ramazanenescik04.diken.tools.Utils;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.JPopupMenu;
@@ -105,6 +107,10 @@ public class ExplorerPanel extends DockablePanel {
 		});
 		
 		root.OnReplaceDescendant.Connect(_ -> {
+			rebuildExplorer();
+		});
+		
+		root.OnParentChangedDescendant.Connect(_ -> {
 			rebuildExplorer();
 		});
 		
@@ -275,12 +281,14 @@ public class ExplorerPanel extends DockablePanel {
 	        if (result != JFileChooser.APPROVE_OPTION) return;
 
 	        File selectedFile = fileChooser.getSelectedFile();
-	        if (selectedFile != null && gameNode != null) {
-				try {
-					Node.exportNode(selectedFile, gameNode);
-				} catch (IOException e1) {
-					DikenEngine.errorLog("Node dışarıya aktarmada bir sorun çıktı!", e1);
-				}
+	        if (selectedFile != null && gameNode != null) {     	
+				new NodeEIDialog(Utils.getInvisibleFrame(), e -> {
+					try {
+						Node.exportNode(selectedFile, gameNode, e.getEnabledImportOptions().toArray(Node.EIOptions[]::new));
+					} catch (IOException e1) {
+						DikenEngine.errorLog("Node dışarıya aktarmada bir sorun çıktı!", e1);
+					}
+				}, true).setVisible(true);
 			}
 	    });
 	    
@@ -300,14 +308,16 @@ public class ExplorerPanel extends DockablePanel {
 
 	        File selectedFile = fileChooser.getSelectedFile();
 	        if (selectedFile != null && gameNode != null) {
-				try {
-					var loadedNode = Node.importNode(selectedFile);
-					
-					if (loadedNode != null)
-						gameNode.addChild(loadedNode);
-				} catch (IOException e1) {
-					DikenEngine.errorLog("Node içeriye aktarmada bir sorun çıktı!", e1);
-				}
+	        	new NodeEIDialog(Utils.getInvisibleFrame(), e -> {
+	        		try {
+						var loadedNode = Node.importNode(selectedFile, e.getEnabledImportOptions().toArray(Node.EIOptions[]::new));
+						
+						if (loadedNode != null)
+							gameNode.addChild(loadedNode);
+					} catch (IOException e1) {
+						DikenEngine.errorLog("Node içeriye aktarmada bir sorun çıktı!", e1);
+					}
+				}, false).setVisible(true);
 				
 				rebuildExplorer();
 			}

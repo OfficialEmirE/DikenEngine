@@ -265,6 +265,10 @@ public sealed interface Tag {
                 throw new UncheckedIOException(e);
             }
         }
+        
+        public static Compound fromInputStream(DataInputStream in) throws IOException {
+			return TagIO.readCompoundBody(in);
+		}
 
         @Override
         public String toString() { return "Compound" + entries; }

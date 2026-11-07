@@ -4,6 +4,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -129,6 +130,24 @@ public class Utils {
 						"message": "%s"
 					}
 					""".formatted(e.getMessage());
+		}
+		return response.body();
+	}
+	
+	public static InputStream getWebDataToIS(String uri) {
+		HttpClient client = HttpClient.newHttpClient();
+
+		HttpRequest request = HttpRequest.newBuilder()
+				.uri(URI.create(uri))
+				.GET()
+				.build();
+
+		HttpResponse<InputStream> response = null;
+		try {
+			response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
 		return response.body();
 	}

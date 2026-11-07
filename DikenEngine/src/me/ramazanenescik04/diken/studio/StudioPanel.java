@@ -17,6 +17,7 @@ import java.util.function.Consumer;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLayeredPane;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -39,7 +40,6 @@ import bibliothek.gui.dock.common.intern.CDockable;
 import bibliothek.gui.dock.common.intern.DefaultCDockable;
 import bibliothek.gui.dock.common.mode.ExtendedMode;
 import bibliothek.gui.dock.common.theme.ThemeMap;
-
 import me.ramazanenescik04.diken.Config;
 import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.DikenEngine;
@@ -67,6 +67,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.studio.builders.Menubar;
 import me.ramazanenescik04.diken.studio.builders.Toolbar;
+import me.ramazanenescik04.diken.studio.dialog.AboutWindow;
 import me.ramazanenescik04.diken.studio.dialog.SettingsDialog;
 import me.ramazanenescik04.diken.studio.dialog.ThreadInfoDialog;
 import me.ramazanenescik04.diken.studio.dockables.*;
@@ -82,6 +83,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	private JFrame engineWindow;
 	private RendererPanel gamePanel;
 	private DikenEngine engine;
+	public NotificationHelper notificationHelper;
 	
 	private JToolBar toolBar;
 	private JMenuBar menuBar;
@@ -153,6 +155,22 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		JPopupMenu.setDefaultLightWeightPopupEnabled(false);
 		ToolTipManager.sharedInstance().setLightWeightPopupEnabled(false);
 		
+		var layeredPane = new JLayeredPane();
+		layeredPane.setLayout(null);
+		layeredPane.setPreferredSize(new Dimension(1280, 706));
+		
+		layeredPane.add(this, JLayeredPane.DEFAULT_LAYER);
+		layeredPane.addComponentListener(new java.awt.event.ComponentAdapter() {
+			@Override
+			public void componentResized(java.awt.event.ComponentEvent e) {
+				setBounds(0, 0, layeredPane.getWidth(), layeredPane.getHeight());
+			}
+		});
+		setBounds(0, 0, 1280, 706);
+		engineWindow.setContentPane(layeredPane);
+		
+		notificationHelper = new NotificationHelper(layeredPane);
+		
 		editWorld = new World("");
 		
 		control = new CControl();
@@ -166,9 +184,9 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		consolePanel = new ConsolePanel();
 		objectsPanel = new BasicObjectsPanel(explorerPanel::addNodeToSelected);
 		scriptTabPanel = new EditorTabPanel();
-		scriptTabPanel.openEditor(new GamePreview(gamePanel));
+		scriptTabPanel.openEditor(new GamePreview(gamePanel, notificationHelper));
 		resourcesPanel = new ResourcesPanel(editWorld, scriptTabPanel, engineWindow);
-		toolboxPanel = new ToolboxPanel(editWorld, engineWindow);
+		toolboxPanel = new ToolboxPanel(editWorld, engineWindow, explorerPanel);
 		explorerPanel.addSelectedNodeListener(new ExplorerPanel.SelectedNodeListener() {
 			@Override
 			public void onSelectedNode(Node node) {}
@@ -623,7 +641,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 		}
 	}
 	
-	public void newWorld() {
+	public void newWorld() {		
 		var newWorld = new World("Untitled World");
 		
 		Lighting lighting = newWorld.getService("Lighting");

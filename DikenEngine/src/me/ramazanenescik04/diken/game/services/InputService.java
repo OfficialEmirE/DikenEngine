@@ -46,7 +46,7 @@ public class InputService extends Service {
 	public void update(World world, DikenEngine engine) {
 		super.update(world, engine);
 		
-		if (uiService == null)
+		if (uiService == null || uiService.world != world)
 			uiService = world.getService(UIService.class);
 		
 		cursor.update(world);
@@ -98,6 +98,11 @@ public class InputService extends Service {
 		if (textTypeMode) return false;
 		
 		return engine.input.isKeyReleased(key);
+	}
+
+	@Override
+	protected void reloadNode() {
+		uiService = world.getService(UIService.class);
 	}
 
 	public void keyHandled(int inputMode, int key, char character) {

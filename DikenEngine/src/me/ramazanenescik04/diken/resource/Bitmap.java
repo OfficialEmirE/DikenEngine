@@ -225,7 +225,7 @@ public class Bitmap implements IResource {
 	            int srcY = (int) Math.round(srcYd);
 
 	            if (srcX >= 0 && srcX < w && srcY >= 0 && srcY < h) {
-	                newPixels[dx + dy * newW] = pixels.localArray[srcX + srcY * w];
+	                newPixels[dx + dy * newW] = pixels.get(srcX + srcY * w);
 	            } else {
 	                newPixels[dx + dy * newW] = fillColor; // kenar rengi
 	            }

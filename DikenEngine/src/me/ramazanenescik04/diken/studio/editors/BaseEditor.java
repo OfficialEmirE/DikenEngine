@@ -14,6 +14,7 @@ import javax.swing.border.LineBorder;
 
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.language.Lang;
+import me.ramazanenescik04.diken.studio.builders.Toolbar;
 import me.ramazanenescik04.diken.studio.dockables.EditorTabPanel;
 
 public abstract class BaseEditor extends JPanel {
@@ -61,6 +62,10 @@ public abstract class BaseEditor extends JPanel {
 	
 	protected void updateTabHeader() {
 		tabPanel.updateEditor(this);
+	}
+	
+	public Toolbar.Builder getToolbar() {
+		return null;
 	}
 	
 	public void refreshWorld(World world, boolean playtest) {}

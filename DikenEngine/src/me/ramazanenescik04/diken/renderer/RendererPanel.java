@@ -207,18 +207,18 @@ public class RendererPanel extends AWTGLCanvas {
 
 	@Override
 	public void removeNotify() {
-		try {
-			if (glInitialized) {
-				makeCurrent();
-				GL11.glDeleteTextures(textureId);
-				glInitialized = false;
-				textureId = 0;
-			}
-		} catch (LWJGLException e) {
-			e.printStackTrace();
-		}
-
-		super.removeNotify();
+	    try {
+	        if (glInitialized) {
+	            makeCurrent();
+	            GL11.glDeleteTextures(textureId);
+	            glInitialized = false;
+	            textureId = 0;
+	        }
+	        
+	        super.removeNotify();
+	    } catch (LWJGLException e) {
+	        e.printStackTrace();
+	    }
 	}
 	
 	@Override

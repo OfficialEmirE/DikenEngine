@@ -11,6 +11,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -18,6 +19,8 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class PlayerService extends Service {
+	public final Event OnCharacterAdded = new Event();
+	
 	private Humanoid character;
 	private String username = "Player";
 	private String nodeObjectID = "";
@@ -50,7 +53,8 @@ public class PlayerService extends Service {
 	public void setCharacter(Humanoid character) {
 		this.character = character;
 		if (this.character != null) {
-			this.nodeObjectID = (character != null ? character.getNetId().toString() : ""); 
+			this.nodeObjectID = (character != null ? character.getNetId().toString() : "");
+			this.OnCharacterAdded.FireEvent(this.character);
 		}
 	}
 	
@@ -99,12 +103,25 @@ public class PlayerService extends Service {
 	}
 	
 	protected void reloadNode() {
-		if (nodeObjectID.isEmpty())
-			return;
+		var workspace = this.getRootNode().findFirstChildOfClass(Workspace.class);
+		var starterCharacter = this.findFirstChild("StarterCharacter");
 		
-		UUID target = UUID.fromString(nodeObjectID);
-		List<Node> results = getRootNode().findByNetId(target);
-		this.character = (Humanoid) (results.isEmpty() ? null : results.get(0));
+		if (!nodeObjectID.isEmpty()) {
+			UUID target = UUID.fromString(nodeObjectID);
+			List<Node> results = getRootNode().findByNetId(target);
+			this.character = (Humanoid) (results.isEmpty() ? null : results.get(0));
+			this.OnCharacterAdded.FireEvent(this.character);
+		} else if (
+				this.character == null &&
+				starterCharacter != null &&
+				starterCharacter instanceof Humanoid i
+		) {
+			var character = (Humanoid) i.copy();
+			character.setParent(workspace);
+			character.setName(this.username);
+			this.character = character;
+			this.OnCharacterAdded.FireEvent(this.character);
+		}
 	}
 
 	@Override

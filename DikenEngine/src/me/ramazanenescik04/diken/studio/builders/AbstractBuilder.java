@@ -36,7 +36,7 @@ public abstract class AbstractBuilder<T> {
 	public static abstract class Builder<T, R> {
 		protected Map<String, T> abstractBuilders = new LinkedHashMap<>();
 		
-		public abstract T createT(String key);
+		protected abstract T createT(String key);
 		public T create(String key) {
 			var toolbar = createT(key);
 			abstractBuilders.put(key, toolbar);

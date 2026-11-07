@@ -52,7 +52,7 @@ public class World implements Cloneable {
     private static final int MAX_COLLISION_PASSES = 6;
     
     public static final int MIN_WORLD_IO_VERSION = 2;
-    public static final int WORLD_IO_VERSION = 3;
+    public static final int WORLD_IO_VERSION = 4;
 
     public transient DikenEngine engine;
     
@@ -391,6 +391,54 @@ public class World implements Cloneable {
 		
 		world.resources = resources;
 		return world;
+    }
+    
+    public byte[] saveResources() throws IOException {
+    	var byteArrayIS = new ByteArrayOutputStream();
+    	var outStream = new DataOutputStream(byteArrayIS);
+    	
+    	outStream.writeInt(resources.size() - 1);
+        for (var entry : resources.entrySet()) {
+            IResource resource = entry.getValue();
+            
+            if (resource == null)
+            	continue;
+            
+            outStream.writeUTF(entry.getKey());
+            outStream.writeUTF(resource.getClass().getName());
+            
+            ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            resource.saveResource(new DataOutputStream(stream));
+            outStream.writeInt(stream.size());
+            outStream.write(stream.toByteArray());
+        }
+    	
+    	return byteArrayIS.toByteArray();
+    }
+    
+    public static LinkedHashMap<String, IResource> loadResources(byte[] byteList) throws IOException, ReflectiveOperationException {
+    	var outStream = new DataInputStream(new ByteArrayInputStream(byteList));
+    	
+    	int resourceLenght = outStream.readInt();
+        
+    	LinkedHashMap<String, IResource> resources = new LinkedHashMap<>();
+        resources.put("empty", null);
+        
+        for (int i = 0; i < resourceLenght; i++) {
+            String key = outStream.readUTF();
+            String className = outStream.readUTF();
+            int lenght = outStream.readInt();
+            byte[] data = new byte[lenght];
+            outStream.readFully(data);
+            
+            var in = new ByteArrayInputStream(data);
+            var resource = IResource.loadResource(new DataInputStream(in), className);
+            
+            resources.put(key, resource);
+        }
+    	
+    	outStream.close();
+		return resources;
     }
     
     public IResource[] getResources(EnumResource animation) {

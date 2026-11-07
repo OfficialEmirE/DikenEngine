@@ -22,6 +22,7 @@ import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 import me.ramazanenescik04.diken.tools.ObservableList;
 
@@ -67,6 +68,11 @@ public abstract class Node implements Cloneable {
     protected boolean archivable = true; // Kaydedilebilir mi?
     protected boolean removed = false;
     protected int zIndex = 0;
+    
+    public enum EIOptions {
+    	Disable_Scripts,
+    	Allow_Resources, 
+    }
 
     // Constructor
     public Node() {
@@ -624,15 +630,41 @@ public abstract class Node implements Cloneable {
 	
 	public void loadNodeData(Tag.Compound tag) {};
 	
-	public static void exportNode(File file, Node node) throws IOException {
+	public static void exportNode(File file, Node node, Node.EIOptions... eiOptions) throws IOException {
+		if (eiOptions == null) eiOptions = new EIOptions[] {};
+		node = node.copy();
+		
 		try (var out = new DataOutputStream(new java.io.FileOutputStream(file))) {
 			out.writeUTF("DikenEngine-NodeFile-" + World.WORLD_IO_VERSION);
 			
+			boolean containsResources = false;
+
+			for (EIOptions eiOption : eiOptions) {
+			    if (eiOption == EIOptions.Disable_Scripts) {
+			        node.findByClass(Script.class).forEach(e -> e.setEnabled(false));
+
+			    } else if (eiOption == EIOptions.Allow_Resources) {
+			        containsResources = true;
+			    }
+			}
+
+			out.writeBoolean(containsResources);
+
+			if (containsResources) {
+			    var world = DikenEngine.getEngine().getWorld();
+			    byte[] resourceArray = world.saveResources();
+
+			    out.writeInt(resourceArray.length);
+			    out.write(resourceArray);
+			}
+			
+			node.sendDisposeAllNodes(node);
 			saveNode(node, out);
 		}
 	}
 	
-	public static Node importNode(File file) throws IOException {
+	public static Node importNode(File file, Node.EIOptions... eiOptions) throws IOException {
+		if (eiOptions == null) eiOptions = new EIOptions[] {};
 		try (var in = new DataInputStream(new java.io.FileInputStream(file))) {
 			String signature = in.readUTF();
 
@@ -649,9 +681,36 @@ public abstract class Node implements Cloneable {
 			} else {
 			    throw new IOException("DikenEngine NodeFile Dosyası Değil!");
 			}
+			
+			boolean enableScripts = true;
+			if (version == 4) {
+				for (EIOptions eiOption : eiOptions) {
+					if (eiOption == EIOptions.Disable_Scripts) {
+						enableScripts = false;
+					} else if (eiOption == EIOptions.Allow_Resources) {
+						boolean containsResources = in.readBoolean();
 
-			return loadNode(in, version);
+						if (containsResources) {
+						    int resourceLength = in.readInt();
+						    byte[] resources = in.readNBytes(resourceLength);
+
+						    var world = DikenEngine.getEngine().getWorld();
+						    world.resources.putAll(World.loadResources(resources));
+						}
+					}
+				}
+			}
+			
+			var node = loadNode(in, version);
+			for (var script : node.findByClass(Script.class)) {
+				script.setEnabled(enableScripts);
+			}
+			node.sendReloadAllNodes(node);
+			return node;
+		} catch (ReflectiveOperationException e) {
+			e.printStackTrace();
 		}
+		return null;
 	}
 	
 	public static Node loadNode(DataInputStream inStream, int ver) throws IOException {
@@ -741,7 +800,6 @@ public abstract class Node implements Cloneable {
             }
 
             return newNode;
-
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
             return null;

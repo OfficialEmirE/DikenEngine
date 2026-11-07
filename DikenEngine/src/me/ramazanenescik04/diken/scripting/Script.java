@@ -4,6 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 import org.luaj.vm2.*;
 import org.luaj.vm2.lib.jse.*;
@@ -12,6 +15,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.event.Signal;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -19,6 +23,8 @@ import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 public class Script extends Node {
+	private static final ThreadLocal<Script> CURRENT_SCRIPT = new ThreadLocal<>();
+	private Map<Event, List<Signal>> eventConnections = new IdentityHashMap<>();
 	public static final Event scriptStarted = new Event();
 	public static final Event scriptStopped = new Event();
 	
@@ -43,6 +49,30 @@ public class Script extends Node {
 	public Script(DataInputStream in) throws IOException {
 		super(in);
 		loadNodeData(in);
+	}
+
+	public static Script getCurrentScript() {
+		return CURRENT_SCRIPT.get();
+	}
+
+	public static Script setCurrentScript(Script script) {
+		Script previous = CURRENT_SCRIPT.get();
+		if (script == null) CURRENT_SCRIPT.remove();
+		else CURRENT_SCRIPT.set(script);
+		return previous;
+	}
+
+	public synchronized void trackConnection(Event event, Signal signal) {
+		if (stopRequested) {
+			event.Disconnect(signal);
+			return;
+		}
+		eventConnections.computeIfAbsent(event, _ -> new ArrayList<>()).add(signal);
+	}
+
+	private synchronized void disconnectEventConnections() {
+		eventConnections.forEach((event, signals) -> signals.forEach(event::Disconnect));
+		eventConnections.clear();
 	}
 
 	public void initialize(World theWorld) {
@@ -71,6 +101,7 @@ public class Script extends Node {
 	    virtualThread = Thread.ofVirtual()
 	        .name("lua-script-" + getName())
 	        .start(() -> {
+	            Script previousScript = setCurrentScript(this);
 	            try {
 	                LuaValue rootNode = CoerceJavaToLua.coerce(theWorld);
 	                LuaValue bridge = CoerceJavaToLua.coerce(new LuaBridge(this));
@@ -99,12 +130,15 @@ public class Script extends Node {
 	                if (myRunId == runId) {
 	                    DikenEngine.errorLog("Script Error [" + getName() + "]: ", e);
 	                }
+	            } finally {
+	                setCurrentScript(previousScript);
 	            }
 	        });
 	}
 
 	public void stop() {
 	    stopRequested = true;
+	    disconnectEventConnections();
 	    runId++; // eski çalışmayı geçersiz kıl
 	    isInitialized = false;
 	    luaUpdateFunction = null;
@@ -119,6 +153,7 @@ public class Script extends Node {
     @Override
     public void update(World world, DikenEngine engine) {
         if (luaUpdateFunction != null && isInitialized) {
+	        Script previousScript = setCurrentScript(this);
             try {
                 luaUpdateFunction.call();
             } catch (LuaError e) {
@@ -127,6 +162,8 @@ public class Script extends Node {
                 }
             } catch (Exception e) {
                 DikenEngine.errorLog("Script Update Error [" + getName() + "]: " + e.getMessage());
+	        } finally {
+	            setCurrentScript(previousScript);
             }
         }
 
@@ -193,6 +230,7 @@ public class Script extends Node {
 	@Override
     public Node copy() {
         Script cloned = (Script) super.copy();
+        cloned.eventConnections = new IdentityHashMap<>();
         cloned.setSource(this.source);
         cloned.setEnabled(this.enabled);
         return cloned;

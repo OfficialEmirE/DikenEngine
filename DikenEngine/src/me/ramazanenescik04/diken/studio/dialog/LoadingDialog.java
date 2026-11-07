@@ -1,4 +1,4 @@
-package me.ramazanenescik04.diken.studio;
+package me.ramazanenescik04.diken.studio.dialog;
 
 import java.awt.BorderLayout;
 import java.awt.Color;

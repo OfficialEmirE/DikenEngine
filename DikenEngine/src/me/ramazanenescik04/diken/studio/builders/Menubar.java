@@ -38,7 +38,14 @@ public class Menubar extends AbstractBuilder<JMenuItem> {
 	public static final class Builder extends AbstractBuilder.Builder<Menubar, JMenuBar> {
 		
 		@Override
-		public Menubar createT(String key) {
+		@Deprecated
+		protected Menubar createT(String key) {
+			throw new IllegalArgumentException("please use Menubar.Builder.newMenu(String, String) method!");
+		}
+
+		@Override
+		@Deprecated
+		public Menubar create(String key) {
 			throw new IllegalArgumentException("please use Menubar.Builder.newMenu(String, String) method!");
 		}
 

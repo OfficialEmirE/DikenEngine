@@ -14,7 +14,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
 
 public class RunService extends Service {
-	private boolean running, runScriptEvent, stopScriptEvent;
+	private boolean running, runScriptEvent;
 
 	public RunService(World world) {
 		this(world, "RunService");
@@ -32,17 +32,6 @@ public class RunService extends Service {
 
 	@Override
 	public void update(World world, DikenEngine engine) {
-		if (stopScriptEvent) {
-			world.disposeNodes();
-			List<Script> scripts = this.world.getRoot().findByClass(Script.class);
-	    	for (Script script : scripts) {
-	    		script.stop();
-	    	}
-	    	System.gc();
-	    	
-			this.stopScriptEvent = true;
-		}
-		
 		super.update(world, engine);
 		
 		if (runScriptEvent) {
@@ -63,7 +52,14 @@ public class RunService extends Service {
 	
 	public void stop() {
 		this.running = false;
-		this.stopScriptEvent = true;
+		this.runScriptEvent = false;
+		if (this.world == null) return;
+
+		List<Script> scripts = this.world.getRoot().findByClass(Script.class);
+		for (Script script : scripts) {
+			script.stop();
+		}
+		this.world.disposeNodes();
 	}
 	
 	public void restart() {

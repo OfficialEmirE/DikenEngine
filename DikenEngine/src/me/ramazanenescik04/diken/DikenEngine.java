@@ -41,14 +41,14 @@ import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.IOResource;
 import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
-import me.ramazanenescik04.diken.studio.LoadingDialog;
 import me.ramazanenescik04.diken.studio.StudioPanel;
+import me.ramazanenescik04.diken.studio.dialog.LoadingDialog;
 import me.ramazanenescik04.diken.tools.Utils;
 
 /**
  * Represents the `DikenEngine` type within the DikenEngine `core` package.
  */
-public class DikenEngine implements Runnable, IInputListener {
+public final class DikenEngine implements Runnable, IInputListener {
 	public static final String VERSION = "3.3.0";
 	public static final int protocolVersion = 330;
 
@@ -145,7 +145,6 @@ public class DikenEngine implements Runnable, IInputListener {
 					studioPanel.stop();
 				}
 			});
-			this.engineWindow.setContentPane(studioPanel);
 		} else {
 			this.engineWindow.addWindowListener(new WindowAdapter() {
 				public void windowClosing(WindowEvent e) {
