@@ -33,12 +33,7 @@ public class Lighting extends Service {
 	public Lighting(String name) {
 		super(name);
 	}
-
-	public Lighting(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-
+	
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
 		drawSky(sceneBitmap, viewport);
 	}

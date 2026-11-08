@@ -16,8 +16,13 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public abstract class AbstractValue<T> extends Node {
 	private T value;
 	private String nodeObjectID = "";
-	private final Class<T> typeClass;
-	private final EnumSettingType enumSettingType;
+	private Class<T> typeClass;
+	private EnumSettingType enumSettingType;
+	
+	@SuppressWarnings("unchecked")
+	public AbstractValue() {
+		this("Value", null, (Class<T>) Object.class, EnumSettingType.UNKNOWN);
+	}
 	
 	public AbstractValue(T value, Class<T> typeClass, EnumSettingType enumSettingType) {
 		this("Value", value, typeClass, enumSettingType);
@@ -36,19 +41,6 @@ public abstract class AbstractValue<T> extends Node {
         } else {
         	this.enumSettingType = EnumSettingType.UNKNOWN;
         }
-	}
-	
-	@SuppressWarnings("unchecked")
-	public AbstractValue(DataInputStream in) throws IOException {
-		super(in);
-		super.loadNodeData(in);
-		try {
-			this.typeClass = (Class<T>) Class.forName(in.readUTF());
-		} catch (Exception e) {
-			throw new IOException("Type Class load error", e);
-		}
-		this.enumSettingType = EnumSettingType.valueOf(in.readUTF());
-		this.loadValueData(in);
 	}
 
 	public T getValue() {
@@ -159,9 +151,16 @@ public abstract class AbstractValue<T> extends Node {
 	    }
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void loadNodeData(DataInputStream in) throws IOException {
 		super.loadNodeData(in);
-		throw new IOException("AbstractValue final alanları constructor içinde yüklenmelidir.");
+		try {
+			this.typeClass = (Class<T>) Class.forName(in.readUTF());
+		} catch (Exception e) {
+			throw new IOException("Type Class load error", e);
+		}
+		this.enumSettingType = EnumSettingType.valueOf(in.readUTF());
+		this.loadValueData(in);
 	}
 }

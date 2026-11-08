@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.services;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,11 +18,6 @@ public class Workspace extends Service {
 
 	public Workspace(String name) {
 		super(name);
-	}
-	
-	public Workspace(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 	
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {

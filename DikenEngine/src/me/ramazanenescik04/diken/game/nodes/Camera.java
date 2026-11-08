@@ -35,7 +35,7 @@ public class Camera extends AbstractService {
 	private Point cameraPos = new Point();
 	private float zoom = 1.0f;
 	
-	public Camera(World world) {
+	public Camera() {
 		this("Camera");
 	}
 	
@@ -43,11 +43,6 @@ public class Camera extends AbstractService {
 		super(name);
 	}
 
-	public Camera(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-	
 	@Override
 	public void update(World world, DikenEngine engine) {
 		super.update(world, engine);

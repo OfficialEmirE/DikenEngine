@@ -33,11 +33,6 @@ public class PlayerService extends Service {
 		super(name);
 	}
 
-	public PlayerService(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-	
 	public String getUsername() {
 		return username;
 	}

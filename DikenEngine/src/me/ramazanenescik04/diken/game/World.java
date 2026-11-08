@@ -52,7 +52,7 @@ public class World implements Cloneable {
     private static final int MAX_COLLISION_PASSES = 6;
     
     public static final int MIN_WORLD_IO_VERSION = 2;
-    public static final int WORLD_IO_VERSION = 4;
+    public static final int WORLD_IO_VERSION = 5;
 
     public transient DikenEngine engine;
     
@@ -61,7 +61,7 @@ public class World implements Cloneable {
     
     public transient Map<String, IResource> resources;
     
-    private Camera camera = new Camera(this);
+    private Camera camera = new Camera();
     private Hitbox gameViewport, uiViewport;
 
     public World(String gameName, Game rootNode) {
@@ -98,7 +98,7 @@ public class World implements Cloneable {
     	root.addChild(new InputService());
     	root.addChild(new RunService(this));
     }
-
+    
     // --- Node Yönetimi ---
     
     public void addOptionalService(Class<? extends Service> serviceClass) {

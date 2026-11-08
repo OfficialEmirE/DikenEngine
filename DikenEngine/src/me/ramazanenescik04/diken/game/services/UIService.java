@@ -28,11 +28,6 @@ public class UIService extends Service {
 		super(name);
 	}
 
-	public UIService(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-	
 	@Override
 	public boolean showStudio() {
 		return true;

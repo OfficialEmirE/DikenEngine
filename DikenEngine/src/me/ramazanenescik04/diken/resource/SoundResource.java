@@ -21,6 +21,7 @@ public class SoundResource implements IResource {
     private float pitch = 1.0f; // default
     private long maxPosition;
     private boolean loop = false;
+    private String audioFormat = "wav";
 
     // runtime (serialize edilmez)
     private transient Clip clip;
@@ -29,10 +30,12 @@ public class SoundResource implements IResource {
 
     public SoundResource() {
         // reflection için zorunlu
+    	this.audioFormat = "wav";
     }
 
-    public SoundResource(String id, byte[] wavBytes) {
+    public SoundResource(String id, String audioFormat, byte[] wavBytes) {
         this.id = id;
+        this.audioFormat = audioFormat;
         this.wavBytes = wavBytes;
     }
 
@@ -46,8 +49,8 @@ public class SoundResource implements IResource {
     // ---------------------------
     public static SoundResource fromWav(Path wavPath, String id) throws IOException {
         byte[] bytes = Files.readAllBytes(wavPath);
-        ensureLooksLikeWav(bytes, wavPath.toString());
-        return new SoundResource(id, bytes);
+        ensureValidAudio(bytes, wavPath.toString());
+        return new SoundResource(id, "wav", bytes);
     }
 
     public static SoundResource fromWav(File wavFile, String id) throws IOException {
@@ -55,8 +58,8 @@ public class SoundResource implements IResource {
     }
 
     public static SoundResource fromWavBytes(byte[] wavBytes, String id) {
-        ensureLooksLikeWav(wavBytes, "byte[]");
-        return new SoundResource(id, wavBytes);
+    	ensureValidAudio(wavBytes, "byte[]");
+        return new SoundResource(id, "wav", wavBytes);
     }
     
 	public static SoundResource fromWav(InputStream inputStream, String id) throws IOException {
@@ -74,9 +77,7 @@ public class SoundResource implements IResource {
 
 		byte[] wavBytes = buffer.toByteArray();
 		
-		ensureLooksLikeWav(wavBytes, "InputStream");
-
-		return new SoundResource(id, wavBytes);
+		return new SoundResource(id, ensureValidAudio(wavBytes, "InputStream"), wavBytes);
 	}
 
     // ---------------------------
@@ -155,36 +156,41 @@ public class SoundResource implements IResource {
     // ---------------------------
     // Lifecycle hooks
     // ---------------------------
-    @Override
-    public synchronized void reload() {
-        safeCloseClip();
 
-        if (wavBytes == null || wavBytes.length == 0) {
-            loaded = false;
-            return;
-        }
+	public synchronized void reload() {
+		safeCloseClip();
 
-        try (ByteArrayInputStream bais = new ByteArrayInputStream(wavBytes);
-             BufferedInputStream bis = new BufferedInputStream(bais);
-             AudioInputStream ais = AudioSystem.getAudioInputStream(bis)) {
+		if (wavBytes == null || wavBytes.length == 0) {
+			loaded = false;
+			return;
+		}
 
-            Clip newClip = AudioSystem.getClip();
-            newClip.open(ais);
+		try {			
+			if (audioFormat == null || audioFormat.isBlank()) {
+				audioFormat = ensureValidAudio(wavBytes, "SoundResource");
+			}
 
-            this.clip = newClip;
-            this.loaded = true;
+			try (var ais
+					= AudioSystem.getAudioInputStream(new BufferedInputStream(new ByteArrayInputStream(wavBytes)))) {
+				Clip newClip = AudioSystem.getClip();
+				newClip.open(ais);
 
-            this.maxPosition = clip.getMicrosecondLength();
-            this.originalSampleRate = null;
-            applyVolume(volume);
-            applyPitch(pitch);
-            
-        } catch (Exception e) {
-            this.clip = null;
-            this.loaded = false;
-            throw new RuntimeException("SoundResource reload failed (id=" + id + "): " + e.getMessage(), e);
-        }
-    }
+				this.clip = newClip;
+				this.loaded = true;
+				this.maxPosition = clip.getMicrosecondLength();
+				this.originalSampleRate = null;
+
+				applyVolume(volume);
+				applyPitch(pitch);
+			}
+
+		} catch (Exception e) {
+			this.clip = null;
+			this.loaded = false;
+
+			throw new RuntimeException("SoundResource reload failed (id=" + id + "): " + e.getMessage(), e);
+		}
+	}
 
     @Override
     public synchronized void disponse() {
@@ -294,21 +300,25 @@ public class SoundResource implements IResource {
         return new String(bytes, StandardCharsets.UTF_8);
     }
 
-    // ---------------------------
-    // Quick WAV sanity check (RIFF/WAVE)
-    // ---------------------------
-    private static void ensureLooksLikeWav(byte[] bytes, String name) {
-        if (bytes == null || bytes.length < 12) {
-            throw new IllegalArgumentException("Invalid WAV (" + name + "): too small");
-        }
-        boolean riff =
-                bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F';
-        boolean wave =
-                bytes[8] == 'W' && bytes[9] == 'A' && bytes[10] == 'V' && bytes[11] == 'E';
-        if (!riff || !wave) {
-            throw new IllegalArgumentException("Invalid WAV (" + name + "): missing RIFF/WAVE header");
-        }
-    }
+	// ---------------------------
+	// Audio sanity check (WAV / OGG)
+	// ---------------------------
+
+	private static String ensureValidAudio(byte[] bytes, String name) {
+		if (bytes == null || bytes.length < 4) {
+			throw new IllegalArgumentException("Invalid audio (" + name + "): too small");
+		}
+
+		boolean riff = bytes.length >= 12 && bytes[0] == 'R' && bytes[1] == 'I' && bytes[2] == 'F' && bytes[3] == 'F';
+		boolean wave = bytes.length >= 12 && bytes[8] == 'W' && bytes[9] == 'A' && bytes[10] == 'V' && bytes[11] == 'E';
+		boolean ogg = bytes[0] == 'O' && bytes[1] == 'g' && bytes[2] == 'g' && bytes[3] == 'S';
+
+		if (!(riff && wave) && !ogg) {
+			throw new IllegalArgumentException("Invalid audio (" + name + "): missing RIFF/WAVE or OggS header");
+		}
+		
+		return (ogg ? "ogg" : "wav");
+	}
 
     // ---------------------------
     // Getters/Setters
@@ -347,6 +357,8 @@ public class SoundResource implements IResource {
     }
     
     public long getMaxPosition() { return this.maxPosition; }
+    
+    public String getAudioFormat() { return this.audioFormat; }
 
     public boolean isLoop() { return loop; }
     public void setLoop(boolean loop) { this.loop = loop; }

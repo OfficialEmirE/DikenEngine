@@ -1,6 +1,7 @@
 package me.ramazanenescik04.diken.game.io;
 
 import java.io.*;
+import java.util.UUID;
 
 /**
  * Tag okuma mantığı. id byte'ına göre switch ile ilgili record'u üretir.
@@ -28,6 +29,7 @@ public final class TagIO {
             case 11 -> readIntArray(in);
             case 12 -> readLongArray(in);
             case 13 -> new Tag.Boolean(in.readBoolean());
+            case 14 -> new Tag.UUID_Record(UUID.fromString(in.readUTF()));
             default -> throw new IOException("Bilinmeyen tag id: " + id);
         };
     }
@@ -95,6 +97,7 @@ public final class TagIO {
             case Tag.LongArray(var arr) -> "long[" + arr.length + "]";
             case Tag.ListTag list -> "list<" + list.size() + " öğe>";
             case Tag.Boolean(var v) -> "boolean(" + v +  ")";
+            case Tag.UUID_Record(var v) -> "UUID(" + v + ")";
             case Tag.Compound c -> "compound{" + c.entries().size() + " alan}";
         };
     }

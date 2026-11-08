@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.io.Tag;
+import me.ramazanenescik04.diken.game.nodes.NilNode;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -59,7 +60,7 @@ public abstract class Node implements Cloneable {
 	// Hiyerarşi
     protected Node parent;
     protected List<Node> children = new ObservableList<>();
-    protected final UUID netId;
+    private UUID netId;
     
     // Temel Özellikler
     protected String name;
@@ -84,6 +85,7 @@ public abstract class Node implements Cloneable {
         this.netId = UUID.randomUUID();
     }
     
+    @Deprecated
     public Node(DataInputStream in) throws IOException {
         this.netId = UUID.fromString(in.readUTF());
     }
@@ -610,7 +612,6 @@ public abstract class Node implements Cloneable {
 	}
 	
 	public void saveNodeData(DataOutputStream out) throws IOException {
-		out.writeUTF(netId.toString());
 		out.writeUTF(name);
 		out.writeBoolean(debug);
 		out.writeBoolean(archivable);
@@ -626,9 +627,15 @@ public abstract class Node implements Cloneable {
 		this.zIndex = in.readInt();
 	}
 	
-	public void saveNodeData(Tag.Compound tag) {};
+	public void saveNodeData(Tag.Compound tag) {
+		tag.putUUID("netId", this.netId);
+		tag.putString("name", name);
+	}
 	
-	public void loadNodeData(Tag.Compound tag) {};
+	public void loadNodeData(Tag.Compound tag) {
+		this.netId = tag.getUUID("netId", this.netId);
+		this.name = tag.getString("name", this.name);
+	}
 	
 	public static void exportNode(File file, Node node, Node.EIOptions... eiOptions) throws IOException {
 		if (eiOptions == null) eiOptions = new EIOptions[] {};
@@ -683,7 +690,7 @@ public abstract class Node implements Cloneable {
 			}
 			
 			boolean enableScripts = true;
-			if (version == 4) {
+			if (version >= 4) {
 				for (EIOptions eiOption : eiOptions) {
 					if (eiOption == EIOptions.Disable_Scripts) {
 						enableScripts = false;
@@ -720,9 +727,12 @@ public abstract class Node implements Cloneable {
         Node node;
         try {
             Class<?> clazz = Class.forName(className);
-            node = (Node) clazz.getConstructor(DataInputStream.class).newInstance(inStream);
+            node = (Node) clazz.getConstructor().newInstance();
+            node.netId = UUID.fromString(inStream.readUTF()); // read netId
+            node.loadNodeData(inStream);
         } catch (Exception e) {
-            throw new IOException("Node sınıfı yüklenemedi: " + className, e);
+            DikenEngine.errorLog("!KRITIK HATA! Node sınıfı yüklenemedi: " + className, e);
+            node = new NilNode(className);
         }
         
         //TODO: Her yeni world io sürümünde değiştir!

@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.services;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -26,12 +24,7 @@ public class Game extends AbstractService {
 		super(name);
 		this.setArchivable(true);
 	}
-
-	public Game(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-
+	
 	@Override
 	public void setName(String name) {
 		OnPropertyChanged.FireEvent("name", this.name, name);

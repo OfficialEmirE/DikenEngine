@@ -163,6 +163,14 @@ public class AboutWindow extends JDialog {
 		lblRTextArea.setFont(new Font("Tahoma", Font.PLAIN, 12));
 		lblRTextArea.setAlignmentX(0.5f);
 		aboutPage.add(lblRTextArea);
+		
+		JLabel lblOggVorbis = createLabel(
+				"J-ogg-Vorbis - https://github.com/stephengold/j-ogg-all/",
+				"https://github.com/stephengold/j-ogg-all/"
+			);
+		lblOggVorbis.setFont(new Font("Tahoma", Font.PLAIN, 12));
+		lblOggVorbis.setAlignmentX(0.5f);
+		aboutPage.add(lblOggVorbis);
 
 		JPanel headerPanel = new JPanel();
 		headerPanel.setOpaque(false);

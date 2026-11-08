@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.services;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -24,13 +22,6 @@ public abstract class Service extends AbstractService {
 	
 	public Service(String name) {
 		super(name);
-	}
-
-	public Service(DataInputStream in) throws IOException {
-		super(in);
-		if (getClass() == Service.class) {
-			loadNodeData(in);
-		}
 	}
 	
 	@Override

@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.services;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -35,11 +33,6 @@ public class InputService extends Service {
 	
 	public InputService(String name) {
 		super(name);
-	}
-
-	public InputService(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 
 	@Override

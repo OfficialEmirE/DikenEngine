@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.services;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -15,7 +13,11 @@ import me.ramazanenescik04.diken.scripting.Script;
 
 public class RunService extends Service {
 	private boolean running, runScriptEvent;
-
+	
+	public RunService() {
+		this(null, "RunService");
+	}
+	
 	public RunService(World world) {
 		this(world, "RunService");
 	}
@@ -23,11 +25,6 @@ public class RunService extends Service {
 	public RunService(World world, String name) {
 		super(name);
 		this.world = world;
-	}
-
-	public RunService(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 
 	@Override

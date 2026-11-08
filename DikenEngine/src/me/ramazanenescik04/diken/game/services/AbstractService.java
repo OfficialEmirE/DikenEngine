@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.services;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Node;
@@ -14,13 +12,6 @@ public abstract class AbstractService extends Node {
 	
 	public AbstractService(String name) {
 		super(name);
-	}
-
-	public AbstractService(DataInputStream in) throws IOException {
-		super(in);
-		if (getClass() == AbstractService.class) {
-			loadNodeData(in);
-		}
 	}
 	
 	@Override

@@ -31,11 +31,6 @@ public class Audio extends Node {
 	public Audio(String name) {
 		super(name);
 	}
-
-	public Audio(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public String getSound() {
 		return resourceID;
@@ -126,6 +121,11 @@ public class Audio extends Node {
 	public float getPitch() {
 		if (texture == null) return 0f;
 		return texture.getPitch();
+	}
+	
+	public String getAudioFormat() {
+		if (texture == null) return "Unknown";
+		return texture.getAudioFormat();
 	}
 	
 	@Override

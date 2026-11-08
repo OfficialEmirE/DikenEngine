@@ -14,7 +14,7 @@ import me.ramazanenescik04.diken.game.event.BindableEvent;
 
 public final class InstanceList {
 	private static final ArrayList<Node> NODE_LIST;
-	private static final Map<CategoryKey, List<Node>> NODE_TYPES;
+	private static Map<CategoryKey, List<Node>> NODE_TYPES;
 	
 	private InstanceList() {}
 	
@@ -59,6 +59,15 @@ public final class InstanceList {
 	        }
 	    }
 	    return false;
+	}
+	
+	public synchronized static void addNode(Node node) {
+		NODE_LIST.add(node);
+		
+		NODE_TYPES = NODE_LIST.stream()
+		        .collect(Collectors.groupingBy(
+		        		obj -> getCategoryName(obj)
+		        ));
 	}
 	
 	private static CategoryKey getCategoryName(Object obj) {

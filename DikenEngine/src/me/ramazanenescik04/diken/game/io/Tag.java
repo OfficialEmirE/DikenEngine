@@ -80,6 +80,11 @@ public sealed interface Tag {
         public byte id() { return 13; }
         public void write(DataOutputStream out) throws IOException { out.writeBoolean(value); }
     }
+    
+    record UUID_Record(UUID value) implements Tag {
+		public byte id() { return 14; }
+		public void write(DataOutputStream out) throws IOException { out.writeUTF(value.toString()); }
+    }
 
     // ---------------------------------------------------------------
     // Bileşik tag'ler (List / Compound)
@@ -146,6 +151,7 @@ public sealed interface Tag {
         public Compound putIntArray(String key, int[] v) { entries.put(key, new IntArray(v)); return this; }
         public Compound putLongArray(String key, long[] v) { entries.put(key, new LongArray(v)); return this; }
         public Compound putBoolean(String key, boolean v) { entries.put(key, new Boolean(v)); return this; }
+        public Compound putUUID(String key, UUID v) { entries.put(key, new UUID_Record(v)); return this; }
         public Compound put(String key, Tag tag) { entries.put(key, tag); return this; }
 
         public boolean has(String key) { return entries.containsKey(key); }
@@ -197,6 +203,13 @@ public sealed interface Tag {
         public String getString(String key, String def) {
             return switch (entries.get(key)) {
                 case Str(var v) -> v;
+                case null, default -> def;
+            };
+        }
+        
+        public UUID getUUID(String key, UUID def) {
+            return switch (entries.get(key)) {
+                case UUID_Record(var v) -> v;
                 case null, default -> def;
             };
         }

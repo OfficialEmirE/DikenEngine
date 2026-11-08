@@ -282,7 +282,7 @@ public class ResourcesPanel extends DockablePanel {
         if (selectedType == EnumResource.IMAGE || selectedType == EnumResource.CURSOR) {
         	fileChooser.setFileFilter(new FileNameExtensionFilter("Image Files", "png", "jpg", "jpeg", "bmp", "gif"));
 		} else if (selectedType == EnumResource.SOUND) {
-			fileChooser.setFileFilter(new FileNameExtensionFilter("Wave Files", "wav"));
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Audio Files", "wav", "ogg"));
 		} else if (selectedType == EnumResource.ANIMATION) {
 			fileChooser.setFileFilter(new FileNameExtensionFilter("Animation Files", "bin", "anim"));
 		} else if (selectedType == EnumResource.FONT) {

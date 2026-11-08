@@ -46,11 +46,6 @@ public class Script extends Node {
 		super(name);
 	}
 
-	public Script(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-
 	public static Script getCurrentScript() {
 		return CURRENT_SCRIPT.get();
 	}
