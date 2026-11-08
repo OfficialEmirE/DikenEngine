@@ -281,8 +281,10 @@ public class ExplorerPanel extends DockablePanel {
 	        if (result != JFileChooser.APPROVE_OPTION) return;
 
 	        File selectedFile = fileChooser.getSelectedFile();
-	        if (selectedFile != null && gameNode != null) {     	
-				new NodeEIDialog(Utils.getInvisibleFrame(), e -> {
+	        if (selectedFile != null && gameNode != null) {
+	        	var window = Utils.getInvisibleFrame();
+				new NodeEIDialog(window, e -> {
+					window.dispose();
 					try {
 						Node.exportNode(selectedFile, gameNode, e.getEnabledImportOptions().toArray(Node.EIOptions[]::new));
 					} catch (IOException e1) {
@@ -308,7 +310,9 @@ public class ExplorerPanel extends DockablePanel {
 
 	        File selectedFile = fileChooser.getSelectedFile();
 	        if (selectedFile != null && gameNode != null) {
-	        	new NodeEIDialog(Utils.getInvisibleFrame(), e -> {
+	        	var window = Utils.getInvisibleFrame();
+	        	new NodeEIDialog(window, e -> {
+	        		window.dispose();
 	        		try {
 						var loadedNode = Node.importNode(selectedFile, e.getEnabledImportOptions().toArray(Node.EIOptions[]::new));
 						

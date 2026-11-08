@@ -191,6 +191,11 @@ public class AnimationEditor extends ResourceEditor<Animation> implements Runnab
 		long nextFrame = System.nanoTime();
 
 		while (animationPlaying) {
+			if (frames.length == 0) {
+				this.animationPlaying = false;
+				break;
+			}
+			
 			if (animationPaused) {
 		        try {
 		            Thread.sleep(20);

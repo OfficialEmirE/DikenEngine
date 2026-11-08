@@ -23,7 +23,7 @@ public class Config {
 	public Config() {		
 		defaultConfig.put("sync", new Setting<Boolean>("V-Sync", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		defaultConfig.put("debug", new Setting<Boolean>("Debug Mode", false, Boolean.class, EnumSettingType.CHECK_BOX));
-		defaultConfig.put("maxFPS", new Setting<>("Max Fps", 120, Integer.class, EnumSettingType.TEXT_FIELD));
+		defaultConfig.put("maxFPS", new Setting<>("Max Fps", 120, 0, 400, Integer.class, EnumSettingType.SLIDER));
 		defaultConfig.put("fixedInternalResolution", new Setting<Boolean>("Fixed Internal Resolution", false, Boolean.class, EnumSettingType.CHECK_BOX));
 		
 		Map<String, String> available = Lang.getAvailableLanguages();
@@ -108,6 +108,21 @@ public class Config {
 	
 	public <T> T getSettingValue(String key, Class<T> type) {
 	    return getSetting(key, type).getValue();
+	}
+	
+	public <T> T getSettingValue(String key,  Class<T> type, T defaultValue) {
+		Setting<?> setting = config.get(key);
+		if (setting == null) {
+			return defaultValue;
+		}
+		
+		if (setting.getTypeClass() != type) 
+	    	throw new IllegalArgumentException("Type mismatch");
+
+	    @SuppressWarnings("unchecked")
+	    Setting<T> s = (Setting<T>) setting;
+	    T value = s.getValue();
+	    return (value == null ? (s.getDefaultValue() == null ? defaultValue : s.getDefaultValue()) : value);
 	}
 	
 	/**

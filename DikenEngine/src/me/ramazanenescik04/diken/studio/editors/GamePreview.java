@@ -8,7 +8,6 @@ import java.awt.GridBagLayout;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
-import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.renderer.RendererPanel;
 import me.ramazanenescik04.diken.studio.NotificationHelper;
 import me.ramazanenescik04.diken.studio.builders.Toolbar;
@@ -25,23 +24,24 @@ public class GamePreview extends BaseEditor {
 
 	private enum DisplayType {
 
-		Native(null), Mobile(new Dimension(320, 240));
+	    Native(null),
+	    Mobile(new Dimension(320, 240));
 
-		private static int id = 0;
+	    private static int id = 0;
 
-		public final Dimension size;
+	    public final Dimension size;
 
-		DisplayType(Dimension size) {
-			this.size = size;
-		}
+	    DisplayType(Dimension size) {
+	        this.size = size;
+	    }
 
-		public static DisplayType nextOne() {
-			var values = values();
+	    public static DisplayType nextOne() {
+	        var values = values();
 
-			id = (id + 1) % values.length;
+	        id = (id + 1) % values.length;
 
-			return values[id];
-		}
+	        return values[id];
+	    }
 	}
 
 	public GamePreview(RendererPanel panel, NotificationHelper notification) {
