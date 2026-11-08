@@ -10,7 +10,9 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.AWTGLCanvas;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
+import org.lwjgl.util.glu.GLU;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.resource.Bitmap;
 
 /**
@@ -60,6 +62,13 @@ public class RendererPanel extends AWTGLCanvas {
 	public Bitmap getFrameSnapshot() {
 		synchronized (frameLock) {
 			return frameBitmap.clone();
+		}
+	}
+	
+	public void checkGLErrors() {
+		int err = GL11.glGetError();
+		if (err != 0) {
+			DikenEngine.errorLog("OpenGL Error: " + err + " (" + GLU.gluErrorString(err) + ")");
 		}
 	}
 
@@ -115,6 +124,7 @@ public class RendererPanel extends AWTGLCanvas {
 			drawPresentedFrame(canvasWidth, canvasHeight);
 		}
 
+		this.checkGLErrors();
 		try {
 			swapBuffers();
 		} catch (LWJGLException e) {

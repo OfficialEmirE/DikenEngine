@@ -334,17 +334,21 @@ public final class DikenEngine implements Runnable, IInputListener {
 				}
 
 				long maxFps = this.config.getSettingValue("maxFPS", Integer.class, 0).longValue();
-				boolean activeFpsLimit = maxFps > 0;
 				boolean render = true;
-				if (activeFpsLimit) {
-					render = currentTime - lastFrameTime >= (1000000000L / maxFps);
-					lastFrameTime = currentTime;
-				}
 				
+				if (maxFps > 0) {
+				    long frameDuration = 1_000_000_000L / maxFps;
+				    
+				    render = currentTime - lastFrameTime >= frameDuration;
+				    
+				    if (render)
+				        lastFrameTime = currentTime;
+				}
+
 				if (render) {
-					Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
-					renderWorker.queueFrame(frameBitmap);
-					frames++;
+				    Bitmap frameBitmap = rendererPanel.acquireFrameBuffer(getScaledWidth(), getScaledHeight());
+				    renderWorker.queueFrame(frameBitmap);
+				    frames++;
 				}
 
 				if (System.currentTimeMillis() - lastFPSTime >= 1000) {
