@@ -102,7 +102,7 @@ public class InputService extends Service {
 
 	@Override
 	protected void reloadNode() {
-		uiService = world.getService(UIService.class);
+		uiService = this.getRootNode().findFirstChildOfClass(UIService.class);
 	}
 
 	public void keyHandled(int inputMode, int key, char character) {
