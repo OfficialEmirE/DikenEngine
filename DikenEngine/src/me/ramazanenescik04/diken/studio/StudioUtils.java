@@ -75,7 +75,7 @@ public final class StudioUtils {
         DOCKING_THEME.addChangeListener(e -> studioPanel.control.setTheme(e.toLowerCase()));
 
         SettingCategory appearance = SettingCategory
-                .createSettingCategory("appearance", "Appearence", 15, 2)
+                .createSettingCategory("appearance", "Appearence", 13, 15)
                 .addSetting(LOOK_AND_FEEL)
                 .addSetting(DOCKING_THEME)
                 .addSetting(new Setting<>("Draw Grid", studioPanel.drawGrid, Boolean.class, EnumSettingType.CHECK_BOX)
