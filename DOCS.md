@@ -63,7 +63,7 @@ Every node has a parent and a child list. Typical access from the root:
 ```lua
 local workspace = game:GetService("Workspace")
 local run = game:GetService("RunService")
-local part = workspace:FindFirstChild("Part")
+local part = workspace:findFirstChild("Part")
 ```
 
 The Lua proxy exposes Java getters, setters, fields, and methods. Java method names are case-sensitive. `game.Workspace.Part` searches for children by name.
