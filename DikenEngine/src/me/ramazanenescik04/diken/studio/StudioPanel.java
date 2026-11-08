@@ -379,7 +379,7 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	
 	@Override
 	public void keyHandled(int inputMode, int key, char character) {
-		if (inputMode == InputHandler.INPUT_PRESSED) {
+		if (inputMode == InputHandler.INPUT_PRESSED && !isPlayTestMode) {
 			boolean ctrl = engine.input.isKeyDown(KeyEvent.VK_CONTROL);
 			if (ctrl && key == KeyEvent.VK_Z) {
 				undo();

@@ -26,7 +26,7 @@ public class NodeEIDialog extends JDialog {
 	private boolean isCancelled;
 
 	public NodeEIDialog(Frame owner, Consumer<NodeEIDialog> consumer, boolean importMode) {
-		super(owner, "Please Select Optional " + (importMode ? "Import" : "Export") + " Options", true);
+		super(owner, "Please Select Optional " + (importMode ? "Export" : "Import") + " Options", true);
 		this.consumer = consumer;
 		setSize(640, 480);
 		setLocationRelativeTo(owner);
