@@ -8,6 +8,7 @@ import java.util.List;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.Node;
+import me.ramazanenescik04.diken.game.NodeResource;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.entity.Humanoid;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
@@ -16,18 +17,13 @@ import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.EnumResource;
-import me.ramazanenescik04.diken.resource.IResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
  * Represents the `Tool` type within the DikenEngine `game.nodes` package.
  */
-public class Tool extends Instance {
-	private transient Bitmap icon = new Bitmap(16, 16);
-	private String resourceID = "empty";
-	private boolean resourceLoaded = false;
-	
+public class Tool extends Instance {	
+	private NodeResource<Bitmap> resource;
 	private boolean isEquipped = false;
 	
 	public Tool() {
@@ -44,22 +40,17 @@ public class Tool extends Instance {
 		super(name, x, y);
 		init();
 	}
-
-	public Tool(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public Bitmap getIconBitmap() {
-		return icon;
+		return resource.getResource();
 	}
 	
 	public String getIcon() {
-		return resourceID;
+		return resource.getKey();
 	}
 	
 	public void setIcon(String icon) {
-		this.resourceID = icon;
+		this.resource.setKey(icon);
 		this.reloadNode();
 	}
 	
@@ -73,7 +64,7 @@ public class Tool extends Instance {
 		if (other instanceof Humanoid player && !isEquipped) {
 			Tool copyTool = (Tool) this.copy();
 			this.setRenderType(RenderType.InVisible);
-			copyTool.icon = this.icon.clone();
+			copyTool.resource = this.resource.copy();
 			copyTool.isEquipped = true;
 			player.findFirstChild("Tools").addChild(copyTool);
 			
@@ -86,23 +77,17 @@ public class Tool extends Instance {
 	public void update(World world, DikenEngine engine) {
 		super.update(world, engine);
 		
-		if (!resourceLoaded) {
-			IResource resource = world.getResource(resourceID, EnumResource.IMAGE);
-			if (resource != null && resource instanceof Bitmap bitmap) {
-				this.icon = bitmap.clone();
-				this.resourceLoaded = true;
-			}
-		}
+		resource.update(world);
 	}
 
 	@Override
 	public Bitmap render() {
-		return icon;
+		return resource.getResource();
 	}
 	
 	@Override
 	protected void reloadNode() {
-		this.resourceLoaded = false;
+		this.resource.reloadResource();
 	}
 	
 	@Override
@@ -110,7 +95,7 @@ public class Tool extends Instance {
 		var key = new SettingCategory.SettingKey("tool", "Tool", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(4, 1));
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Icon ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setIcon));
+				.addSetting(new Setting<String>("Icon ID", resource.getKey(), String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setIcon));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
@@ -120,17 +105,15 @@ public class Tool extends Instance {
 	@Override
 	public void saveNodeData(DataOutputStream out) throws IOException {
 		super.saveNodeData(out);
-		out.writeUTF(resourceID);
+		out.writeUTF(resource.getKey());
 		out.writeBoolean(isEquipped);
 	}
 
 	@Override
 	public void loadNodeData(DataInputStream in) throws IOException {
 		super.loadNodeData(in);
-		this.resourceID = in.readUTF();
+		this.resource.setKey(in.readUTF());
 		this.isEquipped = in.readBoolean();
-		this.resourceLoaded = false;
-		this.icon = new Bitmap(16, 16);
 	}
 }
 

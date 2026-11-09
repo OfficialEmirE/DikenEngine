@@ -4,8 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
-
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -20,23 +19,14 @@ import me.ramazanenescik04.diken.tools.PixelToColor;
  * Optimized and modernized ColorPickBar for DikenEngine.
  */
 public class ColorPickBar extends GuiComponent {
+	public final Event OnSelectedColor = new Event();
+	
     private int selectedColor;
     private int selectorX = 1; // Seçicinin yatay pozisyonu
-    private Consumer<Integer> consumer;
     private Bitmap cachedHueMap; // Performans için renk haritasını önbelleğe alıyoruz
 
     public ColorPickBar(UDim2 position, UDim2 size) {
         super("ColorPickBar", position, size);
-    }
-
-    public ColorPickBar(DataInputStream in) throws IOException {
-    	super(in);
-    	loadNodeData(in);
-    }
-    
-    public ColorPickBar setConsumer(Consumer<Integer> consumer) {
-        this.consumer = consumer;
-        return this;
     }
     
     public ColorPickBar setSelectedColor(int color) {
@@ -101,9 +91,7 @@ public class ColorPickBar extends GuiComponent {
                 this.selectedColor = cachedHueMap.getPixel(checkX, checkY);
                 this.selectorX = checkX;
                 
-                if (this.consumer != null) {
-                    this.consumer.accept(this.selectedColor);
-                }
+                OnSelectedColor.FireEvent(this.selectedColor);
             }
         }
     }

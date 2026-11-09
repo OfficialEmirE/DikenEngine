@@ -61,11 +61,6 @@ public class Text extends GuiComponent {
 		this.color = color;
 		this.font = new NodeResource<>(font, EnumResource.FONT);
 	}
-
-	public Text(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public Bitmap render() {
 	    Bitmap bitmap = super.render();

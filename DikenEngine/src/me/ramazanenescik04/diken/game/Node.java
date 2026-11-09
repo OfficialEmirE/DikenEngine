@@ -15,7 +15,6 @@ import java.util.function.Predicate;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.io.Tag;
-import me.ramazanenescik04.diken.game.nodes.NilNode;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;

@@ -47,11 +47,6 @@ public class Light extends Instance {
         this(name);
         this.setLocation(x, y);
     }
-
-    public Light(DataInputStream in) throws IOException {
-        super(in);
-        loadNodeData(in);
-    }
     
 	@Override
     public Bitmap render() {

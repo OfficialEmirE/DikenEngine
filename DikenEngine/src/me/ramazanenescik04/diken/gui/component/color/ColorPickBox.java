@@ -4,8 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
-
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -20,9 +19,10 @@ import me.ramazanenescik04.diken.tools.PixelToColor;
  * Represents the `ColorPickBox` type within the DikenEngine `gui.compoment` package.
  */
 public class ColorPickBox extends GuiComponent {
+	public final Event OnSelectedColor = new Event();
+	
 	private int selectedColor;
 	private float hueColor = PixelToColor.rgbToHsv(0xffff0000)[0];
-	private Consumer<Integer> consumer;
 
 	private Bitmap cachedMap;
 	private int selectedX = -1;
@@ -30,16 +30,6 @@ public class ColorPickBox extends GuiComponent {
 
 	public ColorPickBox(UDim2 position, UDim2 size) {
 		super("ColorPickBox", position, size);
-	}
-
-	public ColorPickBox(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-
-	public ColorPickBox setConsumer(Consumer<Integer> consumer) {
-		this.consumer = consumer;
-		return this;
 	}
 
 	public ColorPickBox setSelectedColor(int color) {
@@ -118,9 +108,7 @@ public class ColorPickBox extends GuiComponent {
 			selectedX = x;
 			selectedY = y;
 
-			if (consumer != null) {
-				consumer.accept(selectedColor);
-			}
+			OnSelectedColor.FireEvent(this.selectedColor);
 		}
 	}
 	

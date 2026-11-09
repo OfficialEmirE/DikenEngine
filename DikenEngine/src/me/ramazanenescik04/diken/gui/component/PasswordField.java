@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.gui.component;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -21,11 +19,6 @@ public class PasswordField extends TextField {
 		super(text, position, size);
 		
 		this.setName("PasswordField");
-	}
-
-	public PasswordField(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 
 	@Override

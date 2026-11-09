@@ -28,11 +28,6 @@ public class ProgressBar extends GuiComponent {
 		super("ProgressBar", position, size);
 	}
 
-	public ProgressBar(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-
 	@Override
 	public Bitmap render() {
 		var width = this.getAbsoluteBounds().getWidth();

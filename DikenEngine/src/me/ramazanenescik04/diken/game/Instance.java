@@ -55,10 +55,6 @@ public abstract class Instance extends Node {
         this.y = y;
     }
 
-    public Instance(DataInputStream in) throws IOException {
-        super(in);
-    }
-
     public abstract Bitmap render();
     
     public void draw(Bitmap btp) {

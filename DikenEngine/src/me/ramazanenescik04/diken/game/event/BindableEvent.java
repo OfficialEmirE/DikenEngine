@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.event;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import org.luaj.vm2.LuaValue;
@@ -21,11 +19,6 @@ public class BindableEvent extends Node {
 
 	public BindableEvent(String name) {
 		super(name);
-	}
-
-	public BindableEvent(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 
 	public void FireEvent(Object... args) {

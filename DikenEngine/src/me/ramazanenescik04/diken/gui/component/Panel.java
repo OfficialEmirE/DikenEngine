@@ -34,11 +34,6 @@ public class Panel extends GuiComponent {
 		super("Panel", position, size);
 	}
 
-	public Panel(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-
 	public Bitmap render() {
 		Bitmap bitmap = super.render();
 		if (panelBorder == BorderStyle.Fill) {

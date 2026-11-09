@@ -1,8 +1,7 @@
-package me.ramazanenescik04.diken.game.nodes;
+package me.ramazanenescik04.diken.game;
 
 import java.util.List;
 
-import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 
 public class NilNode extends Node {

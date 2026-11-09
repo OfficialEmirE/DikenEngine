@@ -31,11 +31,6 @@ public class TextLine extends GuiComponent {
 	public TextLine(UDim2 position, UDim2 size) {
 		super("TextLine", position, size);
 	}
-
-	public TextLine(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	//API START
 	

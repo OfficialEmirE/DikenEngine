@@ -36,10 +36,6 @@ public abstract class ImageNode extends Instance {
 		this.setSolid(false);
 	}
 
-	public ImageNode(DataInputStream in) throws IOException {
-		super(in);
-	}
-	
 	public String getTexture() {
 		return resourceID;
 	}

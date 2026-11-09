@@ -19,7 +19,7 @@ import me.ramazanenescik04.diken.resource.Bitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.LuaDoc;
 
-public class ScreenGui extends Node {
+public class ScreenGui extends BaseScreenGui {
 	private boolean enabled = true;
 	private transient final List<DrawList> drawList = new ArrayList<>();
 	
@@ -30,11 +30,7 @@ public class ScreenGui extends Node {
 	public ScreenGui(String name) {
 		super(name);
 	}
-
-	public ScreenGui(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
+	
 	
 	public void drawScreen(Bitmap sceneBitmap, Hitbox viewport, boolean allowDrawBitmap) {
 		OnPreRender.FireEvent();
@@ -60,6 +56,7 @@ public class ScreenGui extends Node {
         OnPostRender.FireEvent();
 	}
 	
+	@Override
 	public void keyHandled(int inputMode, int key, char character) {
 		if (!enabled) return;
 		
@@ -72,6 +69,7 @@ public class ScreenGui extends Node {
 		}
 	}
 	
+	@Override
 	public void mouseHandled(int inputMode, int x, int y, int clicked) {
 		if (!enabled) return;
 		

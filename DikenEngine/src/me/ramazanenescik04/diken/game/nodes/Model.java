@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.nodes;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
@@ -27,12 +25,6 @@ public class Model extends Instance {
 	public Model(String name, int x, int y) {
 		super(name, x, y);
 		init();
-	}
-
-	public Model(DataInputStream in) throws IOException {
-		super(in);
-		init();
-		loadNodeData(in);
 	}
 
 	private void init() {

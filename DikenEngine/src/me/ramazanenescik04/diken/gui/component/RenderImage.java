@@ -29,11 +29,6 @@ public class RenderImage extends GuiComponent {
 		
 		setTexture(resourceID);
 	}
-
-	public RenderImage(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public String getTexture() {
 		return resourceID;

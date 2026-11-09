@@ -59,10 +59,6 @@ public abstract class GuiComponent extends Node {
 		this("GuiComponent", position, size);
 	}
 
-	public GuiComponent(DataInputStream in) throws IOException {
-		super(in);
-	}
-
 	public Bitmap render() {
 		Hitbox bounds = getAbsoluteBounds();
 		return FrameBitmapPool.newBitmap(bounds.getWidth(), bounds.getHeight());

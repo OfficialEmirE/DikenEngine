@@ -4,8 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -21,7 +21,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `CheckBox` type within the DikenEngine `gui.compoment` package.
  */
 public class CheckBox extends GuiComponent {	
-	private Consumer<CheckBox> checkBoxClicked;
+	public final Event OnClicked = new Event();
 	private boolean touching;
 	private boolean checked = false;
 	private String text;
@@ -29,16 +29,6 @@ public class CheckBox extends GuiComponent {
 
 	public CheckBox(String text, UDim2 position, UDim2 size) {
 		super("CheckBox", position, size);
-	}
-
-	public CheckBox(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
-	
-	public CheckBox setConsumer(Consumer<CheckBox> r) {
-		this.checkBoxClicked = r;
-		return this;
 	}
 
 	public boolean isChecked() {
@@ -78,9 +68,7 @@ public class CheckBox extends GuiComponent {
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {
 		if (this.active && (isTouch || touching)) {
 			checked = !checked;
-			if (checkBoxClicked != null) {
-				checkBoxClicked.accept(this);
-			}
+			OnClicked.FireEvent();
 		}
 	}
 

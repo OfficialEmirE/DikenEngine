@@ -71,7 +71,7 @@ public class DebugScreen implements ListAdapter<LogText> {
 		title.setBorderColor(0xffffffff);
 		
 		var closeButton = new Button("X", UDim2.of(1, -18, 0, 1), UDim2.of(0, 16, 0, 16));
-		closeButton.setRunnable(this::closeDebugScreen);
+		closeButton.OnClicked.Connect(_ -> this.closeDebugScreen());
 		closeButton.setButtonColor(0xffff0000);
 		closeButton.setTextColor(0xffffffff);
 		closeButton.setParent(title);
@@ -97,14 +97,14 @@ public class DebugScreen implements ListAdapter<LogText> {
 			
 			var commandField = new TextField("", UDim2.zero, UDim2.of(1, -28, 1, 0));
 			commandField.setParent(commandPanel);
-			commandField.setPressedEnter(() -> {
+			commandField.OnPressedEnter.Connect(_ -> {
 				sendCommand(commandField.getText());
 				commandField.setText("");
 			});
 			
 			var sendButton = new Button("Send", UDim2.of(1, -28, 0, 1), UDim2.of(0, 27, 0, 15));
 			sendButton.setParent(commandPanel);
-			sendButton.setRunnable(() -> {
+			sendButton.OnClicked.Connect(_ -> {
 				sendCommand(commandField.getText());
 				commandField.setText("");
 			});

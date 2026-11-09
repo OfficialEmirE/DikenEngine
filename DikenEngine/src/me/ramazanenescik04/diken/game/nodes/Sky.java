@@ -40,11 +40,6 @@ public class Sky extends Instance {
 		super("Sky");
 		this.resourceID = skyBitmap;
 	}
-
-	public Sky(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public String getTexture() {
 		return resourceID;

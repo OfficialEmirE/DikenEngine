@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.nodes;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
@@ -21,11 +19,6 @@ public class Texture extends ImageNode {
 	
 	public Texture(String name) {
 		super(name);
-	}
-
-	public Texture(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 	
 	@Override

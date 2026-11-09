@@ -54,13 +54,6 @@ public class Part extends Instance {
 		this.aabb = new Hitbox(0, 0, 16, 16);
 		this.setAnchored(true);
 	}
-
-	public Part(DataInputStream in) throws IOException {
-		super(in);
-		if (getClass() == Part.class) {
-			loadNodeData(in);
-		}
-	}
 	
 	public Bitmap render() {
 		int width = this.aabb.getWidth();

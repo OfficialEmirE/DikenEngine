@@ -1,7 +1,5 @@
 package me.ramazanenescik04.diken.game.nodes;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Node;
@@ -19,11 +17,6 @@ public class Folder extends Node {
 
 	public Folder(String name) {
 		super(name);
-	}
-
-	public Folder(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
 	}
 	
 	@Override

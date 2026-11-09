@@ -11,7 +11,7 @@ import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
-import me.ramazanenescik04.diken.gui.component.ScreenGui;
+import me.ramazanenescik04.diken.gui.component.BaseScreenGui;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
@@ -50,13 +50,12 @@ public class UIService extends Service {
 	public void draw(Bitmap sceneBitmap, Hitbox viewport) {
 		OnPreRender.FireEvent();
 		
-		
 		List<Node> sortedChildren = new ArrayList<>(children);
     	sortedChildren.sort(Comparator.comparingInt(Node::getZIndex));
 
         for (int i = 0; i < sortedChildren.size(); i++) {
             Node child = sortedChildren.get(i);
-            if (child instanceof ScreenGui childInstance) {
+            if (child instanceof BaseScreenGui childInstance) {
 				childInstance.drawScreen(sceneBitmap, viewport, allowDrawBitmap);
 			}
         }
@@ -67,7 +66,7 @@ public class UIService extends Service {
 	public void keyHandled(int inputMode, int key, char character) {
 		for (int i = 0; i < children.size(); i++) {
             Node child = children.get(i);
-            if (child instanceof ScreenGui childInstance) {
+            if (child instanceof BaseScreenGui childInstance) {
 				childInstance.keyHandled(inputMode, key, character);
 			}
         }
@@ -76,7 +75,7 @@ public class UIService extends Service {
 	public void mouseHandled(int inputMode, int x, int y, int clicked) {
 		for (int i = 0; i < children.size(); i++) {
             Node child = children.get(i);
-            if (child instanceof ScreenGui childInstance) {
+            if (child instanceof BaseScreenGui childInstance) {
 				childInstance.mouseHandled(inputMode, x, y, clicked);
 			}
         }

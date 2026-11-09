@@ -49,11 +49,6 @@ public class Humanoid extends Part {
 		super(0, 0, width, height);
 		this.init();
 	}
-
-	public Humanoid(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	private void init() {
 		this.name = "Humanoid";

@@ -40,11 +40,6 @@ public class SpriteSheet extends Instance {
 		super(name);
 		this.setSolid(false);
 	}
-
-	public SpriteSheet(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public String getAnimationID() {
 		return resourceID;

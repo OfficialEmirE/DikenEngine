@@ -4,9 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -22,14 +22,14 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public class ScrollBar extends GuiComponent {
 	public static final int VERTICAL = 0;
 	public static final int HORIZONTAL = 1;
+	
+	public final Event OnDragged = new Event();
 
 	private Button upButton;
 	private Button downButton;
 	private Button sliderButton;
 
 	private Button[] buttons;
-
-	private Consumer<Float> listener;
 
 	private float scrollValue = 0.0f; //0.0 - 1.0 arası değer
 	private int handleHeight = 30;    // Tutamağın boyu (İçeriğe göre dinamik de yapılabilir)
@@ -52,33 +52,31 @@ public class ScrollBar extends GuiComponent {
 	public ScrollBar(UDim2 position, UDim2 size) {
 		this(position, size, VERTICAL);
 	}
-
-	public ScrollBar(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-		regenerateButtons();
-	}
 	
 	private void regenerateButtons() {
 		int width = getWidth();
 		int height = getHeight();
 
 		if (type == VERTICAL) {
-			upButton = new Button("/\\", new UDim2(0, 1, 0, 1), new UDim2(0, width - 2, 0, 20)).setRunnable(() -> {
+			upButton = new Button("/\\", new UDim2(0, 1, 0, 1), new UDim2(0, width - 2, 0, 20));
+			upButton.OnClicked.Connect(_ -> {
 				setScrollValue(scrollValue - 0.05f);
 			});
 
-			downButton = new Button("\\/", new UDim2(0, 1, 0, height - 21), new UDim2(0, width - 2, 0, 20)).setRunnable(() -> {
+			downButton = new Button("\\/", new UDim2(0, 1, 0, height - 21), new UDim2(0, width - 2, 0, 20));
+			downButton.OnClicked.Connect(_ -> {
 				setScrollValue(scrollValue + 0.05f);
 			});
 
 			sliderButton = new Button("=", new UDim2(0, 1, 0, 21), new UDim2(0, width - 2, 0, handleHeight));
 		} else {
-			upButton = new Button("<", new UDim2(0, 1, 0, 1), new UDim2(0, 20, 0, height - 2)).setRunnable(() -> {
+			upButton = new Button("<", new UDim2(0, 1, 0, 1), new UDim2(0, 20, 0, height - 2));
+			upButton.OnClicked.Connect(_ -> {
 				setScrollValue(scrollValue - 0.05f);
 			});
 
-			downButton = new Button(">", new UDim2(0, width - 21, 0, 1), new UDim2(0, 20, 0, height - 2)).setRunnable(() -> {
+			downButton = new Button(">", new UDim2(0, width - 21, 0, 1), new UDim2(0, 20, 0, height - 2));
+			downButton.OnClicked.Connect(_ -> {
 				setScrollValue(scrollValue + 0.05f);
 			});
 
@@ -86,12 +84,6 @@ public class ScrollBar extends GuiComponent {
 		}
 
 		buttons = new Button[] { upButton, downButton, sliderButton };
-	}
-
-	// get ile bizi sayı versin
-	public ScrollBar addDraggedListener(Consumer<Float> listener) {
-		this.listener = listener;
-		return this;
 	}
 
 	// Değeri dışarıdan almak için (ScrollPanel bunu kullanacak)
@@ -103,9 +95,7 @@ public class ScrollBar extends GuiComponent {
 	public void setScrollValue(float value) {
 		this.scrollValue = Math.clamp(value, 0.0f, 1.0f); // Java 21 Math.clamp
 
-		if (listener != null) {
-			listener.accept(this.scrollValue);
-		}
+		OnDragged.FireEvent(this.scrollValue);
 	}
 
 	public void updateHandleSize(int viewportSize, int totalContentSize) {
@@ -219,8 +209,8 @@ public class ScrollBar extends GuiComponent {
 			}
 
 			if (isDragging) {
-				if (listener != null && sliderButton.getLocalY() != mouseY - dragOffsetY) {
-					listener.accept(scrollValue);
+				if (sliderButton.getLocalY() != mouseY - dragOffsetY) {
+					OnDragged.FireEvent(this.scrollValue);
 				}
 
 				int minY = upButton.getHeight();
@@ -264,8 +254,8 @@ public class ScrollBar extends GuiComponent {
 			}
 
 			if (isDragging) {
-				if (listener != null && sliderButton.getLocalX() != mouseX - dragOffsetX) {
-					listener.accept(scrollValue);
+				if (sliderButton.getLocalX() != mouseX - dragOffsetX) {
+					OnDragged.FireEvent(this.scrollValue);
 				}
 
 				int minX = upButton.getWidth();

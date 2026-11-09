@@ -4,10 +4,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -23,6 +23,8 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `Button` type within the DikenEngine `gui.compoment` package.
  */
 public class Button extends GuiComponent {
+	public final Event OnClicked = new Event();
+	
 	private String text = "";
 	private int tColor = 0xff000000, bColor = 0xffffffff;
 	
@@ -31,7 +33,6 @@ public class Button extends GuiComponent {
     private final double SCROLL_SPEED = 0.49888d; // Kaydırma hızı
     private double textOffsetLong = 0;
     
-    private Consumer<Button> runnable;
     private transient Bitmap icon;
     private transient boolean iconLoaded = false;
     private String iconID = "empty";
@@ -42,13 +43,6 @@ public class Button extends GuiComponent {
 	public Button(String text, UDim2 position, UDim2 size) {
 		super("Button", position, size);
 		this.text = text;	
-	}
-
-	public Button(DataInputStream in) throws IOException {
-		super(in);
-		if (getClass() == Button.class) {
-			loadNodeData(in);
-		}
 	}
 	
 	public Button setTextColor(int color) {
@@ -211,8 +205,8 @@ public class Button extends GuiComponent {
 
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {
 		if (isTouch || isTouching) {
-			if (button == 0 && runnable != null && this.isActive()) {
-				runnable.accept(this);
+			if (button == 0 && this.isActive()) {
+				OnClicked.FireEvent();
 			}
 		}
 	}
@@ -220,16 +214,6 @@ public class Button extends GuiComponent {
 	public void mouseGetInfo(int x, int y, boolean isTouch) {
 		if (isActive()) this.isTouching = isTouch;
 		else this.isTouching = false;
-	}
-
-	public Button setRunnable(Runnable runnable) {
-		this.runnable = (_) -> {runnable.run();};
-		return this;
-	}
-	
-	public Button setRunnable(Consumer<Button> runnable) {
-		this.runnable = runnable;
-		return this;
 	}
 	
 	public boolean isTouchingMouse() {

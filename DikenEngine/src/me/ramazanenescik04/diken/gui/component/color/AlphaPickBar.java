@@ -4,8 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
 
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -20,24 +20,15 @@ import me.ramazanenescik04.diken.tools.PixelToColor;
  * Saydamlık (Alpha) seçimi için özel bar bileşeni.
  */
 public class AlphaPickBar extends GuiComponent {
+	public final Event OnSelectedColor = new Event();
+	
     private int selectedAlpha = 255;
     private int baseColor = 0xffffff; // Alpha'nın uygulanacağı ana renk (genelde beyaz veya seçili renk)
-    private Consumer<Integer> consumer;
 
 	private int cursorX;
 
     public AlphaPickBar(UDim2 position, UDim2 size) {
         super("AlphaPickBar", position, size);
-    }
-
-    public AlphaPickBar(DataInputStream in) throws IOException {
-    	super(in);
-    	loadNodeData(in);
-    }
-    
-    public AlphaPickBar setConsumer(Consumer<Integer> consumer) {
-        this.consumer = consumer;
-        return this;
     }
     
     public AlphaPickBar setSelectedAlpha(int alpha) {
@@ -84,8 +75,7 @@ public class AlphaPickBar extends GuiComponent {
         	cursorX = Math.max(0, Math.min(x - 1, this.getAbsoluteBounds().getWidth() - 3));
             this.selectedAlpha = ((x - 1) * 255) / (this.getAbsoluteBounds().getHeight() - 2);
             this.selectedAlpha = Math.max(0, Math.min(255, this.selectedAlpha));
-            
-            if (this.consumer != null) this.consumer.accept(this.selectedAlpha);
+            this.OnSelectedColor.FireEvent(this.selectedAlpha);
         }
     }
     

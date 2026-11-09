@@ -51,4 +51,9 @@ public class NodeResource<T extends IResource> {
 	public void reloadResource() {
 		this.keyLoaded = false;
 	}
+
+	public NodeResource<T> copy() {
+		var copy = new NodeResource<T>(new String(key), resourceType);
+		return copy;
+	}
 }

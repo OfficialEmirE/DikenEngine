@@ -8,9 +8,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.function.Consumer;
-
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
@@ -30,15 +29,15 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public class TextField extends GuiComponent {
 	
+	public final Event OnTextChanged = new Event();
+	public final Event OnPressedEnter = new Event();
+	
 	private String text = "";
 	
 	private int counter;
 	private boolean isFocused;
 	private boolean isPressingControl;
 	private boolean isNumberField = false;
-	
-	private Consumer<String> textChanged;
-	private Runnable pressedEnter;
 
 	public TextField(UDim2 position, UDim2 size) {
 		this("", position, size);
@@ -47,31 +46,6 @@ public class TextField extends GuiComponent {
 	public TextField(String text, UDim2 position, UDim2 size) {
 		super("TextField", position, size);
 		this.text = text;
-	}
-
-	public TextField(DataInputStream in) throws IOException {
-		super(in);
-		if (getClass() == TextField.class) {
-			loadNodeData(in);
-		}
-	}
-	
-	public TextField setTextChanged(Consumer<String> consumer) {
-		this.textChanged = consumer;
-		return this;
-	}
-	
-	public Consumer<String> getTextChanged() {
-		return textChanged;
-	}
-	
-	public TextField setPressedEnter(Runnable consumer) {
-		this.pressedEnter = consumer;
-		return this;
-	}
-	
-	public Runnable getPressedEnter() {
-		return pressedEnter;
 	}
 
 	public Bitmap render() {
@@ -100,9 +74,7 @@ public class TextField extends GuiComponent {
 	
 	public void setText(String text) {
 		this.text = text;
-		if (textChanged != null) {
-			textChanged.accept(text);
-		}
+		OnTextChanged.FireEvent(text);
 	}
 	
 	public void setFocused(boolean focused) {
@@ -201,9 +173,7 @@ public class TextField extends GuiComponent {
 		isFocused = false;
 		InputService.setTextTypeMode(false);
 
-		if (pressedEnter != null) {
-			pressedEnter.run();
-		}
+		this.OnPressedEnter.FireEvent();
 	}
 
 	private void cancelInput() {
@@ -231,9 +201,7 @@ public class TextField extends GuiComponent {
 	}
 
 	private void notifyTextChanged() {
-		if (textChanged != null) {
-			textChanged.accept(text);
-		}
+		OnTextChanged.FireEvent(text);
 	}
 
 	public void mouseClicked(int x, int y, int button, boolean isTouch) {

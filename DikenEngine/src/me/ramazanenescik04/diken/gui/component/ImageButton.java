@@ -30,11 +30,6 @@ public class ImageButton extends Button {
 		
 		this.setIcon(btpTexture);
 	}
-
-	public ImageButton(DataInputStream in) throws IOException {
-		super(in);
-		loadNodeData(in);
-	}
 	
 	public String getIcon() {
 		return textureID;
