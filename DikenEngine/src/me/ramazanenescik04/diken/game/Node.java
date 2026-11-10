@@ -727,7 +727,10 @@ public abstract class Node implements Cloneable {
         try {
             Class<?> clazz = Class.forName(className);
             node = (Node) clazz.getConstructor().newInstance();
-            node.netId = UUID.fromString(inStream.readUTF()); // read netId
+            
+            if (ver < 5)
+            	node.netId = UUID.fromString(inStream.readUTF()); // read netId
+            
             node.loadNodeData(inStream);
         } catch (Exception e) {
             DikenEngine.errorLog("!KRITIK HATA! Node sınıfı yüklenemedi: " + className, e);
@@ -767,6 +770,7 @@ public abstract class Node implements Cloneable {
 		
     	outStream.writeUTF(current.getClass().getName());
     	outStream.writeInt(filteredChildren.size());
+    	outStream.writeUTF(current.netId.toString());
     	current.saveNodeData(outStream);
     	
     	var compound = new Tag.Compound();

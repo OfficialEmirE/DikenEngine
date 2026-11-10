@@ -62,7 +62,8 @@ public class PlayerService extends Service {
 	public void update(World world, DikenEngine engine) {
 		super.update(world, engine);
 		
-		if (this.character != null && world.getRunService().isRunning()) {
+		var runService = world.getRunService();
+		if (this.character != null && runService.isRunning() && !runService.isPaused()) {
 			if (engine.input.isKeyDown(KeyEvent.VK_W)) {
 				this.character.move(0, -1);
 			}

@@ -13,6 +13,7 @@ import me.ramazanenescik04.diken.scripting.Script;
 
 public class RunService extends Service {
 	private boolean running, runScriptEvent;
+	private boolean paused;
 	
 	public RunService() {
 		this(null, "RunService");
@@ -40,6 +41,14 @@ public class RunService extends Service {
 
 	public boolean isRunning() {
 		return running;
+	}
+	
+	public boolean isPaused() {
+		return paused;
+	}
+	
+	public void setPaused(boolean b) {
+		this.paused = b;
 	}
 
 	public void run() {
@@ -75,7 +84,8 @@ public class RunService extends Service {
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<>("Running", this.running, Boolean.class, EnumSettingType.CHECK_BOX).setChangeable(false));
+				.addSetting(new Setting<>("Running", this.running, Boolean.class, EnumSettingType.CHECK_BOX).setChangeable(false))
+				.addSetting(new Setting<>("Paused", this.paused, Boolean.class, EnumSettingType.CHECK_BOX).setChangeable(false));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
