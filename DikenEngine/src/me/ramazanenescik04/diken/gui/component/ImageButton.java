@@ -24,6 +24,10 @@ public class ImageButton extends Button {
 	private transient boolean textureLoaded = false;
 	private String textureID = "empty";
 
+	public ImageButton() {
+		this("empty", UDim2.zero, UDim2.defaultV);
+	}
+
 	public ImageButton(String btpTexture, UDim2 position, UDim2 size) {
 		super("", position, size);
 		this.setName("ImageButton");

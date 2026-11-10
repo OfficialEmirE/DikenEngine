@@ -24,6 +24,10 @@ public class ProgressBar extends GuiComponent {
 	private int color = 0xff00ff00, color2 = 0xff00ff00, bgColor = 0xff000000;
 	private String text = "";
 	
+	public ProgressBar() {
+		this(UDim2.zero, UDim2.defaultV);
+	}
+
 	public ProgressBar(UDim2 position, UDim2 size) {
 		super("ProgressBar", position, size);
 	}

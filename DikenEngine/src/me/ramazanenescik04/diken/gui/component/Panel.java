@@ -30,6 +30,10 @@ public class Panel extends GuiComponent {
 	private boolean clipsDescendants;
 	private int borderSize = 1;
 
+	public Panel() {
+		this(UDim2.zero, UDim2.defaultV);
+	}
+
 	public Panel(UDim2 position, UDim2 size) {
 		super("Panel", position, size);
 	}

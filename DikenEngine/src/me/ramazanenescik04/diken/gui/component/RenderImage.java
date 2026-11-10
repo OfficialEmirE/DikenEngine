@@ -30,6 +30,10 @@ public class RenderImage extends GuiComponent {
 	private ImageType imageType = ImageType.Texture;
 	private boolean xFlip = false;
 
+	public RenderImage() {
+		this("empty", UDim2.zero, UDim2.defaultV);
+	}
+
 	public RenderImage(String btpID, UDim2 position, UDim2 size) {
 		super("RenderImage", position, size);
 		

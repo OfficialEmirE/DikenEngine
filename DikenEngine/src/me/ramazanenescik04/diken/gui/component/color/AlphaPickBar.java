@@ -27,6 +27,10 @@ public class AlphaPickBar extends GuiComponent {
 
 	private int cursorX;
 
+	public AlphaPickBar() {
+		this(UDim2.zero, UDim2.defaultV);
+	}
+
     public AlphaPickBar(UDim2 position, UDim2 size) {
         super("AlphaPickBar", position, size);
     }

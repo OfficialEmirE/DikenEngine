@@ -27,6 +27,10 @@ public class CheckBox extends GuiComponent {
 	private String text;
 	private UniFont font = UniFont.getFont("default_font");
 
+	public CheckBox() {
+		this("", UDim2.zero, UDim2.defaultV);
+	}
+
 	public CheckBox(String text, UDim2 position, UDim2 size) {
 		super("CheckBox", position, size);
 	}

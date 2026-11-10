@@ -25,6 +25,10 @@ public class ColorPickBar extends GuiComponent {
     private int selectorX = 1; // Seçicinin yatay pozisyonu
     private Bitmap cachedHueMap; // Performans için renk haritasını önbelleğe alıyoruz
 
+	public ColorPickBar() {
+		this(UDim2.zero, UDim2.defaultV);
+	}
+
     public ColorPickBar(UDim2 position, UDim2 size) {
         super("ColorPickBar", position, size);
     }

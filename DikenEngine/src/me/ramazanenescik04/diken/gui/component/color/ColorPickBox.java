@@ -28,6 +28,10 @@ public class ColorPickBox extends GuiComponent {
 	private int selectedX = -1;
 	private int selectedY = -1;
 
+	public ColorPickBox() {
+		this(UDim2.zero, UDim2.defaultV);
+	}
+
 	public ColorPickBox(UDim2 position, UDim2 size) {
 		super("ColorPickBox", position, size);
 	}

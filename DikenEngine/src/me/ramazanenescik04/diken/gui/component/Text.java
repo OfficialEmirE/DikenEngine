@@ -49,6 +49,10 @@ public class Text extends GuiComponent {
 			this.y = y;
 		}
 	}
+	
+	public Text() {
+		this("", UDim2.zero);
+	}
 
 	public Text(String text, UDim2 position) {
 		this(text, position, UDim2.defaultV, 0xffffffff, "default_font");

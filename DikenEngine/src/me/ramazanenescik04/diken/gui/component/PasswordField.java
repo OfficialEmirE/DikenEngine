@@ -11,6 +11,10 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  * Represents the `PasswordField` type within the DikenEngine `gui.compoment` package.
  */
 public class PasswordField extends TextField {
+	public PasswordField() {
+		this("", UDim2.zero, UDim2.defaultV);
+	}
+
 	public PasswordField(UDim2 position, UDim2 size) {
 		this("", position, size);
 	}

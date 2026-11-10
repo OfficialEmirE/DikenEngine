@@ -44,7 +44,6 @@ import me.ramazanenescik04.diken.Config;
 import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Instance;
-import me.ramazanenescik04.diken.game.NilNode;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.event.Event;
@@ -266,14 +265,6 @@ public final class StudioPanel extends JPanel implements IInputListener {
 	}
 	
 	public void loadWorld(World world) {
-		if (world.getRoot().findByClass(NilNode.class).size() > 0)
-			JOptionPane.showMessageDialog(
-					this.engineWindow, 
-					"Your world contains invalid nodes.\nPlease open the world in an older version!", 
-					"Warning", 
-					JOptionPane.WARNING_MESSAGE
-			);
-		
 		this.editWorld = world;
 		undoManager.discardAllEdits();
 		this.engine.setWorld(world);

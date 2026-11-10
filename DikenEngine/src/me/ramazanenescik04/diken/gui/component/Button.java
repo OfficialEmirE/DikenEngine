@@ -40,6 +40,10 @@ public class Button extends GuiComponent {
     protected boolean isTouching = false;
     private boolean isIconLeft = true;
 	
+	public Button() {
+		this("", UDim2.zero, UDim2.defaultV);
+	}
+
 	public Button(String text, UDim2 position, UDim2 size) {
 		super("Button", position, size);
 		this.text = text;	

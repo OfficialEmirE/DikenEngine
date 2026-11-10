@@ -733,14 +733,12 @@ public abstract class Node implements Cloneable {
             
             node.loadNodeData(inStream);
         } catch (Exception e) {
-            DikenEngine.errorLog("!KRITIK HATA! Node sınıfı yüklenemedi: " + className, e);
-            node = new NilNode(className);
+           throw new IOException("!KRITIK HATA! Node sınıfı yüklenemedi: " + className, e);
         }
         
         //TODO: Her yeni world io sürümünde değiştir!
         if (ver > World.MIN_WORLD_IO_VERSION) {
         	int length = inStream.readInt();
-        	
         	if (length < 0) {
                 throw new IOException("Geçersiz veri uzunluğu: " + length);
             }

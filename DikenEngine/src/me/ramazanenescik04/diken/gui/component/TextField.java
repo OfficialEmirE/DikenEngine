@@ -39,6 +39,10 @@ public class TextField extends GuiComponent {
 	private boolean isPressingControl;
 	private boolean isNumberField = false;
 
+	public TextField() {
+		this("", UDim2.zero, UDim2.defaultV);
+	}
+
 	public TextField(UDim2 position, UDim2 size) {
 		this("", position, size);
 	}

@@ -42,6 +42,10 @@ public class ScrollBar extends GuiComponent {
 
 	private boolean prevMouseDown = false;
 
+	public ScrollBar() {
+		this(UDim2.zero, UDim2.defaultV, VERTICAL);
+	}
+
 	public ScrollBar(UDim2 position, UDim2 size, int type) {
 		super("ScrollBar", position, size);
 		this.type = type;

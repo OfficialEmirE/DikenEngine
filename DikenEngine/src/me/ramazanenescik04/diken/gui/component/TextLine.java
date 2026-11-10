@@ -28,6 +28,10 @@ public class TextLine extends GuiComponent {
 	private UniFont font = DikenEngine.getEngine().defaultFont;
 	private int color = 0xffffffff, bgColor = 0xff484848; // Default text color is white
 
+	public TextLine() {
+		this(UDim2.zero, UDim2.defaultV);
+	}
+
 	public TextLine(UDim2 position, UDim2 size) {
 		super("TextLine", position, size);
 	}
