@@ -6,7 +6,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONObject;
@@ -27,7 +26,7 @@ public class PluginManager {
 
     private PluginManager() {}
 
-    public void loadPlugins(DikenEngine engine, StudioPanel studio) {
+    public void loadPlugins(DikenEngine engine) {
         if (!pluginsFolder.exists()) {
             pluginsFolder.mkdirs();
             return;
@@ -40,12 +39,12 @@ public class PluginManager {
         if (files == null) return;
 
         for (File file : files) {
-            loadJarPlugin(file, engine, studio);
+            loadJarPlugin(file, engine);
         }
     }
 
     @SuppressWarnings("unchecked")
-	private void loadJarPlugin(File file, DikenEngine engine, StudioPanel studio) {
+	private void loadJarPlugin(File file, DikenEngine engine) {
         try {
             URLClassLoader loader = new URLClassLoader(
                     new URL[]{file.toURI().toURL()},
@@ -102,9 +101,9 @@ public class PluginManager {
         }
     }
 
-    public void loadLocalPlugin(Class<? extends Plugin> pluginClass,
-                                DikenEngine engine,
-                                StudioPanel studio) {
+    @SuppressWarnings("unchecked")
+	public <T extends Plugin> T loadLocalPlugin(Class<T> pluginClass,
+                                DikenEngine engine) {
         try {
             Plugin plugin = pluginClass
                     .getDeclaredConstructor()
@@ -124,12 +123,15 @@ public class PluginManager {
                 StudioUtils.registerPluginSettings(plugin);
             }
 
+            return (T) plugin;
         } catch (Exception e) {
             ConsoleLog.sendLog(
                     "Local plugin yüklenemedi: " + pluginClass.getName()
             );
             e.printStackTrace();
         }
+        
+        return null;
     }
 
     public void disableAll() {
@@ -152,7 +154,17 @@ public class PluginManager {
     }
 
     public List<Plugin> getPlugins() {
-        return Collections.unmodifiableList(plugins);
+        return plugins;
+    }
+    
+    @SuppressWarnings("unchecked")
+	public <T extends Plugin> T getPlugin(Class<T> clazz) {
+    	for (Plugin plugin : this.plugins) {
+    		if (plugin.getClass().isAssignableFrom(clazz))
+    			return (T) plugin;
+    	} 
+    	
+    	return null;
     }
 
 	public void enableAll(DikenEngine engine, StudioPanel studio) {

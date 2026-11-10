@@ -303,7 +303,7 @@ public final class DikenEngine implements Runnable, IInputListener {
 				this.loadingDialog.setProgress(50);
 			}
 			
-			PluginManager.instance.loadPlugins(this, studioPanel);
+			PluginManager.instance.loadPlugins(this);
 			
 			PluginManager.instance.enableAll(this, studioPanel);
 			

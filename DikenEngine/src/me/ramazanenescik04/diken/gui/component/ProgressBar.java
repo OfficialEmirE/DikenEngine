@@ -50,11 +50,12 @@ public class ProgressBar extends GuiComponent {
         
         bitmap.draw(progressBar, 1, 1);
         
+        var renderingText = text.isEmpty() ? value + "%" : text;
         bitmap.drawText(
-        		text.isEmpty() ? value + "%" : text,
+        		renderingText,
         		4,
         		height / 2 - TextRenderer.stringBitmapAverageHeight(
-        				text,
+        				renderingText,
         				DikenEngine.getEngine().defaultFont) / 2,
         		false
         );

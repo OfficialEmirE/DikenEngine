@@ -9,6 +9,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Animation;
 import me.ramazanenescik04.diken.game.Instance;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.io.Tag.Compound;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -25,12 +26,7 @@ public class SpriteSheet extends Instance {
 	
 	private boolean playing = false;
 	private ImageType imageType = ImageType.Texture;
-	
-	public enum ImageType {
-		Texture,
-		Decal,
-		None
-	}
+	private boolean xFlip = false;
 
 	public SpriteSheet() {
 		this("SpriteSheet");
@@ -67,6 +63,9 @@ public class SpriteSheet extends Instance {
 		
 		if (texture == null)
 			return null;
+		
+		if (xFlip)
+			texture = texture.opposite(false);
 		
 		if (this.imageType == ImageType.Texture) {
 			Bitmap parentBitmap = null;
@@ -130,6 +129,14 @@ public class SpriteSheet extends Instance {
 		this.imageType = imageType;
 	}
 
+	public boolean isxFlip() {
+		return xFlip;
+	}
+
+	public void setxFlip(boolean xFlip) {
+		this.xFlip = xFlip;
+	}
+
 	@Override
 	protected void reloadNode() {
 		textureLoaded = false;
@@ -140,9 +147,11 @@ public class SpriteSheet extends Instance {
 		var key = new SettingCategory.SettingKey("spriteSheet", "SpriteSheet", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(2, 3));
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Animation ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setAnimationID))
-				.addSetting(new Setting<ImageType>("Image Type", imageType, ImageType.values(), ImageType.class, EnumSettingType.LIST_SELECT).addChangeListener(this::setImageType))
-				.addSetting(new Setting<Boolean>("Playing", playing, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setPlaying));
+				.addSetting(new Setting<>("Animation ID", resourceID, String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setAnimationID))
+				.addSetting(new Setting<>("Image Type", imageType, ImageType.values(), ImageType.class, EnumSettingType.LIST_SELECT).addChangeListener(this::setImageType))
+				.addSetting(new Setting<>("Playing", playing, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setPlaying))
+				.addSetting(new Setting<>("X Flip", xFlip, Boolean.class, EnumSettingType.CHECK_BOX)
+						.addChangeListener(this::setxFlip));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
@@ -167,5 +176,17 @@ public class SpriteSheet extends Instance {
 		this.playing = in.readBoolean();
 		
 		this.textureLoaded = false;
+	}
+	
+	@Override
+	public void saveNodeData(Compound tag) {
+		super.saveNodeData(tag);
+		tag.putBoolean("xFlip", xFlip);
+	}
+
+	@Override
+	public void loadNodeData(Compound tag) {
+		super.loadNodeData(tag);
+		this.xFlip = tag.getBoolean("xFlip", false);
 	}
 }

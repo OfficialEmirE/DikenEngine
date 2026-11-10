@@ -13,9 +13,9 @@ import me.ramazanenescik04.diken.game.NodeResource;
 import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.event.Signal;
 import me.ramazanenescik04.diken.game.nodes.Camera;
+import me.ramazanenescik04.diken.game.nodes.ImageType;
 import me.ramazanenescik04.diken.game.nodes.Light;
 import me.ramazanenescik04.diken.game.nodes.Part;
-import me.ramazanenescik04.diken.game.nodes.SpriteSheet;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.gui.component.Text;
@@ -39,7 +39,7 @@ public class LuaInit {
 	}
 	
 	public static Map<String, Class<? extends Enum<?>>> initEnums() {
-		var spriteEnum = (SpriteSheet.ImageType.class);
+		var spriteEnum = (ImageType.class);
 		var cameraEnum = (Camera.CameraType.class);
 		var panelEnum = (Panel.BorderStyle.class);
 		var resourceEnum = (EnumResource.class);
