@@ -15,15 +15,14 @@ import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.gui.hitbox.Hitbox;
-import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
-import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.resource.EnumResource;
 
 /**
  * Represents the `Tool` type within the DikenEngine `game.nodes` package.
  */
 public class Tool extends Instance {	
-	private NodeResource<Bitmap> resource;
+	private NodeResource<Bitmap> resource = new NodeResource<>("empty", EnumResource.IMAGE);
 	private boolean isEquipped = false;
 	
 	public Tool() {
@@ -68,8 +67,7 @@ public class Tool extends Instance {
 			copyTool.isEquipped = true;
 			player.findFirstChild("Tools").addChild(copyTool);
 			
-			if (this.parent != null)
-				this.parent.removeChild(this);
+			this.setParent(null);
 		}
 	}
 
@@ -92,9 +90,8 @@ public class Tool extends Instance {
 	
 	@Override
 	public List<SettingCategory> getNodeSettings() {
-		var key = new SettingCategory.SettingKey("tool", "Tool", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(4, 1));
 		var settingCategory = SettingCategory
-				.createSettingCategory(key)
+				.createSettingCategory("tool", "Tool", 4, 1)
 				.addSetting(new Setting<String>("Icon ID", resource.getKey(), String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setIcon));
 		
 		var list = super.getNodeSettings();

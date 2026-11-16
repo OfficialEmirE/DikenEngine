@@ -217,6 +217,20 @@ public abstract class Instance extends Node {
 	public void setY(int y) {
 		this.y = y;
 	}
+	
+	public void setOffsetX(int x) {
+		if (aabb != null)
+			aabb.setX(x);
+	}
+	
+	public void setOffsetY(int y) {
+		if (aabb != null)
+			aabb.setY(y);
+	}
+
+	public void setOffsetLocation(int x, int y) {
+		this.setOffsetX(x); this.setOffsetY(y);
+	}
 
 	public float getScaleX() {
 		return scaleX;

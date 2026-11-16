@@ -1,12 +1,14 @@
 package me.ramazanenescik04.diken.tools;
 
 import java.awt.Desktop;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -15,6 +17,7 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import javax.swing.JFrame;
 
@@ -165,6 +168,46 @@ public class Utils {
 			}
 		}
 	}
+
+	/**
+	 * Checks if an input stream is gzipped.
+	 * 
+	 * @param in
+	 * @return
+	 */
+	public static boolean isGZipped(InputStream in) {
+		if (!in.markSupported()) {
+			in = new BufferedInputStream(in);
+		}
+		in.mark(2);
+		int magic = 0;
+		try {
+			magic = in.read() & 0xff | ((in.read() << 8) & 0xff00);
+			in.reset();
+		} catch (IOException e) {
+			e.printStackTrace(System.err);
+			return false;
+		}
+		return magic == GZIPInputStream.GZIP_MAGIC;
+	}
+
+	/**
+	 * Checks if a file is gzipped.
+	 * 
+	 * @param f
+	 * @return
+	 */
+	public static boolean isGZipped(File f) {
+		int magic = 0;
+		try {
+			RandomAccessFile raf = new RandomAccessFile(f, "r");
+			magic = raf.read() & 0xff | ((raf.read() << 8) & 0xff00);
+			raf.close();
+		} catch (Throwable e) {
+			e.printStackTrace(System.err);
+		}
+		return magic == GZIPInputStream.GZIP_MAGIC;
+	}
 	
 	/**
 	 * @apiNote işlem bittikten sonra ne olursa olsun {@link JFrame#dispose()} edilmelidir!
@@ -179,5 +222,10 @@ public class Utils {
 		frame.setVisible(true);
 		
 		return frame;
+	}
+
+	public static <T> List<T> listAdd(List<T> list, T object) {
+		list.add(object);
+		return list;
 	}
 }

@@ -4,6 +4,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class ResourceLocator {
     private static final Map<ResourceKey, IResource> resMap = new ConcurrentHashMap<>();
@@ -43,6 +44,10 @@ public class ResourceLocator {
     public static IResource getResource(ResourceKey key) {
         return resMap.getOrDefault(key, IOResource.missingTexture);
     }
+    
+    public static Set<Map.Entry<ResourceKey, IResource>> entrySet() {
+		return resMap.entrySet();
+	}
     
     public static class ResourceKey {
         private final String gameID;

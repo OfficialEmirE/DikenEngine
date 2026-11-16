@@ -21,8 +21,9 @@ import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
+import me.ramazanenescik04.diken.scripting.security.LuaSecurity;
 
-public class Script extends Node {
+public class Script extends BaseScript {
 	private static final ThreadLocal<Script> CURRENT_SCRIPT = new ThreadLocal<>();
 	private Map<Event, List<Signal>> eventConnections = new IdentityHashMap<>();
 	public static final Event scriptStarted = new Event();
@@ -33,7 +34,6 @@ public class Script extends Node {
 	
 	private transient volatile boolean stopRequested = false;
 	private transient Thread virtualThread = null;
-	private transient Globals globals;
 	private transient volatile boolean isInitialized = false;
 	private transient volatile LuaValue luaUpdateFunction = null;
 	private transient volatile long runId = 0;
@@ -77,8 +77,7 @@ public class Script extends Node {
 
 	    stopRequested = false;
 	    final long myRunId = ++runId;
-	    final Globals localGlobals = JsePlatform.standardGlobals();
-	    this.globals = localGlobals;
+	    final Globals localGlobals = super.getGlobals();
 
 	    localGlobals.load(new org.luaj.vm2.lib.DebugLib() {
 	        private int counter = 0;
@@ -185,13 +184,9 @@ public class Script extends Node {
 		this.enabled = enabled;
 	}
 	
-	/**
-	 * Bu Method SADECE Kod tamamlama gibi yerlerde kullanılmalıdır!
-	 * @return
-	 */
-	@Deprecated
-	public Globals getGlobals() {
-		return globals;
+	@Override
+	public LuaSecurity getScriptSecurity() {
+		return LuaSecurity.STANDARD;
 	}
 
 	@Override

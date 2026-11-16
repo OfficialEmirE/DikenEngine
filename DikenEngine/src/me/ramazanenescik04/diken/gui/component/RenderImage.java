@@ -108,7 +108,10 @@ public class RenderImage extends GuiComponent {
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Texture", this.resource.getKey(), String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture));
+				.addSetting(new Setting<String>("Texture", this.resource.getKey(), String.class, EnumSettingType.RESOURCE_SELECT).addChangeListener(this::setTexture))
+				.addSetting(new Setting<>("ImageType", this.imageType, ImageType.values(), ImageType.class, EnumSettingType.LIST_SELECT)
+						.addChangeListener(this::setImageType))
+				.addSetting(new Setting<>("XFlip", this.xFlip, Boolean.class, EnumSettingType.CHECK_BOX).addChangeListener(this::setxFlip));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);

@@ -19,18 +19,35 @@ import java.util.function.Consumer;
 public class BasicObjectsPanel extends DockablePanel {
 
     private static final long serialVersionUID = 1L;
+    private JPanel listPanel;
+    private Consumer<Node> onDoubleClick;
 
     public BasicObjectsPanel(Consumer<Node> onDoubleClick) {
     	super("basic_objects_id", "studio.windows.basicObjects");
+    	this.onDoubleClick = onDoubleClick;
     	
         setLayout(new BorderLayout());
         setBackground(new Color(45, 45, 45));
 
-        JPanel listPanel = new JPanel();
+        listPanel = new JPanel();
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(new Color(45, 45, 45));
 
-        Map<InstanceList.CategoryKey, List<Node>> nodeList = InstanceList.getTypedNodes();
+        refreshList();
+        
+        InstanceList.ListUpdated.Connect(_ -> {
+        	refreshList();
+        });
+
+        JScrollPane scrollPane = new JScrollPane(listPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.setBackground(new Color(45, 45, 45));
+        add(scrollPane, BorderLayout.CENTER);
+    }
+    
+    private void refreshList() {
+    	Map<InstanceList.CategoryKey, List<Node>> nodeList = InstanceList.getTypedNodes();
 
         for (Map.Entry<InstanceList.CategoryKey, List<Node>> category : nodeList.entrySet()) {
         	listPanel.add(createBorder(category.getKey()));
@@ -48,12 +65,6 @@ public class BasicObjectsPanel extends DockablePanel {
         }
         
         listPanel.add(Box.createVerticalGlue());
-
-        JScrollPane scrollPane = new JScrollPane(listPanel);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setBackground(new Color(45, 45, 45));
-        add(scrollPane, BorderLayout.CENTER);
     }
 
     private JPanel createBorder(InstanceList.CategoryKey key) {

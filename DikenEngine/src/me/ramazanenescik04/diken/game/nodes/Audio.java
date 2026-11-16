@@ -62,6 +62,12 @@ public class Audio extends Node {
 	protected void reloadNode() {
 		textureLoaded = false;
 	}
+
+	@Override
+	protected void dispose() {
+		if (texture != null)
+			texture.stop();
+	}
 	
 	public void playAudio(boolean play) {
 		if (texture == null)

@@ -118,7 +118,7 @@ public class UniFont implements IResource {
      * @param awtFont kaynak AWT fontu
      * @return oluşturulan {@link UniFont}
      */
-    public static UniFont fromAwtFont(Font awtFont) {
+    public static UniFont fromAwtFont(Font awtFont, boolean registerFont) {
         UniFont font = new UniFont();
         Locale locale = Locale.getDefault();
         font.name        = "%s.%d".formatted(awtFont.getFontName(), awtFont.getSize()).replace(" ", "_");
@@ -146,8 +146,10 @@ public class UniFont implements IResource {
         }
 
         font.charBitmaps.putAll(bitmaps);
-
-        register(font);
+        
+        if (registerFont)
+        	register(font);
+        
         return font;
     }
 

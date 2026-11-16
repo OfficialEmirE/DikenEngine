@@ -1,16 +1,20 @@
 package me.ramazanenescik04.diken.game;
 
 import java.awt.Point;
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Predicate;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.event.Event;
@@ -25,6 +29,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.tools.ListAdapter;
 import me.ramazanenescik04.diken.tools.ObservableList;
+import me.ramazanenescik04.diken.tools.Utils;
 
 // Java 25 ile gelen özellikleri kullanabiliriz ama temel yapı sağlam olmalı.
 /**
@@ -640,7 +645,7 @@ public abstract class Node implements Cloneable {
 		if (eiOptions == null) eiOptions = new EIOptions[] {};
 		node = node.copy();
 		
-		try (var out = new DataOutputStream(new java.io.FileOutputStream(file))) {
+		try (var out = new DataOutputStream(new GZIPOutputStream(new java.io.FileOutputStream(file)))) {
 			out.writeUTF("DikenEngine-NodeFile-" + World.WORLD_IO_VERSION);
 			
 			boolean containsResources = false;
@@ -671,7 +676,10 @@ public abstract class Node implements Cloneable {
 	
 	public static Node importNode(File file, Node.EIOptions... eiOptions) throws IOException {
 		if (eiOptions == null) eiOptions = new EIOptions[] {};
-		try (var in = new DataInputStream(new java.io.FileInputStream(file))) {
+		boolean isGZIPFile = Utils.isGZipped(file);
+
+		var fileIn = new FileInputStream(file);
+		try (var in = new DataInputStream(new BufferedInputStream(isGZIPFile ? new GZIPInputStream(fileIn) : fileIn))) {
 			String signature = in.readUTF();
 
 			int version;
@@ -728,8 +736,19 @@ public abstract class Node implements Cloneable {
             Class<?> clazz = Class.forName(className);
             node = (Node) clazz.getConstructor().newInstance();
             
-            if (ver < 5)
-            	node.netId = UUID.fromString(inStream.readUTF()); // read netId
+            if (ver < 6) {
+                if (ver == 5 && inStream.markSupported())
+                    inStream.mark(65536);
+
+                try {
+                    node.netId = UUID.fromString(inStream.readUTF());
+                } catch (IllegalArgumentException e) {
+                    if (ver != 5)
+                        throw e;
+
+                    inStream.reset();
+                }
+            }
             
             node.loadNodeData(inStream);
         } catch (Exception e) {
@@ -744,9 +763,9 @@ public abstract class Node implements Cloneable {
             }
 
             byte[] bytes = inStream.readNBytes(length);
-
+            
             if (bytes.length != length) {
-                throw new EOFException("Dosya beklenenden erken bitti.");
+            	throw new EOFException("Dosya beklenenden erken bitti.");
             }
         	
         	node.loadNodeData(Tag.Compound.fromBytes(bytes));
@@ -768,7 +787,6 @@ public abstract class Node implements Cloneable {
 		
     	outStream.writeUTF(current.getClass().getName());
     	outStream.writeInt(filteredChildren.size());
-    	outStream.writeUTF(current.netId.toString());
     	current.saveNodeData(outStream);
     	
     	var compound = new Tag.Compound();

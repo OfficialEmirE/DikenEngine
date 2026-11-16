@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.studio.dockables;
 
+import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.Node;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
@@ -280,12 +281,11 @@ public class PropertiesPanel extends DockablePanel {
             }
             case SLIDER -> {
             	var sliderSetting = (Setting<? extends Number>)setting;
+            	int min = sliderSetting.getMin() != null ? sliderSetting.getMin().intValue() : 0;
+                int max = sliderSetting.getMax() != null ? sliderSetting.getMax().intValue() : 100;
+                int value = sliderSetting.getValue() != null ? sliderSetting.getValue().intValue() : min;
             	
-            	JSlider slider = new JSlider();
-
-            	slider.setValue(sliderSetting.getValue().intValue());
-            	slider.setMinimum(sliderSetting.getMin().intValue());
-            	slider.setMaximum(sliderSetting.getMax().intValue());
+            	JSlider slider = new JSlider(min, max, value);
             	
             	slider.addChangeListener(_ -> {
             		applySettingValue(setting, slider.getValue());
@@ -356,35 +356,36 @@ public class PropertiesPanel extends DockablePanel {
     }
     
     @SuppressWarnings({ "rawtypes", "unchecked" })
-	private void applySettingValue(Setting<?> setting, Object object) {
-    	if (object == null) ((Setting) setting).setValue(null);
+	private void applySettingValue(Setting setting, Object object) {
+    	if (object == null) setting.setValue(null);
     	
 		try {
 			Class<?> clazz = setting.getTypeClass();
 			if (object instanceof String value) {
 				if (clazz == String.class) {
-					((Setting) setting).setValue(object);
+					setting.setValue(object);
 				} else if (!value.isBlank()) {
 					if (clazz == Character.class) {
-						((Setting) setting).setValue(value.charAt(0));
+						setting.setValue(value.charAt(0));
 					} else if (clazz == Integer.class) {
-						((Setting) setting).setValue(Integer.parseInt(value));
+						setting.setValue(Integer.parseInt(value));
 					} else if (clazz == Byte.class) {
-						((Setting) setting).setValue(Byte.parseByte(value));
+						setting.setValue(Byte.parseByte(value));
 					} else if (clazz == Short.class) {
-						((Setting) setting).setValue(Short.parseShort(value));
+						setting.setValue(Short.parseShort(value));
 					} else if (clazz == Long.class) {
-						((Setting) setting).setValue(Long.parseLong(value));
+						setting.setValue(Long.parseLong(value));
 					} else if (clazz == Float.class) {
-						((Setting) setting).setValue(Float.parseFloat(value));
+						setting.setValue(Float.parseFloat(value));
 					} else if (clazz == Double.class) {
-						((Setting) setting).setValue(Double.parseDouble(value));
+						setting.setValue(Double.parseDouble(value));
 					}
 				}
 			} else if (setting.getTypeClass().isInstance(object)) {
-				((Setting) setting).setValue(object);
+				setting.setValue(object);
 			}
 		} catch (NumberFormatException ignored) {
+			DikenEngine.errorLog("Numara Formatında Hata Var!", ignored);
 		}
 	}
 }

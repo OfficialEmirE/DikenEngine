@@ -43,6 +43,8 @@ public class Lighting extends Service {
 
 		if (sky != null) {
 			sky.draw(sceneBitmap, viewport);
+		} else {
+			sceneBitmap.clear(0xff000000);
 		}
 
 		OnPostRender.FireEvent();

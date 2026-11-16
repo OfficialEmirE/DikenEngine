@@ -2,6 +2,8 @@ package me.ramazanenescik04.diken.studio.dockables;
 
 import me.ramazanenescik04.diken.CrashDialog;
 import me.ramazanenescik04.diken.game.World;
+import me.ramazanenescik04.diken.game.setting.EnumSettingType;
+import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.language.Lang;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -14,6 +16,7 @@ import me.ramazanenescik04.diken.studio.builders.Menubar;
 import me.ramazanenescik04.diken.studio.builders.Toolbar;
 import me.ramazanenescik04.diken.studio.dialog.CropDialog;
 import me.ramazanenescik04.diken.studio.editors.AnimationEditor;
+import me.ramazanenescik04.diken.studio.editors.FontEditor;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -44,6 +47,7 @@ public class ResourcesPanel extends DockablePanel {
 
     private String selectedKey = null;
     private final Set<String> expandedNodes = new HashSet<>();
+    private boolean showSystemResources;
 
     public ResourcesPanel(World world, EditorTabPanel editor, JFrame parentFrame) {
     	super("resources_panel", "studio.windows.resources");
@@ -122,6 +126,26 @@ public class ResourcesPanel extends DockablePanel {
 	            }
 	        }
 	    }
+	    
+		if (this.showSystemResources) {			
+			for (var entry : ResourceLocator.entrySet()) {
+				String key = entry.getKey().toString();
+				IResource resource = entry.getValue();
+
+				if (key.equals("empty") || key.equals("default_font") || resource == null)
+					continue;
+
+				listPanel.add(createItem(key, resource, false));
+				
+				if (resource instanceof ArrayBitmap arrayBitmap && expandedNodes.contains(key)) {
+					int[] i = {0};
+					arrayBitmap.forEach(b -> {
+						listPanel.add(createItem(key + "&" + i[0], b, true));
+						i[0]++;
+					});
+				}
+			}
+		}
 
 	    listPanel.revalidate();
 	    listPanel.repaint();
@@ -362,7 +386,7 @@ public class ResourcesPanel extends DockablePanel {
 							Lang.get("resources.setResourceName"),
 							finalFont.getFontName() + "-" + finalFont.getSize());
 
-					theWorld.addResource(resourceName, UniFont.fromAwtFont(finalFont));
+					theWorld.addResource(resourceName, UniFont.fromAwtFont(finalFont, true));
                 }
         	} else {
         		var resource = IOResource.loadResource(fis, selectedType);
@@ -490,6 +514,9 @@ public class ResourcesPanel extends DockablePanel {
     		case ANIMATION:
     			editor.openEditor(new AnimationEditor(this.theWorld, key));
     			break;
+    		case FONT:
+    			editor.openEditor(new FontEditor(this.theWorld, key));
+    			break;
     		default:
     			break;
     	}
@@ -533,6 +560,14 @@ public class ResourcesPanel extends DockablePanel {
 				popup.show(e.getComponent(), e.getX(), e.getY());
 			}
 		});
+	}
+	
+	@Override
+	public List<Setting<?>> getDockableSettings() {
+		List<Setting<?>> list = super.getDockableSettings();
+		list.add(new Setting<>("Show System Resources", false, Boolean.class, EnumSettingType.CHECK_BOX)
+				.addChangeListener(e -> {this.showSystemResources = e; rebuildList(); }));
+		return list;
 	}
 	
 	class ResourceNode {

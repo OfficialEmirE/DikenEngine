@@ -11,8 +11,10 @@ import me.ramazanenescik04.diken.gui.component.color.*;
 import me.ramazanenescik04.diken.scripting.Script;
 import me.ramazanenescik04.diken.game.entity.*;
 import me.ramazanenescik04.diken.game.event.BindableEvent;
+import me.ramazanenescik04.diken.game.event.Event;
 
 public final class InstanceList {
+	public static final Event ListUpdated = new Event();
 	private static final ArrayList<Node> NODE_LIST;
 	private static Map<CategoryKey, List<Node>> NODE_TYPES;
 	
@@ -68,6 +70,23 @@ public final class InstanceList {
 		        .collect(Collectors.groupingBy(
 		        		obj -> getCategoryName(obj)
 		        ));
+		
+		ListUpdated.FireEvent();
+	}
+	
+	public synchronized static void addNodes(List<Node> node) {
+		NODE_LIST.addAll(node);
+		
+		NODE_TYPES = NODE_LIST.stream()
+		        .collect(Collectors.groupingBy(
+		        		obj -> getCategoryName(obj)
+		        ));
+		
+		ListUpdated.FireEvent();
+	}
+	
+	public synchronized static void addNodes(Node... nodes) {
+		addNodes(Arrays.asList(nodes));
 	}
 	
 	private static CategoryKey getCategoryName(Object obj) {
@@ -125,6 +144,7 @@ public final class InstanceList {
 		NODE_LIST.add(new Tool());
 		NODE_LIST.add(new Audio());
 		NODE_LIST.add(new Light());
+		NODE_LIST.add(new ClickDetector());
 		
 		// e.ramazanenescik04.diken.game.nodes.values
 		NODE_LIST.add(new StringValue());

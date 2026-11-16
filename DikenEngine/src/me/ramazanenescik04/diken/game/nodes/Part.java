@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.List;
 
 import me.ramazanenescik04.diken.game.Instance;
+import me.ramazanenescik04.diken.game.io.Tag.Compound;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -20,6 +21,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
  */
 public class Part extends Instance {
 	private Surface surface = Surface.Stud;
+	private boolean drawOutside = true;
 	
 	public enum Surface {
 		Stud(0, 0),
@@ -63,10 +65,10 @@ public class Part extends Instance {
 			return null;
 		
 		var bitmap = FrameBitmapPool.newBitmap(width, height);
+		var surfaceAtlas = (ArrayBitmap) ResourceLocator.getResource("surface");
 		
 		if (surface == Surface.Universal) {
 		    // 1. Kullanılacak iki farklı dokuyu önden bir kez çekiyoruz (Döngü içinde sürekli getResource çağırmak performansı düşürür)
-		    var surfaceAtlas = (ArrayBitmap) ResourceLocator.getResource("surface");
 		    var texture0 = surfaceAtlas.getBitmap(0, 0);
 		    var texture1 = surfaceAtlas.getBitmap(1, 0);
 		    
@@ -85,13 +87,19 @@ public class Part extends Instance {
 		        }
 		    }
 		} else {
-			var surfaceTexture = ((ArrayBitmap) ResourceLocator.getResource("surface")).getBitmap(surface.x, surface.y);
+			var surfaceTexture = surfaceAtlas.getBitmap(surface.x, surface.y);
 			
 			for (var y = 0; y < (bitmap.h / surfaceTexture.h) + 1; y++) {
 				for (var x = 0; x < (bitmap.w / surfaceTexture.w) + 1; x++) {
 					bitmap.draw(surfaceTexture, x * surfaceTexture.w, y * surfaceTexture.h);
 				}
 			}
+		}
+		
+		if (drawOutside) {
+			bitmap.box(-1, -1, width - 1, height - 1, 0xffababab);
+			bitmap.box(0, 0, width, height, 0xffffffff);
+			
 		}
 		
 		return bitmap;
@@ -105,6 +113,14 @@ public class Part extends Instance {
 		this.surface = surface;
 	}
 
+	public boolean isDrawOutside() {
+		return drawOutside;
+	}
+
+	public void setDrawOutside(boolean drawOutside) {
+		this.drawOutside = drawOutside;
+	}
+
 	@Override
 	public List<SettingCategory> getNodeSettings() {
 		var key = new SettingCategory.SettingKey("part", "Part", ((ArrayBitmap) ResourceLocator.getResource("editor_icons")).getBitmap(0, 1));
@@ -116,12 +132,26 @@ public class Part extends Instance {
 		
 		var settingCategory = SettingCategory
 				.createSettingCategory(key)
-				.addSetting(new Setting<String>("Surface", surface.name(), typeOptions, String.class, EnumSettingType.LIST_SELECT)
-						.addChangeListener(value -> this.setSurface(Surface.valueOf(value))));
+				.addSetting(new Setting<>("Surface", surface.name(), typeOptions, String.class, EnumSettingType.LIST_SELECT)
+						.addChangeListener(value -> this.setSurface(Surface.valueOf(value))))
+				.addSetting(new Setting<>("DrawOutside", this.drawOutside, Boolean.class, EnumSettingType.CHECK_BOX)
+						.addChangeListener(this::setDrawOutside));
 		
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	public void saveNodeData(Compound tag) {
+		super.saveNodeData(tag);
+		tag.putBoolean("drawOutside", drawOutside);
+	}
+
+	@Override
+	public void loadNodeData(Compound tag) {
+		super.loadNodeData(tag);
+		this.drawOutside = tag.getBoolean("drawOutside", true);
 	}
 
 	@Override

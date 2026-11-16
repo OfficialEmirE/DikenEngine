@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.NodeResource;
+import me.ramazanenescik04.diken.game.io.Tag.Compound;
 import me.ramazanenescik04.diken.game.setting.EnumSettingType;
 import me.ramazanenescik04.diken.game.setting.Setting;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
@@ -14,6 +16,7 @@ import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.UniFont;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
 import me.ramazanenescik04.diken.resource.Bitmap;
+import me.ramazanenescik04.diken.resource.EnumResource;
 import me.ramazanenescik04.diken.resource.ResourceLocator;
 
 /**
@@ -25,7 +28,7 @@ public class TextLine extends GuiComponent {
 	private boolean editable = true;
 	
 	private List<String> textLines = new ArrayList<>();
-	private UniFont font = DikenEngine.getEngine().defaultFont;
+	private NodeResource<UniFont> resource = new NodeResource<>("default_font", EnumResource.FONT);
 	private int color = 0xffffffff, bgColor = 0xff484848; // Default text color is white
 
 	public TextLine() {
@@ -94,12 +97,12 @@ public class TextLine extends GuiComponent {
 		return this;
 	}
 	
-	public UniFont getFont() {
-		return font;
+	public String getFont() {
+		return this.resource.getKey();
 	}
 	
-	public TextLine setFont(UniFont font) {
-		this.font = font;
+	public TextLine setFont(String font) {
+		this.resource.setKey(font);
 		return this;
 	}
 	
@@ -205,9 +208,9 @@ public class TextLine extends GuiComponent {
 	}
 	
 	public void autoSetSize() {
-		String[] array = this.textLines.toArray(new String[0]);
+		String[] array = this.textLines.toArray(String[]::new);
 		
-		int h = TextRenderer.stringBitmapAverageHeight(array, font) * (array.length + 2);
+		int h = TextRenderer.stringBitmapAverageHeight(array, this.resource.getResource()) * (array.length + 2);
 		
 		if (h >= this.getHeight()) this.textLines.removeFirst();
 	}
@@ -221,6 +224,8 @@ public class TextLine extends GuiComponent {
 						.addChangeListener(this::setFocused))
 				.addSetting(new Setting<Boolean>("Editable", this.editable, Boolean.class, EnumSettingType.CHECK_BOX)
 						.addChangeListener(this::setEditable))
+				.addSetting(new Setting<>("Font", this.resource.getKey(), String.class, EnumSettingType.RESOURCE_SELECT)
+						.addChangeListener(this::setFont))
 				.addSetting(
 						new Setting<>("Draw Background", this.drawBackground, Boolean.class, EnumSettingType.CHECK_BOX)
 								.addChangeListener(e -> this.drawBackground = e));
@@ -228,6 +233,23 @@ public class TextLine extends GuiComponent {
 		var list = super.getNodeSettings();
 		list.add(settingCategory);
 		return list;
+	}
+
+	@Override
+	protected void reloadNode() {
+		this.resource.reloadResource();
+	}
+
+	@Override
+	public void saveNodeData(Compound tag) {
+		super.saveNodeData(tag);
+		tag.putString("font", this.resource.getKey());
+	}
+
+	@Override
+	public void loadNodeData(Compound tag) {
+		super.loadNodeData(tag);
+		this.resource.setKey(tag.getString("font", "default_font"));
 	}
 
 	@Override
@@ -255,6 +277,5 @@ public class TextLine extends GuiComponent {
 		for (int i = 0; i < lineCount; i++) {
 			this.textLines.add(in.readUTF());
 		}
-		this.font = DikenEngine.getEngine() != null ? DikenEngine.getEngine().defaultFont : UniFont.getFont("default_font");
 	}
 }

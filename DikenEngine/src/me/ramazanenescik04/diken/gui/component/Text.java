@@ -26,7 +26,7 @@ import me.ramazanenescik04.diken.resource.ResourceLocator;
 public class Text extends GuiComponent {
 	private String text;
 	private int color;
-	private NodeResource<UniFont> font;
+	private NodeResource<UniFont> font = new NodeResource<>("default_font", EnumResource.FONT);
 	private TextPosition textPosition = TextPosition.Center;
 	
 	public enum TextPosition {
@@ -63,7 +63,7 @@ public class Text extends GuiComponent {
 		
 		this.text = text;
 		this.color = color;
-		this.font = new NodeResource<>(font, EnumResource.FONT);
+		this.font.setKey(font);
 	}
 	
 	public Bitmap render() {
@@ -163,6 +163,15 @@ public class Text extends GuiComponent {
 
 	public void setFont(String key) {
 		font.setKey(key);
+	}
+
+	@Override
+	public Text copy() {
+		Text copy = (Text) super.copy();
+		if (copy != null) {
+			copy.font = this.font.copy();
+		}
+		return copy;
 	}
 
 	@Override

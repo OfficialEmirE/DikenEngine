@@ -1,10 +1,12 @@
 package me.ramazanenescik04.diken.game;
 
 import java.awt.geom.Point2D;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,6 +25,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import me.ramazanenescik04.diken.DikenEngine;
+import me.ramazanenescik04.diken.game.io.Tag;
 import me.ramazanenescik04.diken.game.nodes.Camera;
 import me.ramazanenescik04.diken.game.services.UIService;
 import me.ramazanenescik04.diken.game.services.Game;
@@ -52,7 +55,7 @@ public class World implements Cloneable {
     private static final int MAX_COLLISION_PASSES = 6;
     
     public static final int MIN_WORLD_IO_VERSION = 2;
-    public static final int WORLD_IO_VERSION = 5;
+    public static final int WORLD_IO_VERSION = 6;
 
     public transient DikenEngine engine;
     
@@ -63,6 +66,8 @@ public class World implements Cloneable {
     
     private Camera camera = new Camera();
     private Hitbox gameViewport, uiViewport;
+    
+    private Tag.Compound metadata = new Tag.Compound();
 
     public World(String gameName, Game rootNode) {
     	this.resources = new LinkedHashMap<String, IResource>();
@@ -148,8 +153,6 @@ public class World implements Cloneable {
     // --- Render ---
 
     public synchronized void render(Bitmap mainBitmap) {
-		mainBitmap.clear(0x00000000);
-
     	var width = this.engine.getScaledWidth();
     	var height = this.engine.getScaledHeight();
     	
@@ -305,19 +308,19 @@ public class World implements Cloneable {
     }
     
     public static World loadWorld(File outputFile) throws IOException, ReflectiveOperationException {
-    	try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(new FileInputStream(outputFile)))) {
+    	try (DataInputStream outStream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new FileInputStream(outputFile))))) {
     		return readWorld(outStream);
 		}
     }
     
     public static World loadWorld(InputStream inputStream) throws IOException, ReflectiveOperationException {
-    	try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(inputStream))) {
+    	try (DataInputStream outStream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(inputStream)))) {
     		return readWorld(outStream);
 		}
     }
     
     public static World loadWorldFromBytes(byte[] data) throws IOException, ReflectiveOperationException {
-        try (DataInputStream outStream = new DataInputStream(new GZIPInputStream(new ByteArrayInputStream(data)))) {
+        try (DataInputStream outStream = new DataInputStream(new BufferedInputStream(new GZIPInputStream(new ByteArrayInputStream(data))))) {
             return readWorld(outStream);
         }
     }
@@ -325,6 +328,10 @@ public class World implements Cloneable {
     private static void writeWorld(World theWorld, DataOutputStream outStream) throws IOException {
         outStream.writeUTF("DikenEngine-WorldFile");
         outStream.writeInt(WORLD_IO_VERSION);
+        
+        byte[] metadata = theWorld.metadata.toBytes();
+        outStream.writeInt(metadata.length);
+        outStream.write(metadata);
         
         outStream.writeUTF(theWorld.root.name);
         outStream.writeLong(System.currentTimeMillis());
@@ -360,7 +367,23 @@ public class World implements Cloneable {
         if (worldVersion < MIN_WORLD_IO_VERSION) {
         	throw new IOException("Dünya yükleme sistemi, eski dünya dosyaları yüklemeyi desteklemiyor! (şimdilik)");
         }
-    
+        
+        Tag.Compound metadata = new Tag.Compound();
+        if (worldVersion > 5) {
+        	int length = outStream.readInt();
+        	if (length < 0) {
+                throw new IOException("Geçersiz veri uzunluğu: " + length);
+            }
+
+            byte[] bytes = outStream.readNBytes(length);
+            
+            if (bytes.length != length) {
+                throw new EOFException("Dosya beklenenden erken bitti.");
+            }
+            
+            metadata = Tag.Compound.fromBytes(bytes);
+        }
+        
         String gameName = outStream.readUTF();
         long lastUpdateTime = outStream.readLong();
         int resourceLenght = outStream.readInt();
@@ -390,6 +413,7 @@ public class World implements Cloneable {
 		resources.values().forEach(world::reloadResources);
 		
 		world.resources = resources;
+		world.metadata = metadata;
 		return world;
     }
     
@@ -530,6 +554,10 @@ public class World implements Cloneable {
     
     public Game getRoot() {
     	return this.root;
+    }
+    
+    public Tag.Compound getMetadata() {
+    	return this.metadata;
     }
     
     private void reloadResources(IResource res) {

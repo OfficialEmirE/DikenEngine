@@ -6,6 +6,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.NodeResource;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.event.Event;
+import me.ramazanenescik04.diken.game.io.Tag.Compound;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -120,5 +121,17 @@ public class InputService extends Service {
 		if (inputMode == InputHandler.INPUT_PRESSED) {
 			OnMouseClicked.FireEvent(x, y, clicked);
 		}
+	}
+
+	@Override
+	public void loadNodeData(Compound tag) {
+		super.loadNodeData(tag);
+		tag.putString("cursor", cursor.getKey());
+	}
+
+	@Override
+	public void saveNodeData(Compound tag) {
+		super.saveNodeData(tag);
+		cursor.setKey(tag.getString("cursor", "empty"));
 	}
 }
