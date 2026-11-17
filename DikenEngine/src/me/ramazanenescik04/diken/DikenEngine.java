@@ -312,6 +312,8 @@ public final class DikenEngine implements Runnable, IInputListener {
 			
 			this.listeners.forEach(l -> l.engineStarted());
 			
+			this.setCursor((CursorResource) ResourceLocator.getResource("diken:cursor-3"));
+			
 			long fixedUpdateTime = 1000000000L / 60;
 			long lastUpdateTime = System.nanoTime();
 			long lastFrameTime = lastUpdateTime;
@@ -576,9 +578,9 @@ public final class DikenEngine implements Runnable, IInputListener {
 		win_cursors
 				.setArray(IOResource.loadResourceAndCut(IOResource.createClassResource("/cursors.png"), 32, 32));
 
-		for (int j = 0; j < 3; j++) {
+		for (int j = 0; j < 6; j++) {
 			CursorResource cursor = new CursorResource();
-			cursor.cursorBitmap = win_cursors.bitmap[0][j];
+			cursor.cursorBitmap = win_cursors.bitmap[j/3][j%3];
 			ResourceLocator.addResource("cursor-" + j, cursor);
 		}
 	}

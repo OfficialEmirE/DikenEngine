@@ -1,5 +1,6 @@
 package me.ramazanenescik04.diken.game.services;
 
+import java.awt.Point;
 import java.util.*;
 
 import me.ramazanenescik04.diken.DikenEngine;
@@ -7,6 +8,7 @@ import me.ramazanenescik04.diken.game.NodeResource;
 import me.ramazanenescik04.diken.game.World;
 import me.ramazanenescik04.diken.game.event.Event;
 import me.ramazanenescik04.diken.game.io.Tag.Compound;
+import me.ramazanenescik04.diken.game.nodes.ClickDetector;
 import me.ramazanenescik04.diken.game.setting.SettingCategory;
 import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.ArrayBitmap;
@@ -26,7 +28,7 @@ public class InputService extends Service {
 	public final Event OnMouseClicked = new Event();
 	
 	private transient UIService uiService;
-	private NodeResource<CursorResource> cursor = new NodeResource<CursorResource>("empty", EnumResource.CURSOR);
+	private NodeResource<CursorResource> cursor = new NodeResource<CursorResource>("diken:cursor-3", EnumResource.CURSOR);
 	
 	public InputService() {
 		this("InputService");
@@ -44,7 +46,12 @@ public class InputService extends Service {
 			uiService = world.getService(UIService.class);
 		
 		cursor.update(world);
-		engine.setCursor(cursor.getResource());
+		
+		if (cursor.getKey().equals("empty")) {
+			engine.setCursor(null);
+		} else {
+			engine.setCursor(cursor.getResource());
+		}
 	}
 	
 	@Override
@@ -66,6 +73,14 @@ public class InputService extends Service {
 	
 	public void setCursor(String cursorResource) {
 		cursor.setKey(cursorResource);
+	}
+	
+	public String getCursor() {
+		return cursor.getKey();
+	}
+	
+	public Point getMousePosition() {
+		return engine.input.getMousePosition();
 	}
 	
 	public boolean isTextTypeMode() {
@@ -120,6 +135,10 @@ public class InputService extends Service {
 		
 		if (inputMode == InputHandler.INPUT_PRESSED) {
 			OnMouseClicked.FireEvent(x, y, clicked);
+			
+			this.world.getService(Workspace.class)
+				.findByClass(ClickDetector.class)
+				.forEach(e -> e.isClicked(world, x, y));;
 		}
 	}
 

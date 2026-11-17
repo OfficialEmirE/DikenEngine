@@ -120,9 +120,7 @@ public final class StudioUtils {
 	static void reloadGameSettings(World newWorld) {
 		SettingsManager.unregisterCategory("gameSettings");
 		
-		var gameSettings = SettingCategory.createSettingCategory("gameSettings", "Game Settings", 9, 1)
-				.addSetting(new Setting<>("Game Name", newWorld.getRoot().getName(), String.class, EnumSettingType.TEXT_FIELD)
-				.addChangeListener(newWorld.getRoot()::setName))
+		var gameSettings = SettingCategory.createSettingCategory("gameSettings", "Security", 14, 15)
 				.addSetting(new Setting<>("Allow Third Party Resources", newWorld.getRoot().allowThirdPartyResources,
 						Boolean.class, EnumSettingType.CHECK_BOX)
 						.addChangeListener(e -> newWorld.getRoot().allowThirdPartyResources = e));

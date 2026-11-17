@@ -36,7 +36,11 @@ public class ResourceLocator {
     
     public static IResource getResource(String resName) {
         synchronized (lookupKey) {
-            lookupKey.setResourceName(resName);
+        	if (resName.contains(":")) {
+        		lookupKey.setResourceName(resName.split(":")[1]);
+        	} else {
+        		lookupKey.setResourceName(resName);
+        	}
             return resMap.getOrDefault(lookupKey, IOResource.missingTexture);
         }
     }
