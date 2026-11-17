@@ -19,6 +19,7 @@ import me.ramazanenescik04.diken.game.nodes.Part;
 import me.ramazanenescik04.diken.gui.UDim2;
 import me.ramazanenescik04.diken.gui.component.Panel;
 import me.ramazanenescik04.diken.gui.component.Text;
+import me.ramazanenescik04.diken.input.InputHandler;
 import me.ramazanenescik04.diken.resource.EnumResource;
 
 import static org.luaj.vm2.lib.jse.CoerceJavaToLua.*;
@@ -31,6 +32,7 @@ public class LuaInit {
 		enumList.put("KeyEvent", KeyEvent.class);
 		enumList.put("MouseEvent", MouseEvent.class);
 		enumList.put("NodeResource", NodeResource.class);
+		enumList.put("InputHandeler", InputHandler.class);
 		enumList.put("Point", Point.class);
 		enumList.put("Event", Event.class);
 		enumList.put("Signal", Signal.class);
