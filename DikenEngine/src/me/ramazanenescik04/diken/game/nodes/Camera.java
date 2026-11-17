@@ -154,7 +154,7 @@ public class Camera extends AbstractService {
 	}
 	
 	public void setZoom(float zoom) {
-		this.zoom = Math.max(0.1f, zoom);
+	    this.zoom = Math.max(0.1f, Math.round(zoom * 10f) / 10f);
 	}
 
 	public void reset() {

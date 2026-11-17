@@ -439,7 +439,6 @@ public final class StudioPanel extends JPanel implements IInputListener {
 			return;
 		}
 		
-		
 		zoom = targetZoom;
 		editWorld.getCamera().setZoom(zoom);
 		
