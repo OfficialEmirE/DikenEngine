@@ -28,6 +28,7 @@ import me.ramazanenescik04.diken.DikenEngine;
 import me.ramazanenescik04.diken.game.io.Tag;
 import me.ramazanenescik04.diken.game.nodes.Camera;
 import me.ramazanenescik04.diken.game.services.UIService;
+import me.ramazanenescik04.diken.game.services.Debris;
 import me.ramazanenescik04.diken.game.services.Game;
 import me.ramazanenescik04.diken.game.services.InputService;
 import me.ramazanenescik04.diken.game.services.Lighting;
@@ -100,6 +101,7 @@ public class World implements Cloneable {
     	root.addChild(new PlayerService());
     	root.addChild(new Lighting());
     	root.addChild(new UIService());
+    	root.addChild(new Debris());
     	root.addChild(new InputService());
     	root.addChild(new RunService(this));
     }
